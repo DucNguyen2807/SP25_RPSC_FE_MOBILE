@@ -4,11 +4,11 @@
     "slug": "EasyRoomie",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/logoEasyRommie.png",
+    "icon": "./app/assets/logoEasyRommie.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/logoEasyRommie.png",
+      "image": "./app/assets/logoEasyRommie.png",
       "resizeMode": "contain",
       "backgroundColor": "#ACDCD0"
     },
@@ -17,12 +17,12 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/logoEasyRommie.png",
+        "foregroundImage": "./app/assets/logoEasyRommie.png",
         "backgroundColor": "#ACDCD0"
       }
     },
     "web": {
-      "favicon": "./assets/logoEasyRommie.png"
+      "favicon": "./app/assets/logoEasyRommie.png"
     }
   }
 }
