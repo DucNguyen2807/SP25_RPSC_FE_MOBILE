@@ -6,10 +6,9 @@ const SignUpScreen = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [isStudent, setIsStudent] = useState(false); // Trạng thái của Switch (Sinh viên / Người đi làm)
+  const [isStudent, setIsStudent] = useState(false);
 
   const handleSignUp = () => {
-    // Thêm logic xử lý đăng ký tại đây
     if (password === confirmPassword) {
       console.log("Sign up with:", email, fullName);
     } else {

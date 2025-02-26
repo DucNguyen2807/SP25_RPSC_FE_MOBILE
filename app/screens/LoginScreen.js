@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { View, TextInput, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 
-const LoginScreen = () => {
+const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
 
   const handleLogin = () => {
     console.log("Logging in with:", email, password);
+    navigation.navigate('PersonalInfoScreen');
   };
 
   return (
@@ -45,7 +46,7 @@ const LoginScreen = () => {
       </TouchableOpacity>
       <View style={styles.signUpContainer}>
         <Text style={styles.signUpText}>Don't have an account? </Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
           <Text style={styles.signUpLink}>Sign up</Text>
         </TouchableOpacity>
       </View>
@@ -77,7 +78,7 @@ const styles = StyleSheet.create({
   },
   rememberMeContainer: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: 20,
   },
   rememberMeCheckbox: {
