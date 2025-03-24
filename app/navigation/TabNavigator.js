@@ -4,6 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import HomeScreen from '../screens/HomeScreen';
 import RoommateScreen from '../screens/RoommateScreen';
+import MessageScreen from '../screens/MessageScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -21,7 +22,7 @@ const TabNavigator = () => {
             }}
         >
             <Tab.Screen
-                name="Favorite"
+                name="Favortite"
                 component={HomeScreen}
                 options={{
                     tabBarIcon: ({ color }) => (
@@ -49,7 +50,7 @@ const TabNavigator = () => {
             />
             <Tab.Screen
                 name="Messages"
-                component={HomeScreen}
+                component={MessageScreen}
                 options={{
                     tabBarIcon: ({ color }) => (
                         <MaterialIcons name="chat-bubble-outline" size={24} color={color} />
@@ -57,11 +58,11 @@ const TabNavigator = () => {
                 }}
             />
             <Tab.Screen
-                name="Setting"
+                name="Menu"
                 component={HomeScreen}
                 options={{
                     tabBarIcon: ({ color }) => (
-                        <MaterialIcons name="settings" size={24} color={color} />
+                        <MaterialIcons name="menu" size={24} color={color} />
                     ),
                 }}
             />

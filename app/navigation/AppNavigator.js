@@ -1,6 +1,7 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import TabNavigator from './TabNavigator';
+import ChatScreen from '../screens/ChatScreen';
 
 const Stack = createStackNavigator();
 
@@ -14,6 +15,13 @@ const AppNavigator = () => {
       <Stack.Screen 
         name="MainTabs" 
         component={TabNavigator} 
+      />
+      <Stack.Screen 
+        name="Chat" 
+        component={ChatScreen}
+        options={{
+          headerShown: false,
+        }}
       />
       {/* Thêm các màn hình phụ khác ở đây */}
       {/* Ví dụ:

@@ -1,8 +1,14 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Image, StyleSheet, FlatList, TouchableOpacity, TextInput } from 'react-native';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 
 const RoommateScreen = () => {
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [priceMin, setPriceMin] = useState('');
+  const [priceMax, setPriceMax] = useState('');
+  const [ageMin, setAgeMin] = useState('');
+  const [ageMax, setAgeMax] = useState('');
+
   const roommates = [
     {
       id: '1',
@@ -63,32 +69,107 @@ const RoommateScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.filterContainer}>
-        <View style={styles.filterRow}>
-          <TouchableOpacity style={styles.filterButton}>
-            <Text style={styles.filterText}>$Tháng</Text>
-            <View style={styles.minMaxContainer}>
-              <Text style={styles.minMaxText}>Min</Text>
-              <Text style={styles.minMaxText}>Max</Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.filterButton}>
-            <Text style={styles.filterText}>Tuổi</Text>
-            <View style={styles.minMaxContainer}>
-              <Text style={styles.minMaxText}>Min</Text>
-              <Text style={styles.minMaxText}>Max</Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.filterButton}>
-            <MaterialIcons name="location-on" size={20} color="#666" />
-            <Text style={styles.filterText}>Map</Text>
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchBar}>
+          <MaterialIcons name="search" size={20} color="#666" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Bạn muốn tìm nơi đâu?"
+            placeholderTextColor="#999"
+          />
+          <TouchableOpacity>
+            <MaterialIcons name="notifications-none" size={20} color="#666" />
           </TouchableOpacity>
         </View>
+      </View>
 
-        <TouchableOpacity style={styles.moreButton}>
-          <Text style={styles.moreButtonText}>+ More</Text>
+      {/* Filter Section */}
+      <View style={styles.filterContainer}>
+        {/* First Row - Price and Age Filters */}
+        <View style={styles.filterRow}>
+          <View style={styles.filterGroup}>
+            <Text style={styles.filterLabel}>VNĐ/Month</Text>
+            <View style={styles.inputGroup}>
+              <TextInput
+                style={styles.filterInput}
+                placeholder="Min"
+                value={priceMin}
+                onChangeText={setPriceMin}
+                keyboardType="numeric"
+              />
+              <Text style={styles.filterDivider}>-</Text>
+              <TextInput
+                style={styles.filterInput}
+                placeholder="Max"
+                value={priceMax}
+                onChangeText={setPriceMax}
+                keyboardType="numeric"
+              />
+            </View>
+          </View>
+
+          <View style={styles.filterGroup}>
+            <Text style={styles.filterLabel}>Age</Text>
+            <View style={styles.inputGroup}>
+              <TextInput
+                style={styles.filterInput}
+                placeholder="Min"
+                value={ageMin}
+                onChangeText={setAgeMin}
+                keyboardType="numeric"
+              />
+              <Text style={styles.filterDivider}>-</Text>
+              <TextInput
+                style={styles.filterInput}
+                placeholder="Max"
+                value={ageMax}
+                onChangeText={setAgeMax}
+                keyboardType="numeric"
+              />
+            </View>
+          </View>
+        </View>
+
+        {isExpanded && (
+          <>
+            {/* Second Row */}
+            <View style={styles.filterRow}>
+              <TouchableOpacity style={styles.filterOption}>
+                <MaterialIcons name="person" size={20} color="#6D5BA3" />
+                <Text style={styles.filterOptionText}>Gender</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.filterOption}>
+                <MaterialIcons name="local-cafe" size={20} color="#6D5BA3" />
+                <Text style={styles.filterOptionText}>Lifestyle</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.filterOption}>
+                <MaterialIcons name="category" size={20} color="#6D5BA3" />
+                <Text style={styles.filterOptionText}>Type</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Third Row */}
+            <View style={styles.filterRow}>
+              <TouchableOpacity style={styles.filterOption}>
+                <MaterialIcons name="access-time" size={20} color="#6D5BA3" />
+                <Text style={styles.filterOptionText}>Duration</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.filterOption}>
+                <MaterialIcons name="star" size={20} color="#6D5BA3" />
+                <Text style={styles.filterOptionText}>Amenities</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+
+        <TouchableOpacity 
+          style={styles.moreButton}
+          onPress={() => setIsExpanded(!isExpanded)}
+        >
+          <Text style={styles.moreButtonText}>
+            {isExpanded ? '- Less' : '+ More'}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -106,40 +187,66 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
+    paddingTop: 44, // For status bar
+  },
+  searchContainer: {
+    padding: 16,
+    backgroundColor: '#fff',
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#333',
   },
   filterContainer: {
     padding: 16,
+    backgroundColor: '#fff',
   },
   filterRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
+    flexWrap: 'wrap',
+    marginBottom: 12,
+    gap: 8,
   },
   filterButton: {
-    backgroundColor: '#F0EDF6',
-    padding: 8,
+    backgroundColor: '#F5F5F5',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 20,
-    alignItems: 'center',
-    minWidth: 100,
+  },
+  activeFilter: {
+    backgroundColor: '#F0EDF6',
   },
   filterText: {
     color: '#666',
     fontSize: 14,
-    fontWeight: '500',
   },
-  minMaxContainer: {
+  filterOption: {
+    flex: 1,
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    paddingHorizontal: 8,
-    marginTop: 4,
+    alignItems: 'center',
+    backgroundColor: '#F0EDF6',
+    padding: 12,
+    borderRadius: 8,
+    marginHorizontal: 4,
   },
-  minMaxText: {
-    color: '#999',
-    fontSize: 12,
+  filterOptionText: {
+    marginLeft: 8,
+    color: '#6D5BA3',
+    fontSize: 14,
   },
   moreButton: {
     alignSelf: 'center',
+    marginTop: 8,
   },
   moreButtonText: {
     color: '#6D5BA3',
@@ -239,6 +346,36 @@ const styles = StyleSheet.create({
   traitText: {
     color: '#6D5BA3',
     fontSize: 12,
+  },
+  filterGroup: {
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  filterLabel: {
+    color: '#666',
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  inputGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  filterInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#333',
+    paddingVertical: 4,
+    textAlign: 'center',
+    minWidth: 40,
+  },
+  filterDivider: {
+    color: '#666',
+    marginHorizontal: 4,
+    fontSize: 14,
   },
 });
 
