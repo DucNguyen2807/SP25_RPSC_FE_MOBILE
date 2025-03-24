@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, Image, StyleSheet } from 'react-native';
 import { FontAwesome, Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 const HomeScreen = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+  const navigation = useNavigation();
 
   const rooms = [
     {
@@ -54,8 +56,8 @@ const HomeScreen = () => {
   const renderRoomCard = ({ item }) => (
     <View style={styles.card}>
       <View style={styles.userInfo}>
-        <Image 
-          source={require('../assets/logoEasyRommie.png')} 
+        <Image
+          source={require('../assets/logoEasyRommie.png')}
           style={styles.avatar}
         />
         <View style={styles.userDetails}>
@@ -90,9 +92,9 @@ const HomeScreen = () => {
       <View style={styles.headerContainer}>
         <View style={styles.searchContainer}>
           <FontAwesome name="search" size={16} color="#999" style={styles.searchIcon} />
-          <TextInput 
-            style={styles.searchInput} 
-            placeholder="Bạn muốn tìm kiếm nơi đâu?" 
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Bạn muốn tìm kiếm nơi đâu?"
             placeholderTextColor="#999"
           />
         </View>
@@ -125,7 +127,7 @@ const HomeScreen = () => {
             </View>
           </View>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.filterOption, { marginHorizontal: 8 }]}
             onPress={() => setIsExpanded(!isExpanded)}
           >
@@ -134,7 +136,7 @@ const HomeScreen = () => {
             </Text>
           </TouchableOpacity>
 
-          
+
           <TouchableOpacity style={styles.filterOption}>
             <MaterialIcons name="location-on" size={20} color="#6D5BA3" />
             <Text style={styles.filterOptionText}>Map</Text>
@@ -145,20 +147,8 @@ const HomeScreen = () => {
           <View style={styles.expandedFilters}>
             <View style={styles.filterRow}>
               <TouchableOpacity style={styles.filterOption}>
-                <Feather name="coffee" size={20} color="#6D5BA3" />
-                <Text style={styles.filterOptionText}>Lifestyle</Text>
-                <MaterialIcons name="keyboard-arrow-down" size={20} color="#6D5BA3" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.filterOption}>
                 <Feather name="home" size={20} color="#6D5BA3" />
                 <Text style={styles.filterOptionText}>Type</Text>
-                <MaterialIcons name="keyboard-arrow-down" size={20} color="#6D5BA3" />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.filterRow}>
-              <TouchableOpacity style={styles.filterOption}>
-                <MaterialIcons name="access-time" size={20} color="#6D5BA3" />
-                <Text style={styles.filterOptionText}>Duration</Text>
                 <MaterialIcons name="keyboard-arrow-down" size={20} color="#6D5BA3" />
               </TouchableOpacity>
               <TouchableOpacity style={styles.filterOption}>
@@ -166,6 +156,8 @@ const HomeScreen = () => {
                 <Text style={styles.filterOptionText}>Amenities</Text>
                 <MaterialIcons name="keyboard-arrow-down" size={20} color="#6D5BA3" />
               </TouchableOpacity>
+            </View>
+            <View style={styles.filterRow}>
             </View>
           </View>
         )}
@@ -177,29 +169,6 @@ const HomeScreen = () => {
         renderItem={renderRoomCard}
         showsVerticalScrollIndicator={false}
       />
-
-      <View style={styles.bottomNav}>
-      <TouchableOpacity style={styles.navItem}>
-          <MaterialIcons name="favorite-border" size={24} color="#666" />
-          <Text style={styles.navText}>Favorite</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <MaterialIcons name="people" size={24} color="#666" />
-          <Text style={styles.navText}>Roommates</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.navItem, styles.navItemActive]}>
-          <MaterialIcons name="house" size={24}  color="#6D5BA3" />
-          <Text style={[, styles.navTextActive]}>Room</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <MaterialIcons name="chat-bubble-outline" size={24} color="#666" />
-          <Text style={styles.navText}>Messages</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <MaterialIcons name="settings" size={24} color="#666" />
-          <Text style={styles.navText}>Setting</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 };
@@ -213,7 +182,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 25,
-    marginBottom: 10, 
+    marginBottom: 10,
     paddingHorizontal: 16,
     paddingVertical: 8,
     backgroundColor: 'none',

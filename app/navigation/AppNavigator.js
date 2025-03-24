@@ -1,21 +1,26 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
-import SplashScreen from '../screens/SplashScreen';
-import LoginScreen from '../screens/LoginScreen';
-import SignUpScreen from '../screens/SignUpScreen';
-import PersonalInfoScreen from '../screens/PersonalInfoScreen';
-import HomeScreen from '../screens/HomeScreen';
+import TabNavigator from './TabNavigator';
 
 const Stack = createStackNavigator();
 
 const AppNavigator = () => {
   return (
-    <Stack.Navigator initialRouteName="Splash">
-      <Stack.Screen name="Splash" component={SplashScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="SignUp" component={SignUpScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="PersonalInfoScreen" component={PersonalInfoScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="HomeScreen" component={HomeScreen} options={{ headerShown: false }} />
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Stack.Screen 
+        name="MainTabs" 
+        component={TabNavigator} 
+      />
+      {/* Thêm các màn hình phụ khác ở đây */}
+      {/* Ví dụ:
+      <Stack.Screen name="RoomDetail" component={RoomDetailScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
+      */}
     </Stack.Navigator>
   );
 };
