@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { View, TextInput, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 import { Calendar } from 'react-native-calendars';
+import { useNavigation } from '@react-navigation/native'; 
 
 const PersonalInfoScreen = () => {
+  const navigation = useNavigation();
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
   const [nickname, setNickname] = useState('');
@@ -24,7 +26,7 @@ const PersonalInfoScreen = () => {
     } else if (step === 5 && fitnessTrendStep5) {
       setStep(6);
     } else if (step === 6 && birthday) {
-      setStep(7);
+      navigation.navigate('HomeScreen');
     }
   };
 
