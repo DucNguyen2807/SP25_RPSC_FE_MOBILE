@@ -22,11 +22,11 @@ const TabNavigator = () => {
             }}
         >
             <Tab.Screen
-                name="Favortite"
+                name="Rented"
                 component={HomeScreen}
                 options={{
                     tabBarIcon: ({ color }) => (
-                        <MaterialIcons name="favorite-border" size={24} color={color} />
+                        <MaterialIcons name="history" size={24} color={color} />
                     ),
                 }}
             />

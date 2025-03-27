@@ -1,14 +1,40 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, TextInput, Text, TouchableOpacity, StyleSheet, Image, Alert, ActivityIndicator } from 'react-native';
+import { authService } from '../services/authService';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = () => {
-    console.log("Logging in with:", email, password);
-    navigation.navigate('PersonalInfoScreen');
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter both email and password');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const response = await authService.login(email, password);
+      
+      if (response.isSuccess) {
+        // Store user data and token
+        // You might want to use AsyncStorage or a state management solution
+        console.log('Login successful:', response.data);
+        navigation.navigate('PersonalInfoScreen');
+      } else {
+        Alert.alert('Login Failed', response.message || 'Invalid credentials');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      Alert.alert(
+        'Login Error',
+        error.message || 'An error occurred during login. Please try again.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -19,10 +45,13 @@ const LoginScreen = ({ navigation }) => {
       />
       <TextInput
         style={styles.input}
-        placeholder="Your email"
+        placeholder="Your email or phone number"
         placeholderTextColor="#B0B0B0"
         value={email}
         onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        editable={!isLoading}
       />
       <TextInput
         style={styles.input}
@@ -31,22 +60,38 @@ const LoginScreen = ({ navigation }) => {
         secureTextEntry
         value={password}
         onChangeText={setPassword}
+        editable={!isLoading}
       />
       <View style={styles.rememberMeContainer}>
-        <TouchableOpacity onPress={() => setRememberMe(!rememberMe)} style={styles.rememberMeCheckbox}>
+        <TouchableOpacity 
+          onPress={() => setRememberMe(!rememberMe)} 
+          style={styles.rememberMeCheckbox}
+          disabled={isLoading}
+        >
           {rememberMe && <View style={styles.checked} />}
         </TouchableOpacity>
         <Text style={styles.rememberMeText}>Remember me</Text>
       </View>
-      <TouchableOpacity onPress={handleLogin} style={styles.signInButton}>
-        <Text style={styles.signInText}>Sign in</Text>
+      <TouchableOpacity 
+        onPress={handleLogin} 
+        style={[styles.signInButton, isLoading && styles.signInButtonDisabled]}
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <ActivityIndicator color="white" />
+        ) : (
+          <Text style={styles.signInText}>Sign in</Text>
+        )}
       </TouchableOpacity>
-      <TouchableOpacity>
+      <TouchableOpacity disabled={isLoading}>
         <Text style={styles.forgotPassword}>Forgot password?</Text>
       </TouchableOpacity>
       <View style={styles.signUpContainer}>
         <Text style={styles.signUpText}>Don't have an account? </Text>
-        <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+        <TouchableOpacity 
+          onPress={() => navigation.navigate('SignUp')}
+          disabled={isLoading}
+        >
           <Text style={styles.signUpLink}>Sign up</Text>
         </TouchableOpacity>
       </View>
@@ -107,6 +152,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
+  },
+  signInButtonDisabled: {
+    backgroundColor: '#666',
   },
   signInText: {
     color: 'white',
