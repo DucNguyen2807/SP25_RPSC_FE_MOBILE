@@ -12,7 +12,7 @@ const RoommateScreen = () => {
   const roommates = [
     {
       id: '1',
-      name: 'Trần Vũ Khải',
+      name: 'Nguyễn Trần Vĩ Hào',
       avatar: require('../assets/logoEasyRommie.png'),
       occupation: 'Sinh viên ưu tú trường đại học FPT',
       description: 'Tôi là sinh viên cần tìm 1 bạn đồng phòng giúp chia sẻ tiền nhà và học cùng ngày.',
@@ -22,7 +22,7 @@ const RoommateScreen = () => {
     },
     {
       id: '2',
-      name: 'Nguyễn Nhật Hào',
+      name: 'Nguyễn Xuân Đức',
       avatar: require('../assets/logoEasyRommie.png'),
       occupation: 'Nhân viên IT công ty LCK',
       description: 'Tôi là sinh viên cần tìm 1 bạn đồng phòng giúp chia sẻ tiền nhà và học cùng ngày.',

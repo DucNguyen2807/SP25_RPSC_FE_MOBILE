@@ -53,6 +53,10 @@ const HomeScreen = () => {
     },
   ];
 
+  const handleMapPress = () => {
+    navigation.navigate('Map', { rooms });
+  };
+
   const renderRoomCard = ({ item }) => (
     <View style={styles.card}>
       <View style={styles.userInfo}>
@@ -136,8 +140,10 @@ const HomeScreen = () => {
             </Text>
           </TouchableOpacity>
 
-
-          <TouchableOpacity style={styles.filterOption}>
+          <TouchableOpacity 
+            style={styles.filterOption}
+            onPress={handleMapPress}
+          >
             <MaterialIcons name="location-on" size={20} color="#6D5BA3" />
             <Text style={styles.filterOptionText}>Map</Text>
           </TouchableOpacity>

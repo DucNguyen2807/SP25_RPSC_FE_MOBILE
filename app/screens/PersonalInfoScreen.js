@@ -26,7 +26,7 @@ const PersonalInfoScreen = () => {
     } else if (step === 5 && fitnessTrendStep5) {
       setStep(6);
     } else if (step === 6 && birthday) {
-      navigation.navigate('HomeScreen');
+      navigation.replace('MainTabs');
     }
   };
 

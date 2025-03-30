@@ -4,7 +4,9 @@ import TabNavigator from './TabNavigator';
 import ChatScreen from '../screens/ChatScreen';
 import SplashScreen from '../screens/SplashScreen';
 import LoginScreen from '../screens/LoginScreen';
-import SignUpScreen from '../screens/SignUpScreen';
+import PersonalInfoScreen from '../screens/PersonalInfoScreen';
+import MapScreen from '../screens/MapScreen';
+
 const Stack = createStackNavigator();
 
 const AppNavigator = () => {
@@ -24,8 +26,16 @@ const AppNavigator = () => {
         component={LoginScreen} 
       />
       <Stack.Screen 
-        name="SignUp" 
-        component={SignUpScreen} 
+        name="PersonalInfo" 
+        component={PersonalInfoScreen}
+        options={{
+          headerShown: false,
+          title: 'Personal Information',
+          headerStyle: {
+            backgroundColor: '#E5E5E5',
+          },
+          headerTintColor: '#000',
+        }}
       />
       <Stack.Screen 
         name="MainTabs" 
@@ -34,6 +44,13 @@ const AppNavigator = () => {
       <Stack.Screen 
         name="Chat" 
         component={ChatScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="Map" 
+        component={MapScreen}
         options={{
           headerShown: false,
         }}
