@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet, FlatList, TouchableOpacity, TextInput } from 'react-native';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 const RoommateScreen = () => {
+  const navigation = useNavigation();
   const [isExpanded, setIsExpanded] = useState(true);
   const [priceMin, setPriceMin] = useState('');
   const [priceMax, setPriceMax] = useState('');
@@ -32,8 +34,15 @@ const RoommateScreen = () => {
     },
   ];
 
+  const handleRoommatePress = (roommate) => {
+    navigation.navigate('RoommateDetail', { roommate });
+  };
+
   const renderRoommateCard = ({ item }) => (
-    <View style={styles.card}>
+    <TouchableOpacity 
+      style={styles.card}
+      onPress={() => handleRoommatePress(item)}
+    >
       <View style={styles.header}>
         <View style={styles.userInfo}>
           <Image source={item.avatar} style={styles.avatar} />
@@ -64,7 +73,7 @@ const RoommateScreen = () => {
           ))}
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (

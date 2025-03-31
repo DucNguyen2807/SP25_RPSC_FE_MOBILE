@@ -6,6 +6,7 @@ import SplashScreen from '../screens/SplashScreen';
 import LoginScreen from '../screens/LoginScreen';
 import PersonalInfoScreen from '../screens/PersonalInfoScreen';
 import MapScreen from '../screens/MapScreen';
+import RoommateDetailScreen from '../screens/RoommateDetailScreen';
 
 const Stack = createStackNavigator();
 
@@ -51,6 +52,13 @@ const AppNavigator = () => {
       <Stack.Screen 
         name="Map" 
         component={MapScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="RoommateDetail" 
+        component={RoommateDetailScreen}
         options={{
           headerShown: false,
         }}
