@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, Image, StyleSheet } from 'react-native';
-import { FontAwesome, Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
+import { View, Text, TextInput, TouchableOpacity, FlatList, Image, StyleSheet, Dimensions, Animated, ScrollView } from 'react-native';
+import { FontAwesome5, Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
+
+const { width } = Dimensions.get('window');
+const CARD_WIDTH = width - 32;
 
 const HomeScreen = () => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -20,6 +24,9 @@ const HomeScreen = () => {
       postedTime: 'Today',
       capacity: 'Tối đa 3 người',
       image: require('../assets/logoEasyRommie.png'),
+      amenities: ['Wifi', 'Máy lạnh', 'Tủ lạnh'],
+      rating: 4.8,
+      reviews: 12
     },
     {
       id: '2',
@@ -57,123 +64,148 @@ const HomeScreen = () => {
     navigation.navigate('Map', { rooms });
   };
 
+  const handleRoomPress = (room) => {
+    navigation.navigate('RoomDetail', { room });
+  };
+
   const renderRoomCard = ({ item }) => (
-    <View style={styles.card}>
-      <View style={styles.userInfo}>
-        <Image
-          source={require('../assets/logoEasyRommie.png')}
-          style={styles.avatar}
-        />
-        <View style={styles.userDetails}>
-          <Text style={styles.userName}>{item.owner}</Text>
+    <TouchableOpacity 
+      style={styles.card}
+      onPress={() => handleRoomPress(item)}
+    >
+      {/* Featured Label */}
+      <View style={styles.featuredLabelContainer}>
+        <LinearGradient
+          colors={['#FF385C', '#E31C5F']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.featuredLabel}
+        >
+          <Text style={styles.featuredLabelText}>Tin nổi bật</Text>
+        </LinearGradient>
+      </View>
+
+      {/* Room Image */}
+      <View style={styles.imageContainer}>
+        <Image source={item.image} style={styles.roomImage} />
+        <TouchableOpacity style={styles.favoriteButton}>
+          <FontAwesome5 name="heart" size={16} color="#FF385C" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Room Info */}
+      <View style={styles.roomContent}>
+        <View style={styles.userInfo}>
+          <Image
+            source={require('../assets/logoEasyRommie.png')}
+            style={styles.avatar}
+          />
+          <View style={styles.userDetails}>
+            <Text style={styles.userName}>{item.owner}</Text>
+            <View style={styles.ratingContainer}>
+              <FontAwesome5 name="star" size={12} color="#FFB800" />
+              <Text style={styles.rating}>{item.rating}</Text>
+              <Text style={styles.reviews}>({item.reviews} đánh giá)</Text>
+            </View>
+          </View>
           <View style={styles.badgeContainer}>
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{item.postedTime}</Text>
             </View>
-            {item.capacity && (
-              <View style={[styles.badge, styles.capacityBadge]}>
-                <Text style={styles.badgeText}>{item.capacity}</Text>
+          </View>
+        </View>
+
+        <View style={styles.roomInfo}>
+          <Text style={styles.price}>
+            {item.price}
+            <Text style={styles.duration}>{item.duration}</Text>
+          </Text>
+          <Text style={styles.description} numberOfLines={2}>{item.description}</Text>
+          
+          <View style={styles.locationContainer}>
+            <FontAwesome5 name="map-marker-alt" size={14} color="#666" />
+            <Text style={styles.location}>{item.location}</Text>
+          </View>
+
+          <View style={styles.amenitiesContainer}>
+            {item.amenities?.map((amenity, index) => (
+              <View key={index} style={styles.amenityBadge}>
+                <Text style={styles.amenityText}>{amenity}</Text>
               </View>
-            )}
+            ))}
+          </View>
+
+          <View style={styles.capacityContainer}>
+            <FontAwesome5 name="users" size={14} color="#666" />
+            <Text style={styles.capacity}>{item.capacity}</Text>
           </View>
         </View>
       </View>
-
-      <Image source={item.image} style={styles.roomImage} />
-
-      <View style={styles.roomInfo}>
-        <Text style={styles.price}>
-          {item.price} <Text style={styles.duration}>{item.duration}</Text>
-        </Text>
-        <Text style={styles.description}>{item.description}</Text>
-        <Text style={styles.location}>{item.location}</Text>
-      </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerContainer}>
-        <View style={styles.searchContainer}>
-          <FontAwesome name="search" size={16} color="#999" style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Bạn muốn tìm kiếm nơi đâu?"
-            placeholderTextColor="#999"
-          />
-        </View>
-        <TouchableOpacity style={styles.notificationButton}>
-          <FontAwesome name="bell-o" size={20} color="#666" />
-        </TouchableOpacity>
-      </View>
-      <View style={styles.filterContainer}>
-        <View style={styles.basicFilters}>
-          <View style={[styles.filterOption, styles.priceFilterButton]}>
-            <Text style={styles.filterOptionText}>VNĐ/Tháng</Text>
-            <View style={styles.priceFilterContent}>
-              <TextInput
-                style={styles.priceInput}
-                placeholder="Min"
-                value={minPrice}
-                onChangeText={setMinPrice}
-                keyboardType="numeric"
-                placeholderTextColor="#999"
-              />
-              <Text style={styles.priceDivider}>|</Text>
-              <TextInput
-                style={styles.priceInput}
-                placeholder="Max"
-                value={maxPrice}
-                onChangeText={setMaxPrice}
-                keyboardType="numeric"
-                placeholderTextColor="#999"
-              />
-            </View>
+      {/* Header */}
+      <LinearGradient
+        colors={['#6D5BA3', '#8873BE']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.header}
+      >
+        <View style={styles.headerContent}>
+          <View style={styles.searchContainer}>
+            <FontAwesome5 name="search" size={16} color="#999" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Bạn muốn tìm kiếm nơi đâu?"
+              placeholderTextColor="#999"
+            />
           </View>
+          <TouchableOpacity style={styles.notificationButton}>
+            <FontAwesome5 name="bell" size={20} color="#FFF" />
+            <View style={styles.notificationBadge}>
+              <Text style={styles.notificationBadgeText}>2</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
 
-          <TouchableOpacity
-            style={[styles.filterOption, { marginHorizontal: 8 }]}
-            onPress={() => setIsExpanded(!isExpanded)}
-          >
-            <Text style={styles.filterOptionText}>
-              {isExpanded ? '- Less' : '+ More'}
-            </Text>
+      {/* Filters */}
+      <View style={styles.filterContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+          <TouchableOpacity style={[styles.filterOption, styles.priceFilterButton]}>
+            <FontAwesome5 name="money-bill-wave" size={16} color="#6D5BA3" />
+            <Text style={styles.filterOptionText}>Giá</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.filterOption}>
+            <FontAwesome5 name="home" size={16} color="#6D5BA3" />
+            <Text style={styles.filterOptionText}>Loại phòng</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.filterOption}>
+            <FontAwesome5 name="map-marked-alt" size={16} color="#6D5BA3" />
+            <Text style={styles.filterOptionText}>Khu vực</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
             style={styles.filterOption}
             onPress={handleMapPress}
           >
-            <MaterialIcons name="location-on" size={20} color="#6D5BA3" />
-            <Text style={styles.filterOptionText}>Map</Text>
+            <FontAwesome5 name="map" size={16} color="#6D5BA3" />
+            <Text style={styles.filterOptionText}>Bản đồ</Text>
           </TouchableOpacity>
-        </View>
-
-        {isExpanded && (
-          <View style={styles.expandedFilters}>
-            <View style={styles.filterRow}>
-              <TouchableOpacity style={styles.filterOption}>
-                <Feather name="home" size={20} color="#6D5BA3" />
-                <Text style={styles.filterOptionText}>Type</Text>
-                <MaterialIcons name="keyboard-arrow-down" size={20} color="#6D5BA3" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.filterOption}>
-                <MaterialIcons name="room-service" size={20} color="#6D5BA3" />
-                <Text style={styles.filterOptionText}>Amenities</Text>
-                <MaterialIcons name="keyboard-arrow-down" size={20} color="#6D5BA3" />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.filterRow}>
-            </View>
-          </View>
-        )}
+        </ScrollView>
       </View>
 
+      {/* Room List */}
       <FlatList
         data={rooms}
         keyExtractor={(item) => item.id}
         renderItem={renderRoomCard}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContainer}
       />
     </View>
   );
@@ -182,110 +214,154 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F8F9FA',
   },
-  headerContainer: {
+  header: {
+    paddingTop: 40,
+    paddingBottom: 20,
+  },
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 25,
-    marginBottom: 10,
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: 'none',
   },
   searchContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#d9d5d3',
-    borderRadius: 30,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginRight: 12,
-    height: 36,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: '#333',
-    padding: 0,
-    height: '100%',
-  },
-  notificationButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#F5F5F5',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  filterContainer: {
+    backgroundColor: '#FFF',
+    borderRadius: 12,
     paddingHorizontal: 16,
-    marginBottom: 16,
-  },
-  basicFilters: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  filterOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F0EDF6',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    marginHorizontal: 4,
-  },
-  filterOptionText: {
-    color: '#6D5BA3',
-    fontSize: 14,
-    marginLeft: 4,
-    fontWeight: '500',
-  },
-  priceFilterButton: {
-    flex: 0,
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  priceFilterContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  priceInput: {
-    fontSize: 14,
-    color: '#6D5BA3',
-    width: 50,
-    padding: 2,
-    textAlign: 'center',
-  },
-  priceDivider: {
-    color: '#6D5BA3',
-    marginHorizontal: 4,
-    fontSize: 14,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 15,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    padding: 12,
+    paddingVertical: 12,
+    marginRight: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
+  searchIcon: {
+    marginRight: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#333',
+  },
+  notificationButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: '#FF385C',
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FFF',
+  },
+  notificationBadgeText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  filterContainer: {
+    paddingVertical: 16,
+  },
+  filterScroll: {
+    paddingHorizontal: 16,
+  },
+  filterOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginRight: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  filterOptionText: {
+    color: '#6D5BA3',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  listContainer: {
+    padding: 16,
+  },
+  card: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    overflow: 'hidden',
+  },
+  imageContainer: {
+    position: 'relative',
+    height: 200,
+  },
+  roomImage: {
+    width: '100%',
+    height: '100%',
+  },
+  favoriteButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  featuredLabelContainer: {
+    position: 'absolute',
+    top: 16,
+    left: 0,
+    zIndex: 1,
+  },
+  featuredLabel: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderTopRightRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  featuredLabelText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  roomContent: {
+    padding: 16,
+  },
   userInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   avatar: {
     width: 40,
@@ -300,90 +376,81 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
+    marginBottom: 4,
   },
-  badgeContainer: {
+  ratingContainer: {
     flexDirection: 'row',
-    marginTop: 4,
+    alignItems: 'center',
   },
-  badge: {
-    backgroundColor: '#E8F5E9',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginRight: 8,
-  },
-  capacityBadge: {
-    backgroundColor: '#E3F2FD',
-  },
-  badgeText: {
-    fontSize: 12,
+  rating: {
+    fontSize: 14,
     color: '#333',
+    fontWeight: '600',
+    marginLeft: 4,
   },
-  verifiedBadge: {
-    marginLeft: 8,
-  },
-  premiumBadge: {
-    marginLeft: 8,
-  },
-  roomImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 12,
-    marginBottom: 12,
+  reviews: {
+    fontSize: 12,
+    color: '#666',
+    marginLeft: 4,
   },
   roomInfo: {
-    paddingHorizontal: 4,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+    paddingTop: 16,
   },
   price: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 4,
+    marginBottom: 8,
   },
   duration: {
     fontSize: 16,
     color: '#666',
+    fontWeight: 'normal',
   },
   description: {
     fontSize: 14,
     color: '#666',
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   location: {
     fontSize: 14,
     color: '#666',
+    marginLeft: 8,
   },
-  bottomNav: {
+  amenitiesContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
+    flexWrap: 'wrap',
+    marginBottom: 12,
   },
-  navItem: {
-    alignItems: 'center',
+  amenityBadge: {
+    backgroundColor: '#F0EDF6',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginRight: 8,
+    marginBottom: 8,
   },
-  navItemActive: {
-    borderTopWidth: 2,
-    borderTopColor: '#6D5BA3',
-    paddingTop: 2,
-  },
-  navText: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
-  },
-  navTextActive: {
+  amenityText: {
     color: '#6D5BA3',
+    fontSize: 12,
+    fontWeight: '500',
   },
-  expandedFilters: {
-    marginTop: 10,
-  },
-  filterRow: {
+  capacityContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
+    alignItems: 'center',
+  },
+  capacity: {
+    fontSize: 14,
+    color: '#666',
+    marginLeft: 8,
   },
 });
 

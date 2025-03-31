@@ -7,6 +7,7 @@ import LoginScreen from '../screens/LoginScreen';
 import PersonalInfoScreen from '../screens/PersonalInfoScreen';
 import MapScreen from '../screens/MapScreen';
 import RoommateDetailScreen from '../screens/RoommateDetailScreen';
+import RoomDetailScreen from '../screens/RoomDetailScreen';
 
 const Stack = createStackNavigator();
 
@@ -59,6 +60,13 @@ const AppNavigator = () => {
       <Stack.Screen 
         name="RoommateDetail" 
         component={RoommateDetailScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="RoomDetail" 
+        component={RoomDetailScreen}
         options={{
           headerShown: false,
         }}

@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, FlatList, TouchableOpacity, TextInput } from 'react-native';
-import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
+import { View, Text, Image, StyleSheet, FlatList, TouchableOpacity, TextInput, Dimensions, ScrollView, Animated } from 'react-native';
+import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
+
+const { width } = Dimensions.get('window');
+const CARD_WIDTH = width - 32;
 
 const RoommateScreen = () => {
   const navigation = useNavigation();
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [priceMin, setPriceMin] = useState('');
   const [priceMax, setPriceMax] = useState('');
   const [ageMin, setAgeMin] = useState('');
@@ -21,6 +25,9 @@ const RoommateScreen = () => {
       traits: ['Ngủ sớm', 'Ngăn nắp', 'Sạch sẽ'],
       age: 23,
       status: 'Today',
+      rating: 4.8,
+      reviews: 12,
+      gender: 'Nam'
     },
     {
       id: '2',
@@ -31,6 +38,9 @@ const RoommateScreen = () => {
       traits: ['Ngủ trễ', 'Ngăn nắp', 'Sạch sẽ'],
       age: 24,
       status: 'Today',
+      rating: 4.5,
+      reviews: 8,
+      gender: 'Nam'
     },
   ];
 
@@ -43,143 +53,140 @@ const RoommateScreen = () => {
       style={styles.card}
       onPress={() => handleRoommatePress(item)}
     >
-      <View style={styles.header}>
-        <View style={styles.userInfo}>
-          <Image source={item.avatar} style={styles.avatar} />
-          <View style={styles.nameContainer}>
-            <View style={styles.nameRow}>
-              <Text style={styles.name}>{item.name}</Text>
-              <View style={styles.verifiedBadge}>
-                <MaterialIcons name="verified" size={16} color="#4CAF50" />
-                <Text style={styles.age}>{item.age}</Text>
-              </View>
+      <LinearGradient
+        colors={['rgba(109, 91, 163, 0.05)', 'rgba(136, 115, 190, 0.1)']}
+        style={styles.cardGradient}
+      >
+        <View style={styles.header}>
+          <View style={styles.userInfo}>
+            <View style={styles.avatarContainer}>
+              <Image source={item.avatar} style={styles.avatar} />
+              <View style={styles.onlineIndicator} />
             </View>
-            <Text style={styles.occupation}>{item.occupation}</Text>
-            <Text style={styles.description} numberOfLines={2}>
-              {item.description}
-            </Text>
+            <View style={styles.nameContainer}>
+              <View style={styles.nameRow}>
+                <Text style={styles.name}>{item.name}</Text>
+                <View style={styles.verifiedBadge}>
+                  <MaterialIcons name="verified" size={16} color="#4CAF50" />
+                </View>
+              </View>
+              <View style={styles.infoRow}>
+                <View style={styles.infoBadge}>
+                  <FontAwesome5 name="user" size={12} color="#666" />
+                  <Text style={styles.infoText}>{item.gender}</Text>
+                </View>
+                <View style={styles.infoBadge}>
+                  <FontAwesome5 name="birthday-cake" size={12} color="#666" />
+                  <Text style={styles.infoText}>{item.age} tuổi</Text>
+                </View>
+              </View>
+              <View style={styles.ratingContainer}>
+                <FontAwesome5 name="star" size={12} color="#FFB800" solid />
+                <Text style={styles.rating}>{item.rating}</Text>
+                <Text style={styles.reviews}>({item.reviews} đánh giá)</Text>
+              </View>
+              <Text style={styles.occupation}>{item.occupation}</Text>
+              <Text style={styles.description} numberOfLines={2}>
+                {item.description}
+              </Text>
+            </View>
+          </View>
+          <LinearGradient
+            colors={['#4CAF50', '#45a049']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.statusBadge}
+          >
+            <Text style={styles.status}>{item.status}</Text>
+          </LinearGradient>
+        </View>
+
+        <View style={styles.traitsContainer}>
+          <Text style={styles.traitsLabel}>Tiêu chí:</Text>
+          <View style={styles.traits}>
+            {item.traits.map((trait, index) => (
+              <LinearGradient
+                key={index}
+                colors={['#6D5BA3', '#8873BE']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.traitBadge}
+              >
+                <Text style={styles.traitText}>{trait}</Text>
+              </LinearGradient>
+            ))}
           </View>
         </View>
-        <Text style={styles.status}>{item.status}</Text>
-      </View>
 
-      <View style={styles.traitsContainer}>
-        <Text style={styles.traitsLabel}>Tiêu chí:</Text>
-        <View style={styles.traits}>
-          {item.traits.map((trait, index) => (
-            <View key={index} style={styles.traitBadge}>
-              <Text style={styles.traitText}>{trait}</Text>
-            </View>
-          ))}
-        </View>
-      </View>
+        <TouchableOpacity style={styles.chatButton}>
+          <LinearGradient
+            colors={['#6D5BA3', '#8873BE']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.chatButtonGradient}
+          >
+            <FontAwesome5 name="comment-alt" size={16} color="#FFF" />
+            <Text style={styles.chatButtonText}>Nhắn tin</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </LinearGradient>
     </TouchableOpacity>
   );
 
   return (
     <View style={styles.container}>
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <MaterialIcons name="search" size={20} color="#666" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Bạn muốn tìm nơi đâu?"
-            placeholderTextColor="#999"
-          />
-          <TouchableOpacity>
-            <MaterialIcons name="notifications-none" size={20} color="#666" />
+      {/* Header with Gradient */}
+      <LinearGradient
+        colors={['#6D5BA3', '#8873BE']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.headerGradient}
+      >
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBar}>
+            <FontAwesome5 name="search" size={16} color="#666" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Tìm kiếm bạn cùng phòng..."
+              placeholderTextColor="#999"
+            />
+          </View>
+          <TouchableOpacity style={styles.notificationButton}>
+            <FontAwesome5 name="bell" size={20} color="#FFF" />
+            <View style={styles.notificationBadge}>
+              <Text style={styles.notificationBadgeText}>2</Text>
+            </View>
           </TouchableOpacity>
         </View>
-      </View>
+      </LinearGradient>
 
       {/* Filter Section */}
       <View style={styles.filterContainer}>
-        {/* First Row - Price and Age Filters */}
-        <View style={styles.filterRow}>
-          <View style={styles.filterGroup}>
-            <Text style={styles.filterLabel}>VNĐ/Month</Text>
-            <View style={styles.inputGroup}>
-              <TextInput
-                style={styles.filterInput}
-                placeholder="Min"
-                value={priceMin}
-                onChangeText={setPriceMin}
-                keyboardType="numeric"
-              />
-              <Text style={styles.filterDivider}>-</Text>
-              <TextInput
-                style={styles.filterInput}
-                placeholder="Max"
-                value={priceMax}
-                onChangeText={setPriceMax}
-                keyboardType="numeric"
-              />
-            </View>
-          </View>
-
-          <View style={styles.filterGroup}>
-            <Text style={styles.filterLabel}>Age</Text>
-            <View style={styles.inputGroup}>
-              <TextInput
-                style={styles.filterInput}
-                placeholder="Min"
-                value={ageMin}
-                onChangeText={setAgeMin}
-                keyboardType="numeric"
-              />
-              <Text style={styles.filterDivider}>-</Text>
-              <TextInput
-                style={styles.filterInput}
-                placeholder="Max"
-                value={ageMax}
-                onChangeText={setAgeMax}
-                keyboardType="numeric"
-              />
-            </View>
-          </View>
-        </View>
-
-        {isExpanded && (
-          <>
-            {/* Second Row */}
-            <View style={styles.filterRow}>
-              <TouchableOpacity style={styles.filterOption}>
-                <MaterialIcons name="person" size={20} color="#6D5BA3" />
-                <Text style={styles.filterOptionText}>Gender</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.filterOption}>
-                <MaterialIcons name="local-cafe" size={20} color="#6D5BA3" />
-                <Text style={styles.filterOptionText}>Lifestyle</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.filterOption}>
-                <MaterialIcons name="category" size={20} color="#6D5BA3" />
-                <Text style={styles.filterOptionText}>Type</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Third Row */}
-            <View style={styles.filterRow}>
-              <TouchableOpacity style={styles.filterOption}>
-                <MaterialIcons name="access-time" size={20} color="#6D5BA3" />
-                <Text style={styles.filterOptionText}>Duration</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.filterOption}>
-                <MaterialIcons name="star" size={20} color="#6D5BA3" />
-                <Text style={styles.filterOptionText}>Amenities</Text>
-              </TouchableOpacity>
-            </View>
-          </>
-        )}
-
-        <TouchableOpacity 
-          style={styles.moreButton}
-          onPress={() => setIsExpanded(!isExpanded)}
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          style={styles.filterScroll}
         >
-          <Text style={styles.moreButtonText}>
-            {isExpanded ? '- Less' : '+ More'}
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.filterOption}>
+            <FontAwesome5 name="money-bill-wave" size={16} color="#6D5BA3" />
+            <Text style={styles.filterOptionText}>Giá phòng</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.filterOption}>
+            <FontAwesome5 name="venus-mars" size={16} color="#6D5BA3" />
+            <Text style={styles.filterOptionText}>Giới tính</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.filterOption}>
+            <FontAwesome5 name="user-friends" size={16} color="#6D5BA3" />
+            <Text style={styles.filterOptionText}>Độ tuổi</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.filterOption}>
+            <FontAwesome5 name="coffee" size={16} color="#6D5BA3" />
+            <Text style={styles.filterOptionText}>Lối sống</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </View>
 
       <FlatList
@@ -187,6 +194,7 @@ const RoommateScreen = () => {
         renderItem={renderRoommateCard}
         keyExtractor={item => item.id}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContainer}
       />
     </View>
   );
@@ -195,84 +203,107 @@ const RoommateScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
-    paddingTop: 44, // For status bar
+    backgroundColor: '#F8F9FA',
+  },
+  headerGradient: {
+    paddingTop: 44,
+    paddingBottom: 20,
   },
   searchContainer: {
-    padding: 16,
-    backgroundColor: '#fff',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
   },
   searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F5F5F5',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: 8,
-    fontSize: 14,
-    color: '#333',
-  },
-  filterContainer: {
-    padding: 16,
-    backgroundColor: '#fff',
-  },
-  filterRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 12,
-    gap: 8,
-  },
-  filterButton: {
-    backgroundColor: '#F5F5F5',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  activeFilter: {
-    backgroundColor: '#F0EDF6',
-  },
-  filterText: {
-    color: '#666',
-    fontSize: 14,
-  },
-  filterOption: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F0EDF6',
-    padding: 12,
-    borderRadius: 8,
-    marginHorizontal: 4,
-  },
-  filterOptionText: {
-    marginLeft: 8,
-    color: '#6D5BA3',
-    fontSize: 14,
-  },
-  moreButton: {
-    alignSelf: 'center',
-    marginTop: 8,
-  },
-  moreButtonText: {
-    color: '#6D5BA3',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  card: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFF',
     borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    elevation: 2,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginRight: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    elevation: 3,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 12,
+    fontSize: 15,
+    color: '#333',
+  },
+  notificationButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: '#FF385C',
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FFF',
+  },
+  notificationBadgeText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  filterContainer: {
+    paddingVertical: 16,
+    backgroundColor: '#FFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  filterScroll: {
+    paddingHorizontal: 16,
+  },
+  filterOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0EDF6',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginRight: 12,
+  },
+  filterOptionText: {
+    color: '#6D5BA3',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  listContainer: {
+    padding: 16,
+  },
+  card: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    overflow: 'hidden',
+  },
+  cardGradient: {
+    padding: 16,
   },
   header: {
     flexDirection: 'row',
@@ -283,11 +314,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flex: 1,
   },
+  avatarContainer: {
+    position: 'relative',
+    marginRight: 16,
+  },
   avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 12,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: '#FFF',
+  },
+  onlineIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#4CAF50',
+    borderWidth: 2,
+    borderColor: '#FFF',
   },
   nameContainer: {
     flex: 1,
@@ -298,17 +345,47 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   name: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
-    color: '#4CAF50',
+    color: '#333',
     marginRight: 8,
   },
   verifiedBadge: {
+    backgroundColor: '#E8F5E9',
+    padding: 4,
+    borderRadius: 12,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  infoBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#F0EDF6',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginRight: 8,
   },
-  age: {
+  infoText: {
+    fontSize: 12,
+    color: '#666',
+    marginLeft: 4,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  rating: {
     fontSize: 14,
+    color: '#333',
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  reviews: {
+    fontSize: 12,
     color: '#666',
     marginLeft: 4,
   },
@@ -316,29 +393,32 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#333',
     marginBottom: 4,
+    fontWeight: '500',
   },
   description: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#666',
-    lineHeight: 16,
+    lineHeight: 18,
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
   },
   status: {
+    color: '#FFF',
     fontSize: 12,
-    color: '#4CAF50',
-    backgroundColor: '#E8F5E9',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    overflow: 'hidden',
-    height: 24,
+    fontWeight: '500',
   },
   traitsContainer: {
-    marginTop: 8,
+    marginTop: 16,
+    marginBottom: 16,
   },
   traitsLabel: {
     fontSize: 14,
     color: '#333',
     marginBottom: 8,
+    fontWeight: '600',
   },
   traits: {
     flexDirection: 'row',
@@ -346,45 +426,31 @@ const styles = StyleSheet.create({
     marginHorizontal: -4,
   },
   traitBadge: {
-    backgroundColor: '#F0EDF6',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: 20,
     margin: 4,
   },
   traitText: {
-    color: '#6D5BA3',
+    color: '#FFF',
     fontSize: 12,
+    fontWeight: '500',
   },
-  filterGroup: {
-    flex: 1,
-    marginHorizontal: 4,
+  chatButton: {
+    marginTop: 8,
   },
-  filterLabel: {
-    color: '#666',
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  inputGroup: {
+  chatButtonGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
   },
-  filterInput: {
-    flex: 1,
+  chatButtonText: {
+    color: '#FFF',
     fontSize: 14,
-    color: '#333',
-    paddingVertical: 4,
-    textAlign: 'center',
-    minWidth: 40,
-  },
-  filterDivider: {
-    color: '#666',
-    marginHorizontal: 4,
-    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
   },
 });
 

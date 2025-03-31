@@ -25,6 +25,16 @@ const MapScreen = ({ route }) => {
     }
   }));
 
+  const CustomMarker = () => (
+    <View style={styles.customMarkerContainer}>
+      <Image 
+        source={require('../assets/logoEasyRommie.png')} 
+        style={styles.markerImage} 
+      />
+    </View>
+  );
+  
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -48,9 +58,7 @@ const MapScreen = ({ route }) => {
             key={room.id}
             coordinate={room.coordinate}
           >
-            <View style={styles.markerContainer}>
-              <Text style={styles.markerPrice}>{room.price}</Text>
-            </View>
+            <CustomMarker price={room.price} />
             <Callout>
               <View style={styles.calloutContainer}>
                 <Image source={room.image} style={styles.calloutImage} />
@@ -100,17 +108,38 @@ const styles = StyleSheet.create({
   map: {
     flex: 1,
   },
-  markerContainer: {
+  customMarkerContainer: {
+    alignItems: 'center',
+  },
+  markerImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#FFF',
+    backgroundColor: '#FFF',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  markerPriceContainer: {
     backgroundColor: '#6D5BA3',
-    padding: 5,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'white',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginTop: -10,
+    borderWidth: 1.5,
+    borderColor: '#FFF',
   },
   markerPrice: {
     color: 'white',
     fontWeight: 'bold',
-    fontSize: 12,
+    fontSize: 10,
   },
   calloutContainer: {
     width: 200,
