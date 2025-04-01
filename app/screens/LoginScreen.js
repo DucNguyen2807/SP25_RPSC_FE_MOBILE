@@ -1,17 +1,30 @@
 import React, { useState } from 'react';
 import { View, TextInput, Text, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
+import authService from '../services/authService';
 
 const LoginScreen = ({ navigation }) => {
-  const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
 
-  const handleLogin = () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter both email and password');
+  const handleLogin = async () => {
+    if (!phoneNumber || !password) {
+      Alert.alert('Error', 'Please enter both phone number and password');
       return;
     }
-    navigation.replace('MainTabs');
+
+    try {
+      const result = await authService.login(phoneNumber, password);
+      if (result.isSuccess) {
+        Alert.alert('Success', result.message);
+        navigation.replace('MainTabs');
+      } else {
+        Alert.alert('Error', result.message || 'Login failed');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An error occurred. Please try again.');
+      console.error('Login error:', error);
+    }
   };
 
   return (
@@ -24,9 +37,9 @@ const LoginScreen = ({ navigation }) => {
         style={styles.input}
         placeholder="Your email or phone number"
         placeholderTextColor="#B0B0B0"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
+        value={phoneNumber}
+        onChangeText={setPhoneNumber}
+        keyboardType="phone-pad"
         autoCapitalize="none"
       />
       <TextInput
