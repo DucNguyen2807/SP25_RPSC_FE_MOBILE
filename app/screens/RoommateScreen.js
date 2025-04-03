@@ -1,55 +1,46 @@
-import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, FlatList, TouchableOpacity, TextInput, Dimensions, ScrollView, Animated } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, StyleSheet, FlatList, TouchableOpacity, TextInput, Dimensions, ScrollView } from 'react-native';
 import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
+import postService from '../services/postService';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width - 32;
 
 const RoommateScreen = () => {
   const navigation = useNavigation();
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [priceMin, setPriceMin] = useState('');
-  const [priceMax, setPriceMax] = useState('');
-  const [ageMin, setAgeMin] = useState('');
-  const [ageMax, setAgeMax] = useState('');
+  const [roommates, setRoommates] = useState([]); 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const roommates = [
-    {
-      id: '1',
-      name: 'Nguyễn Trần Vĩ Hào',
-      avatar: require('../assets/logoEasyRommie.png'),
-      occupation: 'Sinh viên ưu tú trường đại học FPT',
-      description: 'Tôi là sinh viên cần tìm 1 bạn đồng phòng giúp chia sẻ tiền nhà và học cùng ngày.',
-      traits: ['Ngủ sớm', 'Ngăn nắp', 'Sạch sẽ'],
-      age: 23,
-      status: 'Today',
-      rating: 4.8,
-      reviews: 12,
-      gender: 'Nam'
-    },
-    {
-      id: '2',
-      name: 'Nguyễn Xuân Đức',
-      avatar: require('../assets/logoEasyRommie.png'),
-      occupation: 'Nhân viên IT công ty LCK',
-      description: 'Tôi là sinh viên cần tìm 1 bạn đồng phòng giúp chia sẻ tiền nhà và học cùng ngày.',
-      traits: ['Ngủ trễ', 'Ngăn nắp', 'Sạch sẽ'],
-      age: 24,
-      status: 'Today',
-      rating: 4.5,
-      reviews: 8,
-      gender: 'Nam'
-    },
-  ];
+  useEffect(() => {
+    const fetchRoommatePosts = async () => {
+      setLoading(true);
+      const searchRequest = {
+        pageNumber: 1,
+        pageSize: 10,
+      };
+
+      const result = await postService.getAllRoommatePosts(searchRequest);
+
+      if (result.isSuccess && Array.isArray(result.posts.items)) {
+        setRoommates(result.posts.items); // Set fetched posts to state if valid
+      } else {
+        setError(result.message || 'No posts available');
+      }
+      setLoading(false);
+    };
+
+    fetchRoommatePosts();
+  }, []);
 
   const handleRoommatePress = (roommate) => {
     navigation.navigate('RoommateDetail', { roommate });
   };
 
   const renderRoommateCard = ({ item }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.card}
       onPress={() => handleRoommatePress(item)}
     >
@@ -60,12 +51,12 @@ const RoommateScreen = () => {
         <View style={styles.header}>
           <View style={styles.userInfo}>
             <View style={styles.avatarContainer}>
-              <Image source={item.avatar} style={styles.avatar} />
+              <Image source={{ uri: item.postOwnerInfo.avatar }} style={styles.avatar} />
               <View style={styles.onlineIndicator} />
             </View>
             <View style={styles.nameContainer}>
               <View style={styles.nameRow}>
-                <Text style={styles.name}>{item.name}</Text>
+                <Text style={styles.name}>{item.postOwnerInfo.fullName}</Text>
                 <View style={styles.verifiedBadge}>
                   <MaterialIcons name="verified" size={16} color="#4CAF50" />
                 </View>
@@ -73,19 +64,19 @@ const RoommateScreen = () => {
               <View style={styles.infoRow}>
                 <View style={styles.infoBadge}>
                   <FontAwesome5 name="user" size={12} color="#666" />
-                  <Text style={styles.infoText}>{item.gender}</Text>
+                  <Text style={styles.infoText}>{item.postOwnerInfo.gender}</Text>
                 </View>
                 <View style={styles.infoBadge}>
                   <FontAwesome5 name="birthday-cake" size={12} color="#666" />
-                  <Text style={styles.infoText}>{item.age} tuổi</Text>
+                  <Text style={styles.infoText}>{item.postOwnerInfo.age} tuổi</Text>
                 </View>
               </View>
               <View style={styles.ratingContainer}>
                 <FontAwesome5 name="star" size={12} color="#FFB800" solid />
-                <Text style={styles.rating}>{item.rating}</Text>
-                <Text style={styles.reviews}>({item.reviews} đánh giá)</Text>
+                <Text style={styles.rating}>{item.postOwnerInfo.rating}</Text>
+                <Text style={styles.reviews}>({item.postOwnerInfo.reviews} đánh giá)</Text>
               </View>
-              <Text style={styles.occupation}>{item.occupation}</Text>
+              <Text style={styles.occupation}>{item.postOwnerInfo.postOwnerType}</Text>
               <Text style={styles.description} numberOfLines={2}>
                 {item.description}
               </Text>
@@ -104,17 +95,21 @@ const RoommateScreen = () => {
         <View style={styles.traitsContainer}>
           <Text style={styles.traitsLabel}>Tiêu chí:</Text>
           <View style={styles.traits}>
-            {item.traits.map((trait, index) => (
-              <LinearGradient
-                key={index}
-                colors={['#6D5BA3', '#8873BE']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.traitBadge}
-              >
-                <Text style={styles.traitText}>{trait}</Text>
-              </LinearGradient>
-            ))}
+            {item.traits && item.traits.length > 0 ? (
+              item.traits.map((trait, index) => (
+                <LinearGradient
+                  key={index}
+                  colors={['#6D5BA3', '#8873BE']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.traitBadge}
+                >
+                  <Text style={styles.traitText}>{trait}</Text>
+                </LinearGradient>
+              ))
+            ) : (
+              <Text>No traits available</Text>
+            )}
           </View>
         </View>
 
@@ -135,7 +130,6 @@ const RoommateScreen = () => {
 
   return (
     <View style={styles.container}>
-      {/* Header with Gradient */}
       <LinearGradient
         colors={['#6D5BA3', '#8873BE']}
         start={{ x: 0, y: 0 }}
@@ -160,10 +154,9 @@ const RoommateScreen = () => {
         </View>
       </LinearGradient>
 
-      {/* Filter Section */}
       <View style={styles.filterContainer}>
-        <ScrollView 
-          horizontal 
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.filterScroll}
         >
@@ -189,13 +182,20 @@ const RoommateScreen = () => {
         </ScrollView>
       </View>
 
-      <FlatList
-        data={roommates}
-        renderItem={renderRoommateCard}
-        keyExtractor={item => item.id}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContainer}
-      />
+      {loading ? (
+        <Text>Loading...</Text>
+      ) : error ? (
+        <Text>{error}</Text>
+      ) : (
+        <FlatList
+          data={roommates}
+          renderItem={renderRoommateCard}
+          keyExtractor={item => item.postId}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContainer}
+          ListEmptyComponent={<Text>No roommates available</Text>} // Hiển thị khi không có dữ liệu
+        />
+      )}
     </View>
   );
 };
@@ -454,4 +454,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default RoommateScreen; 
+export default RoommateScreen;

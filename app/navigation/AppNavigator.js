@@ -8,7 +8,8 @@ import PersonalInfoScreen from '../screens/PersonalInfoScreen';
 import MapScreen from '../screens/MapScreen';
 import RoommateDetailScreen from '../screens/RoommateDetailScreen';
 import RoomDetailScreen from '../screens/RoomDetailScreen';
-
+import SignUpScreen from '../screens/SignUpScreen';
+import OtpVerificationScreen from '../screens/OtpVerificationScreen';
 const Stack = createStackNavigator();
 
 const AppNavigator = () => {
@@ -26,6 +27,15 @@ const AppNavigator = () => {
       <Stack.Screen 
         name="Login" 
         component={LoginScreen} 
+      />
+      <Stack.Screen 
+        name="SignUp"
+        component={SignUpScreen}
+      />
+      
+      <Stack.Screen 
+        name="OtpVerification"
+        component={OtpVerificationScreen}
       />
       <Stack.Screen 
         name="PersonalInfo" 

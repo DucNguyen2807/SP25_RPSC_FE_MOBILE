@@ -1,156 +1,280 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
+import { 
+  View, 
+  TextInput, 
+  Text, 
+  TouchableOpacity, 
+  StyleSheet, 
+  Image, 
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  SafeAreaView,
+  ActivityIndicator
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import authService from '../services/authService';
 
 const LoginScreen = ({ navigation }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!phoneNumber || !password) {
       Alert.alert('Error', 'Please enter both phone number and password');
       return;
     }
-
+    
+    setIsLoading(true);
     try {
       const result = await authService.login(phoneNumber, password);
+      
       if (result.isSuccess) {
-        Alert.alert('Success', result.message);
-        navigation.replace('MainTabs');
+        if (result.user.role === 'Customer') {
+          navigation.replace('MainTabs');  // Navigate to main screen for Customer
+        } else {
+          Alert.alert('Error', 'You do not have the correct role to access this app.');
+        }
       } else {
         Alert.alert('Error', result.message || 'Login failed');
       }
     } catch (error) {
       Alert.alert('Error', 'An error occurred. Please try again.');
       console.error('Login error:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Image
-        source={require('../assets/logoEasyRommie.png')}
-        style={styles.logo}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Your email or phone number"
-        placeholderTextColor="#B0B0B0"
-        value={phoneNumber}
-        onChangeText={setPhoneNumber}
-        keyboardType="phone-pad"
-        autoCapitalize="none"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        placeholderTextColor="#B0B0B0"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-      <View style={styles.rememberMeContainer}>
-        <TouchableOpacity 
-          onPress={() => setRememberMe(!rememberMe)} 
-          style={styles.rememberMeCheckbox}
-        >
-          {rememberMe && <View style={styles.checked} />}
-        </TouchableOpacity>
-        <Text style={styles.rememberMeText}>Remember me</Text>
-      </View>
-      <TouchableOpacity 
-        onPress={handleLogin} 
-        style={styles.signInButton}
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoid}
       >
-        <Text style={styles.signInText}>Sign in</Text>
-      </TouchableOpacity>
-      <TouchableOpacity>
-        <Text style={styles.forgotPassword}>Forgot password?</Text>
-      </TouchableOpacity>
-      <View style={styles.signUpContainer}>
-        <Text style={styles.signUpText}>Don't have an account? </Text>
-        <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-          <Text style={styles.signUpLink}>Sign up</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.headerContainer}>
+            <Image
+              source={require('../assets/logoEasyRommie.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+            <Text style={styles.welcomeText}>Welcome Back</Text>
+            <Text style={styles.subtitleText}>Log in to continue using EasyRoomie</Text>
+          </View>
+          
+          <View style={styles.formContainer}>
+            <View style={styles.inputContainer}>
+              <Ionicons name="call-outline" size={22} color="#6C63FF" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Phone Number"
+                placeholderTextColor="#ACACAC"
+                value={phoneNumber}
+                onChangeText={setPhoneNumber}
+                keyboardType="phone-pad"
+                autoCapitalize="none"
+              />
+            </View>
+            
+            <View style={styles.inputContainer}>
+              <Ionicons name="lock-closed-outline" size={22} color="#6C63FF" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Password"
+                placeholderTextColor="#ACACAC"
+                secureTextEntry={!showPassword}
+                value={password}
+                onChangeText={setPassword}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+                <Ionicons 
+                  name={showPassword ? "eye-off-outline" : "eye-outline"} 
+                  size={22} 
+                  color="#ACACAC" 
+                />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.optionsRow}>
+              <TouchableOpacity 
+                onPress={() => setRememberMe(!rememberMe)} 
+                style={styles.rememberMeContainer}
+              >
+                <View style={[styles.checkbox, rememberMe && styles.checkboxActive]}>
+                  {rememberMe && <Ionicons name="checkmark" size={16} color="white" />}
+                </View>
+                <Text style={styles.rememberMeText}>Remember me</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+                <Text style={styles.forgotPassword}>Forgot password?</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <TouchableOpacity 
+              onPress={handleLogin} 
+              style={styles.loginButton}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="white" size="small" />
+              ) : (
+                <Text style={styles.loginButtonText}>Log In</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.footerContainer}>
+            <View style={styles.signUpContainer}>
+              <Text style={styles.signUpText}>Don't have an account? </Text>
+              <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+                <Text style={styles.signUpLink}>Sign up</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#E5E5E5',
-    paddingHorizontal: 30,
+    backgroundColor: '#FFFFFF',
   },
-  logo: {
-    width: 150,
-    height: 150,
+  keyboardAvoid: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingTop: 40,
+    paddingBottom: 24,
+  },
+  headerContainer: {
+    alignItems: 'center',
     marginBottom: 40,
   },
-  input: {
-    width: '100%',
-    height: 50,
-    backgroundColor: 'white',
-    borderRadius: 10,
-    marginBottom: 15,
-    paddingLeft: 15,
+  logo: {
+    width: 120,
+    height: 120,
+    marginBottom: 24,
+  },
+  welcomeText: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#333333',
+    marginBottom: 8,
+  },
+  subtitleText: {
     fontSize: 16,
+    color: '#888888',
+    textAlign: 'center',
+  },
+  formContainer: {
+    width: '100%',
+    marginBottom: 24,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F7F8F9',
+    borderRadius: 12,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    height: 60,
+    borderWidth: 1,
+    borderColor: '#EAEAEA',
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    height: '100%',
+    fontSize: 16,
+    color: '#333333',
+  },
+  eyeIcon: {
+    padding: 8,
+  },
+  optionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
   },
   rememberMeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
   },
-  rememberMeCheckbox: {
+  checkbox: {
     width: 20,
     height: 20,
+    borderRadius: 4,
     borderWidth: 1,
-    borderRadius: 5,
-    marginRight: 10,
+    borderColor: '#DADADA',
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 8,
   },
-  checked: {
-    width: 12,
-    height: 12,
-    backgroundColor: '#5E5E5E',
-    borderRadius: 3,
+  checkboxActive: {
+    backgroundColor: '#6C63FF',
+    borderColor: '#6C63FF',
   },
   rememberMeText: {
-    fontSize: 16,
-  },
-  signInButton: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#000',
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  signInText: {
-    color: 'white',
-    fontSize: 16,
+    fontSize: 14,
+    color: '#666666',
   },
   forgotPassword: {
-    fontSize: 16,
-    color: '#5E5E5E',
-    marginBottom: 40,
+    fontSize: 14,
+    color: '#6C63FF',
+    fontWeight: '500',
+  },
+  loginButton: {
+    backgroundColor: '#6C63FF',
+    borderRadius: 12,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#6C63FF',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  loginButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  footerContainer: {
+    marginTop: 'auto',
+    alignItems: 'center',
+    paddingVertical: 20,
   },
   signUpContainer: {
     flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   signUpText: {
     fontSize: 16,
-    color: '#5E5E5E',
+    color: '#888888',
   },
   signUpLink: {
     fontSize: 16,
-    color: '#000',
+    color: '#6C63FF',
+    fontWeight: '600',
   },
 });
 
