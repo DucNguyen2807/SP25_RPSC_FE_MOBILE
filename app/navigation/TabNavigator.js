@@ -2,9 +2,10 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import HomeScreen from '../screens/HomeScreen';
+import RentedStackNavigator from './RentedStackNavigator';
 import RoommateScreen from '../screens/RoommateScreen';
 import MessageScreen from '../screens/MessageScreen';
+import HomeScreen from '../screens/HomeScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -23,11 +24,12 @@ const TabNavigator = () => {
         >
             <Tab.Screen
                 name="Rented"
-                component={HomeScreen}
+                component={RentedStackNavigator}
                 options={{
                     tabBarIcon: ({ color }) => (
                         <MaterialIcons name="history" size={24} color={color} />
                     ),
+                    tabBarLabel: 'Rented'
                 }}
             />
             <Tab.Screen
@@ -37,6 +39,7 @@ const TabNavigator = () => {
                     tabBarIcon: ({ color }) => (
                         <MaterialIcons name="people" size={24} color={color} />
                     ),
+                    tabBarLabel: 'Roommate'
                 }}
             />
             <Tab.Screen
@@ -46,6 +49,7 @@ const TabNavigator = () => {
                     tabBarIcon: ({ color }) => (
                         <MaterialIcons name="house" size={24} color={color} />
                     ),
+                    tabBarLabel: 'Room'
                 }}
             />
             <Tab.Screen
@@ -55,6 +59,7 @@ const TabNavigator = () => {
                     tabBarIcon: ({ color }) => (
                         <MaterialIcons name="chat-bubble-outline" size={24} color={color} />
                     ),
+                    tabBarLabel: 'Messages'
                 }}
             />
             <Tab.Screen
