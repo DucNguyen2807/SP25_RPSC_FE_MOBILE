@@ -17,8 +17,10 @@ const authService = {
       
       if (data?.isSuccess) {
         if (data.data.role === 'Customer') {
-          // Store user data in AsyncStorage
+          // Lưu user và token vào AsyncStorage
           await AsyncStorage.setItem('user', JSON.stringify(data.data));
+          await AsyncStorage.setItem('token', data.data.token);  
+          await AsyncStorage.setItem('userId', data.data.userId); 
           return { isSuccess: true, message: 'Login successful', user: data.data };
         } else {
           return { isSuccess: false, message: 'You do not have the correct role to access this app.' };
@@ -31,6 +33,7 @@ const authService = {
       return { isSuccess: false, message: 'Something went wrong' };
     }
   },
+
   registerCustomer: async (email, password, confirmPassword, fullName, customerType) => {
     try {
       const response = await fetch(`${API_BASE_URL}/authentication/register-customer`, {

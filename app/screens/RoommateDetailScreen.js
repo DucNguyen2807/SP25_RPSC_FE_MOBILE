@@ -1,670 +1,675 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
-import { MaterialIcons, FontAwesome5, Ionicons } from '@expo/vector-icons';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, Animated } from 'react-native';
+import { FontAwesome5, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import postService from '../services/postService';
 
 const { width } = Dimensions.get('window');
 
 const RoommateDetailScreen = ({ route }) => {
   const navigation = useNavigation();
-  const { roommate } = route.params;
+  const { postId } = route.params;
 
+  const [loading, setLoading] = useState(true);
+  const [postDetail, setPostDetail] = useState(null);
+  const [error, setError] = useState(null);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  // Standard animations instead of Reanimated
+  const fadeAnim = useState(new Animated.Value(0))[0];
+
+  useEffect(() => {
+    const fetchPostDetail = async () => {
+      setLoading(true);
+      try {
+        const response = await postService.getRoommatePostDetail(postId);
+        if (response.isSuccess && response.data) {
+          setPostDetail(response.data);
+          setError(null);
+          // Start fade-in animation when data loads
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 600,
+            useNativeDriver: true,
+          }).start();
+        } else {
+          setError('Failed to load post details: ' + response.message);
+        }
+      } catch (err) {
+        setError(`Error fetching: ${err.message}`);
+        console.error('Detailed error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPostDetail();
+  }, [postId]);
+  
+  if (loading) {
+    return (
+      <View style={styles.centeredContainer}>
+        <ActivityIndicator size="large" color="#6366F1" />
+        <Text style={styles.loadingText}>Finding your perfect match...</Text>
+      </View>
+    );
+  }
+  
+  if (error || !postDetail) {
+    return (
+      <View style={styles.centeredContainer}>
+        <MaterialIcons name="error-outline" size={60} color="#F87171" />
+        <Text style={styles.errorText}>{error || 'No data found'}</Text>
+        <TouchableOpacity 
+          style={styles.retryButton} 
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.retryText}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+  
+  const { postOwnerInfo, roomInfo, title, description, location, createdAt } = postDetail;
+  const roomImages = roomInfo?.roomImages && roomInfo.roomImages.length > 0 
+    ? roomInfo.roomImages 
+    : [require('../assets/logoEasyRommie.png')];
+  
+  const renderImageIndicator = () => {
+    return (
+      <View style={styles.indicatorContainer}>
+        {roomImages.map((_, index) => (
+          <View 
+            key={index} 
+            style={[
+              styles.indicator, 
+              index === activeImageIndex && styles.activeIndicator
+            ]} 
+          />
+        ))}
+      </View>
+    );
+  };
+
+  const renderAmenityIcon = (amenity) => {
+    const amenityIcons = {
+      'WiFi': 'wifi',
+      'Air Conditioning': 'snowflake',
+      'Washing Machine': 'tshirt',
+      'Kitchen': 'utensils',
+      'TV': 'tv',
+      'Parking': 'parking',
+      'Balcony': 'glass-whiskey',
+      'Private Bathroom': 'bath',
+      // Add more mappings as needed
+    };
+    
+    const iconName = amenityIcons[amenity] || 'check-circle';
+    return <FontAwesome5 name={iconName} size={16} color="#6366F1" />;
+  };
+  
   return (
-    <ScrollView style={styles.container}>
-      {/* Header Image with Gradient Overlay */}
-      <View style={styles.headerContainer}>
-        <Image 
-          source={require('../assets/logoEasyRommie.png')}
-          style={styles.headerImage}
-        />
-        <LinearGradient
-          colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.7)']}
-          style={styles.headerGradient}
-        />
-        <View style={styles.headerContent}>
+    <View style={styles.container}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Header Image Carousel */}
+        <View style={styles.header}>
+          <ScrollView 
+            horizontal 
+            pagingEnabled 
+            showsHorizontalScrollIndicator={false}
+            onScroll={(e) => {
+              const index = Math.round(e.nativeEvent.contentOffset.x / width);
+              setActiveImageIndex(index);
+            }}
+            scrollEventThrottle={16}
+          >
+            {roomImages.map((image, index) => (
+              <Image
+                key={index}
+                source={typeof image === 'string' ? { uri: image } : image}
+                style={styles.headerImage}
+                resizeMode="cover"
+              />
+            ))}
+          </ScrollView>
+          
+          {renderImageIndicator()}
+          
+          <LinearGradient 
+            colors={['rgba(0,0,0,0.7)', 'transparent', 'rgba(0,0,0,0.6)']} 
+            style={styles.gradientOverlay} 
+          />
+          
           <TouchableOpacity 
-            style={styles.backButton}
+            style={styles.backButton} 
             onPress={() => navigation.goBack()}
           >
-            <MaterialIcons name="arrow-back-ios" size={24} color="#FFF" />
+            <BlurView intensity={90} tint="dark" style={styles.blurView}>
+              <MaterialIcons name="arrow-back" size={24} color="#FFF" />
+            </BlurView>
           </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Profile Card */}
-      <View style={styles.profileCard}>
-        <Image source={roommate.avatar} style={styles.avatar} />
-        <View style={styles.nameContainer}>
-          <Text style={styles.greeting}>Hello, tui là {roommate.name}</Text>
-          <View style={styles.statusContainer}>
-            <View style={styles.statusBadge}>
-              <View style={styles.dotIndicator} />
-              <Text style={styles.statusText}>Hoạt động hôm nay</Text>
-            </View>
-          </View>
-          <View style={styles.infoRow}>
-            <View style={styles.infoItem}>
-              <FontAwesome5 name="birthday-cake" size={14} color="#666" />
-              <Text style={styles.infoText}>{roommate.age} tuổi</Text>
-            </View>
-            <View style={styles.infoItem}>
-              <Ionicons name="male-female" size={14} color="#666" />
-              <Text style={styles.infoText}>Nam</Text>
-            </View>
+          
+          <TouchableOpacity style={styles.shareButton}>
+            <BlurView intensity={90} tint="dark" style={styles.blurView}>
+              <MaterialIcons name="share" size={24} color="#FFF" />
+            </BlurView>
+          </TouchableOpacity>
+          
+          <View style={styles.priceTag}>
+            <Text style={styles.priceText}>
+              {typeof roomInfo?.price === 'number' ? roomInfo.price.toLocaleString() : 'N/A'}đ
+            </Text>
+            <Text style={styles.priceSubtext}>/month</Text>
           </View>
         </View>
-      </View>
-
-      {/* Info Sections */}
-      <View style={styles.infoContainer}>
-        {/* Work & School Section */}
-        <View style={styles.infoSection}>
-          <View style={styles.infoCard}>
-            <View style={styles.infoIconContainer}>
-              <FontAwesome5 name="briefcase" size={16} color="#6D5BA3" />
+        
+        {/* Animated content container */}
+        <Animated.View style={{ opacity: fadeAnim }}>
+          {/* Profile Section */}
+          <View style={styles.profileCard}>
+            <View style={styles.profile}>
+              <Image 
+                source={{ uri: postOwnerInfo?.avatar }} 
+                style={styles.avatar} 
+              />
+              <View style={styles.profileInfo}>
+                <Text style={styles.profileName}>{postOwnerInfo?.fullName || 'No name'}</Text>
+                <View style={styles.profileBadge}>
+                  <FontAwesome5 name="user-check" size={12} color="#6366F1" />
+                  <Text style={styles.profileBadgeText}>Verified Host</Text>
+                </View>
+              </View>
+              <TouchableOpacity style={styles.messageButton}>
+                <MaterialIcons name="chat" size={20} color="#FFF" />
+              </TouchableOpacity>
             </View>
-            <View>
-              <Text style={styles.infoLabel}>Công việc</Text>
-              <Text style={styles.infoValue}>Là sinh viên còn đi học</Text>
+            
+            <View style={styles.profileDetails}>
+              <View style={styles.profileDetail}>
+                <FontAwesome5 name="birthday-cake" size={14} color="#6366F1" />
+                <Text style={styles.profileDetailText}>{postOwnerInfo?.age || '-'} years</Text>
+              </View>
+              <View style={styles.profileDetail}>
+                <FontAwesome5 name="venus-mars" size={14} color="#6366F1" />
+                <Text style={styles.profileDetailText}>{postOwnerInfo?.gender || '-'}</Text>
+              </View>
+              <View style={styles.profileDetail}>
+                <FontAwesome5 name="heart" size={14} color="#6366F1" />
+                <Text style={styles.profileDetailText}>{postOwnerInfo?.lifeStyle || '-'}</Text>
+              </View>
             </View>
           </View>
-          <View style={styles.infoCard}>
-            <View style={styles.infoIconContainer}>
-              <FontAwesome5 name="graduation-cap" size={16} color="#6D5BA3" />
+          
+          {/* Title and Description */}
+          <View style={styles.section}>
+            <Text style={styles.title}>{title}</Text>
+            <View style={styles.locationRow}>
+              <FontAwesome5 name="map-marker-alt" size={16} color="#6366F1" />
+              <Text style={styles.location}>{location}</Text>
             </View>
-            <View>
-              <Text style={styles.infoLabel}>Trường</Text>
-              <Text style={styles.infoValue}>Đại học FPT</Text>
+            <Text style={styles.description}>{description}</Text>
+            <Text style={styles.date}>
+              Posted: {new Date(createdAt).toLocaleDateString('en-US', { 
+                day: 'numeric', 
+                month: 'short', 
+                year: 'numeric' 
+              })}
+            </Text>
+          </View>
+          
+          {/* Room Information */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>
+              <FontAwesome5 name="home" size={16} color="#6366F1" /> Room Details
+            </Text>
+            
+            <Text style={styles.roomTitle}>{roomInfo?.title}</Text>
+            <View style={styles.roomTypeContainer}>
+              <Text style={styles.roomType}>{roomInfo?.roomTypeName}</Text>
+            </View>
+            
+            <Text style={styles.roomDesc}>{roomInfo?.description}</Text>
+            
+            <View style={styles.roomStats}>
+              <View style={styles.roomStat}>
+                <FontAwesome5 name="door-open" size={16} color="#6366F1" />
+                <Text style={styles.roomStatLabel}>Room No.</Text>
+                <Text style={styles.roomStatValue}>{roomInfo?.roomNumber}</Text>
+              </View>
+              
+              <View style={styles.roomStat}>
+                <FontAwesome5 name="ruler-combined" size={16} color="#6366F1" />
+                <Text style={styles.roomStatLabel}>Area</Text>
+                <Text style={styles.roomStatValue}>{roomInfo?.square} m²</Text>
+              </View>
+              
+              <View style={styles.roomStat}>
+                <FontAwesome5 name="calendar-check" size={16} color="#6366F1" />
+                <Text style={styles.roomStatLabel}>Available</Text>
+                <Text style={styles.roomStatValue}>Now</Text>
+              </View>
             </View>
           </View>
-        </View>
-
-        {/* Introduction Section */}
-        <View style={[styles.section, styles.introSection]}>
-          <Text style={styles.sectionTitle}>Giới thiệu về bản thân</Text>
-          <Text style={styles.introText}>
-            Xin chào mọi người! Mình là Trần Vũ Khải, hiện đang là sinh viên năm cuối tại trường Đại học FPT, chuyên ngành Công nghệ Thông tin. Mình có niềm đam mê với phát triển phần mềm và đặc biệt quan tâm đến các dự án liên quan đến web và ứng dụng di động.
-          </Text>
-        </View>
-
-        {/* Traits Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Sở thích & Tính cách</Text>
-          <View style={styles.traitsContainer}>
-            {['Hòa đồng', 'Dễ tính', 'Món nào cũng biết nấu', 'Dễ ăn uống'].map((trait, index) => (
-              <View key={index} style={styles.traitBadge}>
-                <Text style={styles.traitText}>{trait}</Text>
+          
+          {/* Amenities */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>
+              <FontAwesome5 name="concierge-bell" size={16} color="#6366F1" /> Amenities
+            </Text>
+            
+            <View style={styles.amenitiesGrid}>
+              {(roomInfo?.roomAmenities || []).map((amenity, idx) => (
+                <View key={idx} style={styles.amenityItem}>
+                  {renderAmenityIcon(amenity)}
+                  <Text style={styles.amenityText}>{amenity}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+          
+          {/* Services */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>
+              <FontAwesome5 name="hand-holding-heart" size={16} color="#6366F1" /> Services
+            </Text>
+            
+            {(roomInfo?.services || []).map((service) => (
+              <View key={service.serviceId} style={styles.serviceItem}>
+                <View style={styles.serviceHeader}>
+                  <Text style={styles.serviceName}>{service.serviceName}</Text>
+                  <Text style={styles.servicePrice}>
+                    {(service.price ?? 0).toLocaleString()}đ/mo
+                  </Text>
+                </View>
+                <Text style={styles.serviceDesc}>{service.description}</Text>
               </View>
             ))}
           </View>
-        </View>
-
-        {/* Room Information Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Thông tin phòng trọ</Text>
-          <Text style={styles.roomDescription}>
-            Hiện tại mình đang thuê phòng trọ của chú Mr.Đàm, các bạn có thể coi và tham khảo bên dưới
-          </Text>
           
-          {/* Room Image Gallery */}
-          <View style={styles.roomImageContainer}>
-            <Image 
-              source={require('../assets/logoEasyRommie.png')}
-              style={styles.roomImage}
-            />
-            <LinearGradient
-              colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.5)']}
-              style={styles.imageGradient}
-            />
-            <View style={styles.imageCounter}>
-              <Text style={styles.imageCounterText}>1/10</Text>
-            </View>
-            <View style={styles.roomOwnerInfo}>
-              <Image 
-                source={require('../assets/logoEasyRommie.png')}
-                style={styles.ownerAvatar}
-              />
-              <View style={styles.ownerTextContainer}>
-                <Text style={styles.ownerName}>Nguyễn Xuân Đức</Text>
-                <View style={styles.ownerBadges}>
-                  <View style={styles.ownerBadge}>
-                    <View style={styles.dotIndicator} />
-                    <Text style={styles.ownerBadgeText}>Today</Text>
-                  </View>
-                  <View style={styles.ownerBadge}>
-                    <FontAwesome5 name="user-friends" size={12} color="#4CAF50" />
-                    <Text style={styles.ownerBadgeText}>roommate</Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-          </View>
+          {/* Bottom padding to ensure content isn't hidden behind footer */}
+          <View style={{ height: 80 }} />
+        </Animated.View>
+      </ScrollView>
+      
+      {/* Contact Button */}
+      <View style={styles.footer}>
+      <TouchableOpacity style={[styles.contactButton, { flex: 1 }]}>
+        <FontAwesome5 name="phone-alt" size={16} color="#FFF" style={{ marginRight: 8 }} />
+        <Text style={styles.contactButtonText}>Contact Roommate</Text>
+      </TouchableOpacity>
 
-          {/* Room Details */}
-          <View style={styles.roomDetailsCard}>
-            <View style={styles.roomDetailGrid}>
-              <View style={styles.roomDetailItem}>
-                <FontAwesome5 name="door-open" size={16} color="#6D5BA3" />
-                <Text style={styles.detailLabel}>Số phòng</Text>
-                <Text style={styles.detailValue}>101</Text>
-              </View>
-              <View style={styles.roomDetailItem}>
-                <FontAwesome5 name="money-bill-wave" size={16} color="#6D5BA3" />
-                <Text style={styles.detailLabel}>Tiền trọ</Text>
-                <Text style={styles.detailValue}>2,000,000đ/tháng</Text>
-              </View>
-              <View style={styles.roomDetailItem}>
-                <FontAwesome5 name="ruler-combined" size={16} color="#6D5BA3" />
-                <Text style={styles.detailLabel}>Diện tích</Text>
-                <Text style={styles.detailValue}>95.75 m²</Text>
-              </View>
-              <View style={styles.roomDetailItem}>
-                <FontAwesome5 name="users" size={16} color="#6D5BA3" />
-                <Text style={styles.detailLabel}>Số người</Text>
-                <Text style={styles.detailValue}>5 người</Text>
-              </View>
-            </View>
-
-            <View style={styles.roomDetailDivider} />
-
-            <View style={styles.roomDetailFull}>
-              <View style={styles.detailRow}>
-                <FontAwesome5 name="map-marker-alt" size={16} color="#6D5BA3" />
-                <View style={styles.detailContent}>
-                  <Text style={styles.detailLabel}>Địa chỉ</Text>
-                  <Text style={styles.detailValue}>
-                    12 Mạn Thiện, Phường Long Hiệp, Thành Phố Thủ Đức, TP Hồ Chí Minh
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.roomDetailDivider} />
-
-            <View style={styles.amenitiesSection}>
-              <Text style={styles.amenitiesTitle}>Tiện ích</Text>
-              <View style={styles.amenitiesList}>
-                <View style={styles.amenityItem}>
-                  <FontAwesome5 name="bed" size={16} color="#6D5BA3" />
-                  <Text style={styles.amenityText}>1 giường</Text>
-                </View>
-                <View style={styles.amenityItem}>
-                  <FontAwesome5 name="desk" size={16} color="#6D5BA3" />
-                  <Text style={styles.amenityText}>1 bàn học</Text>
-                </View>
-                <View style={styles.amenityItem}>
-                  <FontAwesome5 name="fan" size={16} color="#6D5BA3" />
-                  <Text style={styles.amenityText}>1 quạt</Text>
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.roomDetailDivider} />
-
-            <View style={styles.servicesSection}>
-              <Text style={styles.servicesTitle}>Dịch vụ</Text>
-              <View style={styles.serviceItem}>
-                <View style={styles.serviceHeader}>
-                  <FontAwesome5 name="tshirt" size={16} color="#6D5BA3" />
-                  <Text style={styles.serviceName}>Giặt ủi</Text>
-                  <Text style={styles.servicePrice}>20,000đ/tháng</Text>
-                </View>
-                <Text style={styles.serviceDetail}>• Có lau giặt ủi và phơi đồ</Text>
-              </View>
-              <View style={styles.serviceItem}>
-                <View style={styles.serviceHeader}>
-                  <FontAwesome5 name="wifi" size={16} color="#6D5BA3" />
-                  <Text style={styles.serviceName}>Wifi</Text>
-                  <Text style={styles.servicePrice}>100,000đ/tháng</Text>
-                </View>
-                <Text style={styles.serviceDetail}>• Có wifi tốc độ cao</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-      </View>
-
-      {/* Action Buttons */}
-      <View style={styles.actionButtonsContainer}>
-        <TouchableOpacity style={styles.messageButton}>
-          <LinearGradient
-            colors={['#7B6AB4', '#6D5BA3']}
-            style={styles.gradientButton}
-          >
-            <FontAwesome5 name="home" size={16} color="#FFF" style={styles.buttonIcon} />
-            <Text style={styles.messageButtonText}>Yêu cầu ở ghép</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.transferButton}>
-          <FontAwesome5 name="comments" size={16} color="#6D5BA3" style={styles.buttonIcon} />
-          <Text style={styles.transferButtonText}>Trò chuyện</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
-  );
+      <TouchableOpacity style={[styles.requestShareButton, { flex: 1 }]}>
+        <FontAwesome5 name="user-friends" size={16} color="#4F46E5" style={{ marginRight: 8 }} />
+        <Text style={styles.requestShareButtonText}>Request to Share</Text>
+      </TouchableOpacity>
+    </View>
+    </View>
+  );  
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
+  container: { 
+    flex: 1, 
+    backgroundColor: '#F9FAFB' 
   },
-  headerContainer: {
-    height: 200,
-    position: 'relative',
+  header: { 
+    height: 280, 
+    position: 'relative' 
   },
-  headerImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
+  headerImage: { 
+    width, 
+    height: 280,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
-  headerGradient: {
+  indicatorContainer: {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: '100%',
-  },
-  headerContent: {
-    position: 'absolute',
-    top: 40,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 20,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  profileCard: {
-    backgroundColor: '#FFF',
-    marginTop: -50,
-    marginHorizontal: 20,
-    borderRadius: 16,
-    padding: 20,
+    bottom: 20,
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+    alignSelf: 'center',
+    zIndex: 10,
   },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginRight: 16,
-    borderWidth: 3,
-    borderColor: '#FFF',
-  },
-  nameContainer: {
-    flex: 1,
-  },
-  greeting: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  statusContainer: {
-    marginBottom: 8,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E8F5E9',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    alignSelf: 'flex-start',
-  },
-  dotIndicator: {
+  indicator: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#4CAF50',
-    marginRight: 6,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    marginHorizontal: 4,
   },
-  statusText: {
-    color: '#4CAF50',
-    fontSize: 14,
-    fontWeight: '500',
+  activeIndicator: {
+    backgroundColor: '#FFFFFF',
+    width: 24,
   },
-  infoRow: {
-    flexDirection: 'row',
-    marginTop: 8,
+  gradientOverlay: { 
+    position: 'absolute', 
+    bottom: 0, 
+    left: 0, 
+    right: 0, 
+    height: '100%',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
-  infoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 16,
+  backButton: { 
+    position: 'absolute', 
+    top: 40, 
+    left: 20, 
+    zIndex: 10,
   },
-  infoText: {
-    color: '#666',
-    fontSize: 14,
-    marginLeft: 6,
+  shareButton: { 
+    position: 'absolute', 
+    top: 40, 
+    right: 20, 
+    zIndex: 10,
   },
-  infoContainer: {
-    padding: 20,
-  },
-  infoSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  infoCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '48%',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  infoIconContainer: {
-    width: 40,
-    height: 40,
+  blurView: {
     borderRadius: 20,
-    backgroundColor: '#F0EDF6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  infoLabel: {
-    fontSize: 12,
-    color: '#999',
-    marginBottom: 4,
-  },
-  infoValue: {
-    fontSize: 14,
-    color: '#333',
-    fontWeight: '500',
-  },
-  section: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 16,
-  },
-  introText: {
-    fontSize: 15,
-    color: '#666',
-    lineHeight: 24,
-  },
-  traitsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 8,
-  },
-  traitBadge: {
-    backgroundColor: '#F0EDF6',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    margin: 4,
-  },
-  traitText: {
-    color: '#6D5BA3',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  roomImageContainer: {
-    position: 'relative',
-    marginVertical: 16,
-    borderRadius: 16,
+    padding: 10,
     overflow: 'hidden',
   },
-  roomImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 16,
-  },
-  imageGradient: {
+  priceTag: {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: '50%',
-  },
-  imageCounter: {
-    position: 'absolute',
-    bottom: 12,
-    right: 12,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  imageCounterText: {
-    color: '#FFF',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  roomOwnerInfo: {
-    position: 'absolute',
-    top: 12,
-    left: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    padding: 8,
+    right: 20,
+    bottom: 20,
+    backgroundColor: 'rgba(99, 102, 241, 0.85)',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     borderRadius: 20,
-  },
-  ownerAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    marginRight: 8,
-  },
-  ownerTextContainer: {
-    flex: 1,
-  },
-  ownerName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
-  },
-  ownerBadges: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  ownerBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E8F5E9',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
-  ownerBadgeText: {
+  priceText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  priceSubtext: {
+    color: '#FFFFFF',
     fontSize: 12,
-    color: '#4CAF50',
-    marginLeft: 4,
+    marginLeft: 2,
   },
-  roomDetailsCard: {
-    backgroundColor: '#FFF',
+  profileCard: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    marginTop: -30,
     borderRadius: 16,
-    padding: 20,
-    marginTop: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  roomDetailGrid: {
+  profile: { 
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 20,
   },
-  roomDetailItem: {
-    width: '48%',
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    alignItems: 'flex-start',
+  avatar: { 
+    width: 60, 
+    height: 60, 
+    borderRadius: 30, 
+    borderWidth: 3, 
+    borderColor: '#FFF' 
   },
-  detailLabel: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  detailValue: {
-    fontSize: 14,
-    color: '#333',
-    fontWeight: '500',
-  },
-  roomDetailDivider: {
-    height: 1,
-    backgroundColor: '#F0F0F0',
-    marginVertical: 20,
-  },
-  roomDetailFull: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    padding: 16,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  detailContent: {
+  profileInfo: {
     flex: 1,
     marginLeft: 12,
   },
-  amenitiesSection: {
-    marginBottom: 20,
+  profileName: { 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    color: '#1F2937',
   },
-  amenitiesTitle: {
+  profileBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  profileBadgeText: {
+    fontSize: 12,
+    color: '#6366F1',
+    marginLeft: 4,
+    fontWeight: '500',
+  },
+  messageButton: {
+    backgroundColor: '#6366F1',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileDetails: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  profileDetail: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  profileDetailText: {
+    marginLeft: 6,
+    color: '#4B5563',
+    fontSize: 14,
+  },
+  section: { 
+    padding: 20, 
+    backgroundColor: '#FFFFFF', 
+    marginHorizontal: 16,
+    marginTop: 16, 
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  title: { 
+    fontSize: 22, 
+    fontWeight: 'bold',
+    color: '#1F2937',
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  location: { 
+    marginLeft: 6,
+    color: '#4B5563', 
+    fontSize: 14,
+  },
+  description: { 
+    color: '#6B7280',
+    lineHeight: 20,
+    marginTop: 8,
+  },
+  date: { 
+    fontSize: 12, 
+    color: '#9CA3AF', 
+    marginTop: 12,
+    fontStyle: 'italic',
+  },
+  sectionTitle: { 
+    fontSize: 18, 
+    fontWeight: '600', 
+    marginBottom: 16,
+    color: '#1F2937',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  roomTitle: { 
+    fontWeight: 'bold',
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+    color: '#1F2937',
+  },
+  roomTypeContainer: {
+    backgroundColor: '#EEF2FF',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+    marginTop: 8,
     marginBottom: 12,
   },
-  amenitiesList: {
+  roomType: { 
+    color: '#6366F1',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  roomDesc: { 
+    color: '#6B7280',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  roomStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#F9FAFB',
+    padding: 15,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  roomStat: {
+    alignItems: 'center',
+  },
+  roomStatLabel: {
+    color: '#6B7280',
+    fontSize: 12,
+    marginTop: 6,
+  },
+  roomStatValue: {
+    color: '#1F2937',
+    fontWeight: '600',
+    fontSize: 14,
+    marginTop: 2,
+  },
+  amenitiesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
   },
   amenityItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8F9FA',
-    paddingHorizontal: 12,
+    width: '50%',
     paddingVertical: 8,
-    borderRadius: 12,
-    marginRight: 8,
-    marginBottom: 8,
   },
   amenityText: {
-    fontSize: 14,
-    color: '#666',
     marginLeft: 8,
+    color: '#4B5563',
+    fontSize: 14,
   },
-  servicesSection: {
-    marginTop: 8,
-  },
-  servicesTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 12,
-  },
-  serviceItem: {
-    marginBottom: 16,
+  serviceItem: { 
+    backgroundColor: '#F9FAFB',
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 10, 
   },
   serviceHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
   },
-  serviceName: {
-    fontSize: 14,
-    color: '#333',
-    fontWeight: '500',
-    marginLeft: 8,
-    flex: 1,
+  serviceName: { 
+    fontWeight: 'bold',
+    color: '#1F2937',
+    fontSize: 15,
   },
-  servicePrice: {
-    fontSize: 14,
-    color: '#6D5BA3',
+  serviceDesc: { 
+    color: '#6B7280',
+    marginTop: 4, 
+    fontSize: 13,
+  },
+  servicePrice: { 
+    color: '#6366F1', 
     fontWeight: '600',
+    fontSize: 15,
   },
-  serviceDetail: {
-    fontSize: 14,
-    color: '#666',
-    marginLeft: 24,
-  },
-  actionButtonsContainer: {
-    flexDirection: 'row',
-    padding: 20,
-    backgroundColor: '#FFF',
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
+    backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-  },
-  messageButton: {
-    flex: 1,
-    marginRight: 10,
-  },
-  gradientButton: {
+    borderTopColor: '#F3F4F6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
     flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12, 
+  },
+
+  centeredContainer: { 
+    flex: 1, 
+    alignItems: 'center', 
     justifyContent: 'center',
+    backgroundColor: '#F9FAFB',
+  },
+  loadingText: { 
+    marginTop: 12,
+    color: '#6366F1',
+    fontWeight: '500',
+  },
+  errorText: { 
+    color: '#F87171', 
+    marginTop: 10,
+    textAlign: 'center',
+    padding: 20,
+  },
+  retryButton: { 
     paddingVertical: 12,
-    borderRadius: 12,
+    paddingHorizontal: 24,
+    backgroundColor: '#6366F1', 
+    borderRadius: 8,
+    marginTop: 16,
   },
-  buttonIcon: {
-    marginRight: 8,
-  },
-  messageButtonText: {
+  retryText: { 
     color: '#FFF',
-    fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '600', 
   },
-  transferButton: {
-    flex: 1,
-    flexDirection: 'row',
+  requestShareButton: {
+    backgroundColor: '#E0E7FF', 
+    padding: 16,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F0EDF6',
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginLeft: 10,
+    flexDirection: 'row',
+    marginTop: 12,
   },
-  transferButtonText: {
-    color: '#6D5BA3',
-    fontSize: 16,
+  requestShareButtonText: {
+    color: '#4F46E5', // tím đậm
     fontWeight: '600',
-    marginLeft: 8,
+    fontSize: 16,
+  },
+  contactButton: {
+    backgroundColor: '#E0E7FF', 
+    padding: 16,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    marginTop: 12,
+  },
+  contactButtonText: {
+    color: '#4F46E5', // tím đậm
+    fontWeight: '600',
+    fontSize: 16,
   },
 });
 
-export default RoommateDetailScreen; 
+export default RoommateDetailScreen;
