@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -14,34 +14,117 @@ import {
 import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
+import chatService from '../services/chatService';
+import * as signalR from '@microsoft/signalr';
 
 const ChatScreen = ({ route }) => {
   const navigation = useNavigation();
   const [message, setMessage] = useState('');
-  const { userName, avatar } = route.params;
-  
-  const messages = [
-    {
-      id: '1',
-      text: 'Mình vào ban mới gọi cho nhau ạ',
-      sender: 'user',
-      time: '10:30 AM',
-      status: 'read',
-    },
-    {
-      id: '2',
-      text: 'Không biết bạn có rảnh không, mình nói chuyện thêm đi ạ',
-      sender: 'other',
-      time: '10:31 AM',
-    },
-    {
-      id: '3',
-      text: 'Chào bạn',
-      sender: 'other',
-      time: '10:32 AM',
-    },
-  ];
+  const [messages, setMessages] = useState([]);
+  const [connection, setConnection] = useState(null);
 
+  const { userName, avatar, userId, myId } = route.params;
+
+  useEffect(() => {
+    const fetchChat = async () => {
+      if (!myId) return;
+
+      const res = await chatService.getChatHistory(userId);
+      if (res.isSuccess) {
+        const formatted = res.data.map((msg, index) => {
+          const senderId = msg.sender?.senderId;
+          return {
+            id: index.toString(),
+            text: msg.message,
+            sender: String(senderId) === String(myId) ? 'user' : 'other',
+            time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            status: 'read',
+          };
+        });
+        setMessages(formatted.reverse());
+      }
+    };
+
+    fetchChat();
+  }, [userId, myId]);
+
+  useEffect(() => {
+    const connectToSignalR = async () => {
+      const newConnection = new signalR.HubConnectionBuilder()
+        .withUrl('http://10.0.2.2:5262/chatHub')
+        .withAutomaticReconnect()
+        .build();
+
+      try {
+        await newConnection.start();
+        await newConnection.invoke('JoinChat', myId);
+        setConnection(newConnection);
+
+        // In your SignalR connection setup (inside useEffect)
+newConnection.on('ReceiveMessage', (senderId, receiverId, newMessage, clientTimestamp) => {
+  if ((String(senderId) === String(userId) || String(receiverId) === String(userId))) {
+    const isCurrentUser = String(senderId) === String(myId);
+    
+    // Only add the message if it's from the other user (not from you)
+    // This prevents duplicate messages from your own sends
+    if (!isCurrentUser) {
+      setMessages(prev => [
+        {
+          id: Date.now().toString(),
+          text: newMessage,
+          sender: 'other',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          status: 'read'
+        },
+        ...prev
+      ]);
+    }
+  }
+});
+      } catch (err) {
+        console.error('SignalR Connection Error:', err);
+      }
+    };
+
+    connectToSignalR();
+
+    return () => {
+      if (connection) {
+        connection.stop();
+      }
+    };
+  }, [myId, userId]);
+
+  const messageInputRef = useRef(null); // Create a reference for the TextInput
+
+  const handleSendMessage = async () => {
+    if (!message.trim()) return;
+    
+    const messageToSend = message; // Store message in a temporary variable
+    setMessage(''); // Clear input immediately
+    
+    
+    const res = await chatService.sendMessageToUser({ message: messageToSend, receiverId: userId });
+    if (res.isSuccess) {
+      const newMessage = {
+        id: Date.now().toString(),
+        text: messageToSend,
+        sender: 'user',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        status: 'read',
+      };
+      
+      setMessages(prev => [newMessage, ...prev]);
+      
+      // if (connection) {
+      //   await connection.invoke('SendMessageToUser', myId, userId, messageToSend, Date.now());
+      // }
+    }
+  };
+  
+  
+  
+  
   const renderMessage = ({ item }) => (
     <View style={[
       styles.messageContainer,
@@ -87,8 +170,6 @@ const ChatScreen = ({ route }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <StatusBar barStyle="light-content" />
-      
-      {/* Header */}
       <LinearGradient
         colors={['#6D5BA3', '#8873BE']}
         start={{ x: 0, y: 0 }}
@@ -101,7 +182,7 @@ const ChatScreen = ({ route }) => {
         >
           <Ionicons name="chevron-back" size={24} color="#FFF" />
         </TouchableOpacity>
-        
+
         <View style={styles.headerContent}>
           <View style={styles.headerAvatarContainer}>
             <Image source={avatar} style={styles.headerAvatar} />
@@ -113,31 +194,35 @@ const ChatScreen = ({ route }) => {
         </View>
       </LinearGradient>
 
-      {/* Messages List */}
       <FlatList
-        data={messages}
-        renderItem={renderMessage}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.messagesList}
-        inverted
-      />
+          data={messages}
+          renderItem={renderMessage}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.messagesList}
+          inverted
+          extraData={messages}  // Cập nhật khi messages thay đổi
+        />
 
-      {/* Input Section */}
       <View style={styles.inputContainer}>
         <View style={styles.inputWrapper}>
           <TouchableOpacity style={styles.attachButton}>
             <FontAwesome5 name="plus" size={20} color="#6D5BA3" />
           </TouchableOpacity>
           <TextInput
-            style={styles.input}
-            placeholder="Nhắn tin..."
-            placeholderTextColor="#999"
-            value={message}
-            onChangeText={setMessage}
-            multiline
-          />
+  ref={messageInputRef}
+  style={styles.input}
+  placeholder="Nhắn tin..."
+  placeholderTextColor="#999"
+  value={message} // This should be correctly bound
+  onChangeText={setMessage}
+  multiline
+/>
+
+
+
           <TouchableOpacity 
             style={[styles.sendButton, message ? styles.sendButtonActive : null]}
+            onPress={handleSendMessage}
           >
             <MaterialIcons 
               name="send" 
@@ -150,6 +235,7 @@ const ChatScreen = ({ route }) => {
     </KeyboardAvoidingView>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {

@@ -1,36 +1,68 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '../constants/config';
 
 const postService = {
-  getAllRoommatePosts: async (pageNumber = 1, pageSize = 10) => {
+  getAllRoommatePosts: async (searchRequest) => {
     try {
-      // Đảm bảo pageNumber và pageSize là số và có thể thay đổi giá trị
-      let page = parseInt(pageNumber, 10); // Dùng let để có thể gán lại giá trị
-      let size = parseInt(pageSize, 10);   // Dùng let để có thể gán lại giá trị
+      // Lấy token từ AsyncStorage
+      const token = await AsyncStorage.getItem('token');
 
-      // Kiểm tra nếu giá trị không phải là số thì gán giá trị mặc định
-      if (isNaN(page) || page <= 0) {
-        page = 1;
+      // Extract search parameters from the search request
+      const {
+        pageNumber = 1,
+        pageSize = 10,
+        address,
+        minBudget,
+        maxBudget,
+        minAge,
+        maxAge,
+        gender,
+        lifeStyles,
+        customerTypes
+      } = searchRequest;
+
+      // Build query string with all possible filters
+      let queryParams = new URLSearchParams();
+      
+      // Add pagination parameters
+      queryParams.append('pageNumber', pageNumber);
+      queryParams.append('pageSize', pageSize);
+      
+      // Add optional filters only if they exist
+      if (address) queryParams.append('address', address);
+      if (minBudget) queryParams.append('minBudget', minBudget);
+      if (maxBudget) queryParams.append('maxBudget', maxBudget);
+      if (minAge) queryParams.append('minAge', minAge);
+      if (maxAge) queryParams.append('maxAge', maxAge);
+      if (gender) queryParams.append('gender', gender);
+      
+      // Handle array parameters
+      if (lifeStyles && lifeStyles.length > 0) {
+        lifeStyles.forEach(style => queryParams.append('lifeStyles', style));
       }
-      if (isNaN(size) || size <= 0) {
-        size = 10;
+      
+      if (customerTypes && customerTypes.length > 0) {
+        customerTypes.forEach(type => queryParams.append('customerTypes', type));
       }
 
-      // Truyền tham số pageNumber và pageSize vào URL
-      const response = await fetch(`${API_BASE_URL}/post/get-all-roommate-post?pageNumber=${page}&pageSize=${size}`, {
+      // Prepare the URL with query parameters
+      const url = `${API_BASE_URL}/post/get-all-roommate-post?${queryParams.toString()}`;
+      console.log('Request URL:', url);
+
+      // Make the API request with Authorization header
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,  // Thêm token vào header
         },
       });
 
-      // Log response để debug
+      // Log response for debugging
       console.log('Response Status:', response.status);
-      console.log('Response Headers:', response.headers);
       
       const data = await response.json();
-
-      // Log dữ liệu trả về để debug
       console.log('Response Data:', data);
 
       if (data?.isSuccess) {
@@ -44,6 +76,38 @@ const postService = {
       return { isSuccess: false, message: 'Something went wrong while fetching posts' };
     }
   },
+
+  getRoommatePostDetail: async (postId) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+  
+      const url = `${API_BASE_URL}/post/get-roommate-post-detail?postId=${postId}`;
+      console.log('Request URL for Post Detail:', url);
+  
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+  
+      const data = await response.json();
+  
+      if (data?.isSuccess) {
+        // Sửa ở đây: trả về data thay vì postDetail
+        return { isSuccess: true, message: data.message, data: data.data }; 
+      } else {
+        console.log('Error message from API:', data.message);
+        return { isSuccess: false, message: data.message || 'Failed to fetch roommate post detail' };
+      }
+    } catch (error) {
+      console.error('Error fetching roommate post detail:', error);
+      return { isSuccess: false, message: 'Something went wrong while fetching post detail' };
+    }
+  },
+  
 };
 
 export default postService;

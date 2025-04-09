@@ -1,83 +1,86 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, StatusBar } from 'react-native';
-import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
+import { FontAwesome5 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
+import chatService from '../services/chatService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const MessageScreen = () => {
   const navigation = useNavigation();
+  const [messages, setMessages] = useState([]);
+  const [myId, setMyId] = useState(null);
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      const res = await chatService.getHistoryByUserId();
+      if (res.isSuccess) {
+        const data = res.data.map((item, index) => ({
+          id: item.chatId || index.toString(),
+          sender: item.receiver?.username || 'Unknown',
+          userId: item.receiver?.id,
+          message: item.latestMessage || '',
+          description: '',
+          avatar: item.receiver?.avatar
+            ? { uri: item.receiver.avatar }
+            : require('../assets/logoEasyRommie.png'),
+          time: new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          unread: false,
+          online: false,
+        }));
+        setMessages(data);
+      }
+    };
+    fetchMessages();
+  }, []);
+
+  useEffect(() => {
+    const getMyIdAndMessages = async () => {
+      try {
+        const currentUserId = await AsyncStorage.getItem('userId');
+        if (!currentUserId) return;
+        setMyId(currentUserId);
   
-  const messages = [
-    {
-      id: '1',
-      sender: 'Landlord1',
-      message: 'Cho chủ thuê phòng này nhé',
-      description: 'Không biết giá đó có thấp đối với bạn không chủ',
-      avatar: require('../assets/logoEasyRommie.png'),
-      time: 'Aug 21 - 25, 2023',
-      unread: true,
-      online: true,
-    },
-    {
-      id: '2',
-      sender: 'Customer',
-      message: 'Mình có thấy bạn đang đăng bài kiếm người ở ghép',
-      description: 'Cho mình ở ghép với nhá',
-      avatar: require('../assets/logoEasyRommie.png'),
-      time: '2 hours ago',
-      unread: false,
-      online: true,
-    },
-    {
-      id: '3',
-      sender: 'Airbnb Support',
-      message: 'Mình có thấy bạn đang đăng bài kiếm người ở ghép',
-      description: 'Cho mình ở ghép với nhá',
-      avatar: require('../assets/logoEasyRommie.png'),
-      time: '3 hours ago',
-      unread: false,
-      online: false,
-    },
-    {
-      id: '4',
-      sender: 'Joe',
-      message: 'New event',
-      description: 'Unavailable',
-      avatar: require('../assets/logoEasyRommie.png'),
-      time: 'Aug 21 - 25, 2023',
-      unread: false,
-      online: false,
-    },
-    {
-      id: '5',
-      sender: 'Airbnb Support',
-      message: 'If you leave this message thread, you',
-      description: 'can get back to it from your Airbnb',
-      avatar: require('../assets/logoEasyRommie.png'),
-      time: '5 hours ago',
-      unread: false,
-      online: true,
-    },
-    {
-      id: '6',
-      sender: 'Airbnb Support',
-      message: 'Which reservation do you need help',
-      description: 'with?',
-      avatar: require('../assets/logoEasyRommie.png'),
-      time: '6 hours ago',
-      unread: false,
-      online: false,
-    },
-  ];
+        const res = await chatService.getHistoryByUserId();
+        if (res.isSuccess) {
+          const data = res.data.map((item, index) => ({
+            id: item.chatId || index.toString(),
+            sender: item.receiver?.username || 'Unknown',
+            userId: item.receiver?.id,
+            message: item.latestMessage || '',
+            description: '',
+            avatar: item.receiver?.avatar
+              ? { uri: item.receiver.avatar }
+              : require('../assets/logoEasyRommie.png'),
+            time: new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            unread: false,
+            online: false,
+          }));
+          setMessages(data);
+        }
+      } catch (error) {
+        console.error('Failed to load chat history:', error);
+      }
+    };
+  
+    getMyIdAndMessages();
+  }, []);
+  
+
 
   const renderMessageItem = ({ item }) => (
-    <TouchableOpacity 
-      style={styles.messageItem}
-      onPress={() => navigation.navigate('Chat', { 
-        userName: item.sender,
-        avatar: item.avatar
-      })}
-    >
+    <TouchableOpacity
+  style={styles.messageItem}
+  onPress={() =>
+    navigation.navigate('Chat', {
+      userName: item.sender,
+      avatar: item.avatar,
+      userId: item.userId,
+      myId: myId, // truyền myId sang ChatScreen
+    })
+  }
+  >
+
       <View style={styles.avatarContainer}>
         <Image source={item.avatar} style={styles.avatar} />
         {item.online && <View style={styles.onlineIndicator} />}
@@ -122,11 +125,11 @@ const MessageScreen = () => {
           </View>
         </View>
       </LinearGradient>
-      
+
       <FlatList
         data={messages}
         renderItem={renderMessageItem}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => item.id.toString()}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.messagesList}
       />
@@ -257,4 +260,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default MessageScreen; 
+export default MessageScreen;
