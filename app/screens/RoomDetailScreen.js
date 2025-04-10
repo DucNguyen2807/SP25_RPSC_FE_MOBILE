@@ -1,19 +1,68 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, StatusBar } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, StatusBar, ActivityIndicator } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { API_BASE_URL } from '../constants/config';
 
 const { width } = Dimensions.get('window');
 
 const RoomDetailScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { room } = route.params;
+  const { roomId } = route.params;
+  const [room, setRoom] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [imageLoadError, setImageLoadError] = useState(false);
+
+  useEffect(() => {
+    fetchRoomDetails();
+  }, [roomId]);
+
+  const fetchRoomDetails = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/room/rooms/${roomId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch room details');
+      }
+      const data = await response.json();
+      setRoom(data);
+    } catch (err) {
+      setError(err.message);
+      console.error('Error fetching room details:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleBack = () => {
     navigation.goBack();
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#6D5BA3" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={fetchRoomDetails}>
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (!room) {
+    return null;
+  }
 
   return (
     <View style={styles.container}>
@@ -21,7 +70,23 @@ const RoomDetailScreen = () => {
       
       {/* Header with Image and Gradient Overlay */}
       <View style={styles.imageContainer}>
-        <Image source={room.image} style={styles.roomImage} />
+        <Image 
+          source={
+            !imageLoadError && 
+            room?.roomImages && 
+            room.roomImages.length > 0 && 
+            room.roomImages[0].startsWith('http')
+              ? { 
+                  uri: room.roomImages[0],
+                  cache: 'force-cache'
+                }
+              : require('../assets/logoEasyRommie.png')
+          } 
+          style={styles.roomImage} 
+          defaultSource={require('../assets/logoEasyRommie.png')}
+          onError={() => setImageLoadError(true)}
+          resizeMode="cover"
+        />
         <LinearGradient
           colors={['rgba(0,0,0,0.6)', 'transparent', 'rgba(0,0,0,0.6)']}
           style={styles.imageGradient}
@@ -37,14 +102,17 @@ const RoomDetailScreen = () => {
           {/* Owner Info */}
           <View style={styles.ownerInfo}>
             <View style={styles.avatarContainer}>
-              <Image source={room.image} style={styles.ownerAvatar} />
+              <Image 
+                source={require('../assets/logoEasyRommie.png')} 
+                style={styles.ownerAvatar} 
+              />
               <View style={styles.onlineIndicator} />
             </View>
             <View style={styles.ownerDetails}>
-              <Text style={styles.ownerName}>{room.owner}</Text>
+              <Text style={styles.ownerName}>{room.landlord.landlordName}</Text>
               <View style={styles.verifiedBadge}>
                 <FontAwesome5 name="check-circle" size={14} color="#4CAF50" />
-                <Text style={styles.verifiedText}>Đã xác thực</Text>
+                <Text style={styles.verifiedText}>Verified</Text>
               </View>
             </View>
             <LinearGradient
@@ -53,25 +121,25 @@ const RoomDetailScreen = () => {
               end={{ x: 1, y: 0 }}
               style={styles.statusBadge}
             >
-              <Text style={styles.statusText}>{room.postedTime}</Text>
+              <Text style={styles.statusText}>{new Date(room.updatedAt).toLocaleDateString()}</Text>
             </LinearGradient>
           </View>
 
           {/* Price Section */}
           <View style={styles.priceSection}>
-            <Text style={styles.priceLabel}>Giá thuê</Text>
-            <Text style={styles.priceValue}>{room.price}<Text style={styles.duration}>/tháng</Text></Text>
+            <Text style={styles.priceLabel}>Rent Price</Text>
+            <Text style={styles.priceValue}>
+              {room.roomPrices[0]?.price.toLocaleString()} VND
+              <Text style={styles.duration}>/month</Text>
+            </Text>
           </View>
 
           {/* Description Section */}
           <View style={styles.descriptionCard}>
             <View style={styles.descriptionHeader}>
-              <Text style={styles.sectionTitle}>Mô tả</Text>
+              <Text style={styles.sectionTitle}>Description</Text>
             </View>
-            
-            <Text style={styles.descriptionText}>
-              Nowadays, the need for roommates is increasing due to the increasing cost of living. Sharing a room can help reduce the feeling of loneliness, especially for those who are living far from home.
-            </Text>
+            <Text style={styles.descriptionText}>{room.description}</Text>
           </View>
 
           {/* Room Details Card */}
@@ -81,8 +149,11 @@ const RoomDetailScreen = () => {
                 <FontAwesome5 name="map-marker-alt" size={16} color="#6D5BA3" />
               </View>
               <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Địa chỉ</Text>
-                <Text style={styles.detailValue}>{room.location}</Text>
+                <Text style={styles.detailLabel}>Address</Text>
+                <Text style={styles.detailValue}>
+                  {room.roomType.address.houseNumber} {room.roomType.address.street}, 
+                  {room.roomType.address.district}, {room.roomType.address.city}
+                </Text>
               </View>
             </View>
 
@@ -91,8 +162,8 @@ const RoomDetailScreen = () => {
                 <FontAwesome5 name="home" size={16} color="#6D5BA3" />
               </View>
               <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Kiểu phòng</Text>
-                <Text style={styles.detailValue}>Phòng trọ mặt đất</Text>
+                <Text style={styles.detailLabel}>Room Type</Text>
+                <Text style={styles.detailValue}>{room.roomType.roomTypeName}</Text>
               </View>
             </View>
 
@@ -101,8 +172,8 @@ const RoomDetailScreen = () => {
                 <FontAwesome5 name="users" size={16} color="#6D5BA3" />
               </View>
               <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Số người ở tối đa</Text>
-                <Text style={styles.detailValue}>{room.capacity}</Text>
+                <Text style={styles.detailLabel}>Max Occupancy</Text>
+                <Text style={styles.detailValue}>{room.roomType.maxOccupancy} people</Text>
               </View>
             </View>
 
@@ -111,17 +182,17 @@ const RoomDetailScreen = () => {
                 <FontAwesome5 name="expand-arrows-alt" size={16} color="#6D5BA3" />
               </View>
               <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Diện tích</Text>
-                <Text style={styles.detailValue}>{room.area}</Text>
+                <Text style={styles.detailLabel}>Area</Text>
+                <Text style={styles.detailValue}>{room.roomType.area} m²</Text>
               </View>
             </View>
           </View>
 
           {/* Amenities Section */}
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Tiện ích</Text>
+            <Text style={styles.sectionTitle}>Amenities</Text>
             <View style={styles.amenitiesGrid}>
-              {room.amenities?.map((amenity, index) => (
+              {room.roomAmenities.map((amenity, index) => (
                 <View key={index} style={styles.amenityItem}>
                   <LinearGradient
                     colors={['#6D5BA3', '#8873BE']}
@@ -129,7 +200,7 @@ const RoomDetailScreen = () => {
                   >
                     <FontAwesome5 name="check" size={12} color="#FFF" />
                   </LinearGradient>
-                  <Text style={styles.amenityText}>{amenity}</Text>
+                  <Text style={styles.amenityText}>{amenity.name}</Text>
                 </View>
               ))}
             </View>
@@ -137,32 +208,42 @@ const RoomDetailScreen = () => {
 
           {/* Services Section */}
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Dịch vụ</Text>
+            <Text style={styles.sectionTitle}>Services</Text>
             <View style={styles.servicesCard}>
-              <View style={styles.serviceRow}>
-                <View style={styles.serviceInfo}>
-                  <FontAwesome5 name="wifi" size={16} color="#6D5BA3" />
-                  <Text style={styles.serviceLabel}>Wifi</Text>
+              {room.roomServices.map((service, index) => (
+                <View key={index}>
+                  <View style={styles.serviceRow}>
+                    <View style={styles.serviceInfo}>
+                      <FontAwesome5 name="wifi" size={16} color="#6D5BA3" />
+                      <Text style={styles.serviceLabel}>{service.roomServiceName}</Text>
+                    </View>
+                    {service.prices && service.prices.length > 0 && (
+                      <Text style={styles.servicePrice}>
+                        {service.prices[0].price.toLocaleString()} VND / month
+                      </Text>
+                    )}
+                  </View>
+                  <View style={styles.serviceDescription}>
+                    <Text style={styles.serviceNote}>{service.description}</Text>
+                  </View>
                 </View>
-                <Text style={styles.servicePrice}>100,000 VNĐ / tháng</Text>
-              </View>
-              <View style={styles.serviceDescription}>
-                <Text style={styles.serviceNote}>Có wifi miễn phí và vệ sinh phí đô</Text>
-              </View>
+              ))}
             </View>
           </View>
 
           {/* Additional Info */}
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Thông tin thêm</Text>
+            <Text style={styles.sectionTitle}>Additional Information</Text>
             <View style={styles.additionalInfoCard}>
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Bắt đầu vào ở</Text>
-                <Text style={styles.infoValue}>01/05/2025</Text>
+                <Text style={styles.infoLabel}>Available From</Text>
+                <Text style={styles.infoValue}>
+                  {new Date(room.availableDateToRent).toLocaleDateString()}
+                </Text>
               </View>
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Tiền cọc</Text>
-                <Text style={styles.infoValue}>5,000,000 VNĐ</Text>
+                <Text style={styles.infoLabel}>Status</Text>
+                <Text style={styles.infoValue}>{room.status}</Text>
               </View>
             </View>
           </View>
@@ -177,7 +258,7 @@ const RoomDetailScreen = () => {
             style={styles.messageGradient}
           >
             <FontAwesome5 name="comment-alt" size={16} color="#6D5BA3" />
-            <Text style={styles.messageButtonText}>Trò chuyện</Text>
+            <Text style={styles.messageButtonText}>Chat</Text>
           </LinearGradient>
         </TouchableOpacity>
         <TouchableOpacity style={styles.rentButton}>
@@ -188,7 +269,7 @@ const RoomDetailScreen = () => {
             style={styles.rentGradient}
           >
             <FontAwesome5 name="key" size={16} color="#FFF" />
-            <Text style={styles.rentButtonText}>Thuê phòng</Text>
+            <Text style={styles.rentButtonText}>Rent Room</Text>
           </LinearGradient>
         </TouchableOpacity>
       </View>
@@ -330,53 +411,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  postedTimeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F0EDF6',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  postedTimeText: {
-    fontSize: 12,
-    color: '#666',
-    marginLeft: 4,
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 16,
   },
   descriptionText: {
     fontSize: 14,
     color: '#333',
     lineHeight: 20,
     marginBottom: 16,
-  },
-  highlightContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 8,
-    marginHorizontal: -4,
-  },
-  highlightItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F8F9FA',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    margin: 4,
-  },
-  highlightIcon: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#FFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 6,
-  },
-  highlightText: {
-    fontSize: 12,
-    color: '#333',
-    fontWeight: '500',
   },
   detailsCard: {
     backgroundColor: '#FFF',
@@ -420,12 +465,6 @@ const styles = StyleSheet.create({
   },
   sectionContainer: {
     marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 16,
   },
   amenitiesGrid: {
     flexDirection: 'row',
@@ -566,6 +605,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: '#333',
+    marginBottom: 20,
+  },
+  retryButton: {
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#6D5BA3',
+  },
+  retryButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

@@ -101,7 +101,7 @@ const HomeScreen = () => {
   };
 
   const handleRoomPress = (room) => {
-    navigation.navigate('RoomDetail', { room });
+    navigation.navigate('RoomDetail', { roomId: room.roomId });
   };
 
   const getTimeDifference = (dateString) => {
@@ -120,34 +120,6 @@ const HomeScreen = () => {
       return `${diffDays} days ago`;
     }
   };
-
-  const prefetchImages = async (imageUrls) => {
-    try {
-      await Promise.all(
-        imageUrls.map(url => 
-          Image.prefetch(url).catch(error => {
-            console.log('Error prefetching image:', error);
-            return false;
-          })
-        )
-      );
-    } catch (error) {
-      console.log('Error in prefetchImages:', error);
-    }
-  };
-
-  useEffect(() => {
-    if (rooms.length > 0) {
-      const imageUrls = rooms
-        .filter(room => room.roomImages && room.roomImages.length > 0)
-        .map(room => room.roomImages[0])
-        .filter(url => url && url.startsWith('http'));
-      
-      if (imageUrls.length > 0) {
-        prefetchImages(imageUrls);
-      }
-    }
-  }, [rooms]);
 
   const handleImageError = (roomId) => {
     setImageLoadErrors(prev => ({
@@ -207,11 +179,13 @@ const HomeScreen = () => {
             style={styles.avatar}
           />
           <View style={styles.userDetails}>
-            <Text style={styles.userName}>{item.landlord.landlordName}</Text>
+            <Text style={styles.userName}>
+              {item.landlord?.landlordName || 'Unknown Owner'}
+            </Text>
             <View style={styles.ratingContainer}>
               <FontAwesome5 name="star" size={12} color="#FFB800" />
               <Text style={styles.rating}>4.8</Text>
-              <Text style={styles.reviews}>(12 đánh giá)</Text>
+              <Text style={styles.reviews}>(12 reviews)</Text>
             </View>
           </View>
           <View style={styles.badgeContainer}>
@@ -228,21 +202,23 @@ const HomeScreen = () => {
 
         <View style={styles.roomInfo}>
           <Text style={styles.price}>
-            {item.roomPrices[0]?.price.toLocaleString()} VND
+            {item.roomPrices?.[0]?.price?.toLocaleString() || '0'} VND
             <Text style={styles.duration}>/month</Text>
           </Text>
-          <Text style={styles.description} numberOfLines={2}>{item.description}</Text>
+          <Text style={styles.description} numberOfLines={2}>
+            {item.description || 'No description available'}
+          </Text>
           
           <View style={styles.locationContainer}>
             <FontAwesome5 name="map-marker-alt" size={14} color="#666" />
             <Text style={styles.location}>
-              {item.roomType.address.houseNumber} {item.roomType.address.street}, 
-              {item.roomType.address.district}, {item.roomType.address.city}
+              {item.roomType?.address?.houseNumber || ''} {item.roomType?.address?.street || ''}, 
+              {item.roomType?.address?.district || ''}, {item.roomType?.address?.city || ''}
             </Text>
           </View>
 
           <View style={styles.amenitiesContainer}>
-            {item.roomAmenities.map((amenity, index) => (
+            {item.roomAmenities?.map((amenity, index) => (
               <View key={index} style={styles.amenityBadge}>
                 <Text style={styles.amenityText}>{amenity.name}</Text>
               </View>
@@ -251,7 +227,9 @@ const HomeScreen = () => {
 
           <View style={styles.capacityContainer}>
             <FontAwesome5 name="users" size={14} color="#666" />
-            <Text style={styles.capacity}>Max {item.roomType.maxOccupancy} people</Text>
+            <Text style={styles.capacity}>
+              Max {item.roomType?.maxOccupancy || 0} people
+            </Text>
           </View>
         </View>
       </View>
@@ -539,7 +517,7 @@ const HomeScreen = () => {
         style={styles.header}
       >
         <View style={styles.headerContent}>
-          <View style={styles.searchContainer}>
+      <View style={styles.searchContainer}>
             <FontAwesome5 name="search" size={16} color="#999" style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
@@ -555,7 +533,7 @@ const HomeScreen = () => {
               <Text style={styles.notificationBadgeText}>2</Text>
             </View>
           </TouchableOpacity>
-        </View>
+      </View>
       </LinearGradient>
 
       {/* Filters */}
@@ -651,8 +629,8 @@ const styles = StyleSheet.create({
   searchIcon: {
     marginRight: 12,
   },
-  searchInput: {
-    flex: 1,
+  searchInput: { 
+    flex: 1, 
     fontSize: 15,
     color: '#333',
   },
