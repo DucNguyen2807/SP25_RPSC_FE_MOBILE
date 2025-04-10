@@ -495,6 +495,27 @@ const handleRejectRequest = async (requestId) => {
     );
   }
 
+  if (!postData) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <LinearGradient
+          colors={['#00A67E', '#00A67E']}
+          style={styles.header}
+        >
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <MaterialIcons name="arrow-back" size={24} color="#FFF" />
+          </TouchableOpacity>
+        </LinearGradient>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Không tìm thấy thông tin bài đăng</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient
@@ -998,6 +1019,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   },
 });
 

@@ -6,6 +6,7 @@ import RentedStackNavigator from './RentedStackNavigator';
 import RoommateScreen from '../screens/RoommateScreen';
 import MessageScreen from '../screens/MessageScreen';
 import HomeScreen from '../screens/HomeScreen';
+import MenuScreen from '../screens/MenuScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -64,7 +65,7 @@ const TabNavigator = () => {
             />
             <Tab.Screen
                 name="Menu"
-                component={HomeScreen}
+                component={MenuScreen}
                 options={{
                     tabBarIcon: ({ color }) => (
                         <MaterialIcons name="menu" size={24} color={color} />
