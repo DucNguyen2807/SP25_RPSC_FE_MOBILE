@@ -63,8 +63,10 @@ const MenuScreen = ({ navigation, route }) => {
   };
 
   const handleSentRequestsPress = () => {
+    // If RentedStackNavigator is directly accessible as a top-level tab
     navigation.navigate('Rented', {
-      screen: 'SentRequests'
+      screen: 'SentRequests',
+      params: { refresh: Date.now() }
     });
   };
 

@@ -115,6 +115,33 @@ const roommateService = {
       return { isSuccess: false, message: 'Something went wrong while accepting the roommate request' };
     }
   },
+  // Lấy tất cả các yêu cầu chia sẻ phòng đã gửi
+  getAllSentRoommateRequests: async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const url = `${API_BASE_URL}/customer/get-all-sent-roommate-request`;
+  
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+  
+      const data = await response.json();
+  
+      if (data?.isSuccess) {
+        return { isSuccess: true, data: data.data };
+      } else {
+        return { isSuccess: false, message: data.message || 'Failed to fetch sent roommate requests' };
+      }
+    } catch (error) {
+      console.error('Error fetching sent roommate requests:', error);
+      return { isSuccess: false, message: 'Something went wrong while fetching sent roommate requests' };
+    }
+  },
+
 };
 
 export default roommateService;
