@@ -18,6 +18,7 @@ const CustomerRequestsScreen = ({ navigation }) => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     fetchRequests();
@@ -52,6 +53,42 @@ const CustomerRequestsScreen = ({ navigation }) => {
       console.error('Error fetching requests:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCancelRequest = async (requestId) => {
+    try {
+      setCancelling(true);
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication token not found');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/customerrequestrent/room-rent-request/cancel/${requestId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'accept': '*/*'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to cancel request');
+      }
+
+      const data = await response.json();
+      if (data.isSuccess) {
+        Alert.alert('Success', 'Request cancelled successfully');
+        // Refresh the requests list
+        fetchRequests();
+      } else {
+        throw new Error(data.message || 'Failed to cancel request');
+      }
+    } catch (err) {
+      Alert.alert('Error', err.message);
+      console.error('Error cancelling request:', err);
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -109,7 +146,37 @@ const CustomerRequestsScreen = ({ navigation }) => {
         <Text style={styles.dateText}>
           Created: {new Date(item.createdAt).toLocaleDateString()}
         </Text>
-        <MaterialIcons name="chevron-right" size={24} color="#666" />
+        <View style={styles.footerActions}>
+          {item.status === 'Pending' && (
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => {
+                Alert.alert(
+                  'Cancel Request',
+                  'Are you sure you want to cancel this request?',
+                  [
+                    {
+                      text: 'No',
+                      style: 'cancel'
+                    },
+                    {
+                      text: 'Yes',
+                      onPress: () => handleCancelRequest(item.roomRequestId)
+                    }
+                  ]
+                );
+              }}
+              disabled={cancelling}
+            >
+              {cancelling ? (
+                <ActivityIndicator size="small" color="#FFF" />
+              ) : (
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              )}
+            </TouchableOpacity>
+          )}
+          <MaterialIcons name="chevron-right" size={24} color="#666" />
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -289,6 +356,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     marginTop: 8,
+  },
+  footerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#F44336',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  cancelButtonText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '500',
   },
 });
 

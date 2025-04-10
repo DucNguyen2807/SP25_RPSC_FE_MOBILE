@@ -1,8 +1,9 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Image, Modal, ScrollView, Platform } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, Image, Modal, ScrollView, Platform, ActivityIndicator } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { API_BASE_URL } from '../constants/config';
 
 const MapScreen = ({ route }) => {
   const navigation = useNavigation();
@@ -10,6 +11,8 @@ const MapScreen = ({ route }) => {
   const mapRef = useRef(null);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [markers, setMarkers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const initialRegion = rooms.length > 0 ? {
     latitude: rooms[0].coordinate.latitude,
@@ -47,8 +50,24 @@ const MapScreen = ({ route }) => {
     }
   }, [markers]);
 
-  const handleMarkerPress = (room) => {
-    setSelectedRoom(room);
+  const handleMarkerPress = async (room) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch(`${API_BASE_URL}/room/rooms/${room.roomId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch room details');
+      }
+      const roomDetails = await response.json();
+      setSelectedRoom(roomDetails);
+    } catch (err) {
+      console.error('Error fetching room details:', err);
+      setError('Failed to load room details. Please try again.');
+      setSelectedRoom(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderMarker = (marker) => {
@@ -76,7 +95,21 @@ const MapScreen = ({ route }) => {
       animationType="slide"
       onRequestClose={() => setSelectedRoom(null)}
     >
-      {selectedRoom && (
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#6D5BA3" />
+        </View>
+      ) : error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity 
+            style={styles.retryButton}
+            onPress={() => selectedRoom && handleMarkerPress(selectedRoom)}
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : selectedRoom && (
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <TouchableOpacity
@@ -98,10 +131,11 @@ const MapScreen = ({ route }) => {
               />
               <View style={styles.modalInfo}>
                 <Text style={styles.modalPrice}>
-                  {selectedRoom.price.toLocaleString()} VND/tháng
+                  {selectedRoom.roomPrices?.[0]?.price?.toLocaleString() || '0'} VND/month
                 </Text>
                 <Text style={styles.modalLocation}>
-                  {selectedRoom.location}
+                  {selectedRoom.roomType?.address?.houseNumber} {selectedRoom.roomType?.address?.street}, 
+                  {selectedRoom.roomType?.address?.district}, {selectedRoom.roomType?.address?.city}
                 </Text>
                 <Text style={styles.modalDescription}>
                   {selectedRoom.description}
@@ -110,10 +144,10 @@ const MapScreen = ({ route }) => {
                   style={styles.viewDetailButton}
                   onPress={() => {
                     setSelectedRoom(null);
-                    navigation.navigate('RoomDetail', { room: selectedRoom });
+                    navigation.navigate('RoomDetail', { roomId: selectedRoom.roomId });
                   }}
                 >
-                  <Text style={styles.viewDetailButtonText}>Xem chi tiết</Text>
+                  <Text style={styles.viewDetailButtonText}>View Details</Text>
                 </TouchableOpacity>
               </View>
             </ScrollView>
@@ -199,21 +233,6 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  markerLabelContainer: {
-    position: 'absolute',
-    top: -20,
-    backgroundColor: '#FF385C',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: '#FFF',
-  },
-  markerLabelText: {
-    color: '#FFF',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
   modalContainer: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -266,6 +285,36 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 20,
+  },
+  errorText: {
+    color: '#FF5252',
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: '#6D5BA3',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 
