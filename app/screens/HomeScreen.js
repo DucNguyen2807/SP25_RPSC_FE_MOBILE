@@ -100,9 +100,10 @@ const HomeScreen = () => {
     navigation.navigate('Map', { rooms: roomsWithCoordinates });
   };
 
-  const handleRoomPress = (room) => {
-    navigation.navigate('RoomDetail', { room });
-  };
+// In HomeScreen.js, change handleRoomPress to:
+const handleRoomPress = (room) => {
+  navigation.navigate('RoomDetail', { roomId: room.roomId });
+};
 
   const getTimeDifference = (dateString) => {
     if (!dateString) return 'Today';

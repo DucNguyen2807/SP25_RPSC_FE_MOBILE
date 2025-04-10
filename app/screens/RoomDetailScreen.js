@@ -1,27 +1,112 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, StatusBar } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, StatusBar, ActivityIndicator, FlatList } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
+import roomService from '../services/roomService';
 
 const { width } = Dimensions.get('window');
 
 const RoomDetailScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { room } = route.params;
+  const { roomId } = route.params;
+  
+  const [room, setRoom] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  useEffect(() => {
+    const fetchRoomDetails = async () => {
+      try {
+        setLoading(true);
+        const result = await roomService.getRoomById(roomId);
+        
+        if (result.isSuccess) {
+          setRoom(result.data);
+        } else {
+          setError(result.message);
+        }
+      } catch (err) {
+        setError('Failed to load room details');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRoomDetails();
+  }, [roomId]);
 
   const handleBack = () => {
     navigation.goBack();
   };
 
+  // Helper function to format price
+  const formatPrice = (price) => {
+    return price?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + " VNĐ";
+  };
+
+  const renderImageItem = ({ item, index }) => {
+    return (
+      <View style={styles.imageSlide}>
+        <Image 
+          source={{ uri: item || 'https://via.placeholder.com/400x300' }} 
+          style={styles.roomImage}
+          resizeMode="cover"
+        />
+      </View>
+    );
+  };
+
+  const onViewableItemsChanged = ({ viewableItems }) => {
+    if (viewableItems.length > 0) {
+      setActiveImageIndex(viewableItems[0].index);
+    }
+  };
+
+  const viewabilityConfig = {
+    itemVisiblePercentThreshold: 50
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#6D5BA3" />
+        <Text style={styles.loadingText}>Loading room details...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <FontAwesome5 name="exclamation-circle" size={50} color="#FF6B6B" />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={() => navigation.goBack()}>
+          <Text style={styles.retryButtonText}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       
-      {/* Header with Image and Gradient Overlay */}
+      {/* Image Carousel */}
       <View style={styles.imageContainer}>
-        <Image source={room.image} style={styles.roomImage} />
+        <FlatList
+          data={room.roomImages}
+          renderItem={renderImageItem}
+          keyExtractor={(item, index) => index.toString()}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
+        />
         <LinearGradient
           colors={['rgba(0,0,0,0.6)', 'transparent', 'rgba(0,0,0,0.6)']}
           style={styles.imageGradient}
@@ -29,6 +114,19 @@ const RoomDetailScreen = () => {
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <FontAwesome5 name="arrow-left" size={20} color="#FFF" />
         </TouchableOpacity>
+        
+        {/* Image Indicators */}
+        <View style={styles.imageIndicators}>
+          {room.roomImages.map((_, index) => (
+            <View 
+              key={index} 
+              style={[
+                styles.indicator, 
+                index === activeImageIndex ? styles.activeIndicator : {}
+              ]} 
+            />
+          ))}
+        </View>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -37,11 +135,14 @@ const RoomDetailScreen = () => {
           {/* Owner Info */}
           <View style={styles.ownerInfo}>
             <View style={styles.avatarContainer}>
-              <Image source={room.image} style={styles.ownerAvatar} />
+              <Image 
+                source={{ uri: room.roomImages[0] || 'https://via.placeholder.com/100x100' }} 
+                style={styles.ownerAvatar} 
+              />
               <View style={styles.onlineIndicator} />
             </View>
             <View style={styles.ownerDetails}>
-              <Text style={styles.ownerName}>{room.owner}</Text>
+              <Text style={styles.ownerName}>{room.landlord?.landlordName || 'Landlord'}</Text>
               <View style={styles.verifiedBadge}>
                 <FontAwesome5 name="check-circle" size={14} color="#4CAF50" />
                 <Text style={styles.verifiedText}>Đã xác thực</Text>
@@ -53,24 +154,26 @@ const RoomDetailScreen = () => {
               end={{ x: 1, y: 0 }}
               style={styles.statusBadge}
             >
-              <Text style={styles.statusText}>{room.postedTime}</Text>
+              <Text style={styles.statusText}>{room.status}</Text>
             </LinearGradient>
           </View>
 
           {/* Price Section */}
           <View style={styles.priceSection}>
             <Text style={styles.priceLabel}>Giá thuê</Text>
-            <Text style={styles.priceValue}>{room.price}<Text style={styles.duration}>/tháng</Text></Text>
+            <Text style={styles.priceValue}>
+              {formatPrice(room.roomPrices?.[0]?.price)}<Text style={styles.duration}>/tháng</Text>
+            </Text>
           </View>
 
           {/* Description Section */}
           <View style={styles.descriptionCard}>
             <View style={styles.descriptionHeader}>
-              <Text style={styles.sectionTitle}>Mô tả</Text>
+              <Text style={styles.sectionTitle}>{room.title || 'Mô tả'}</Text>
             </View>
             
             <Text style={styles.descriptionText}>
-              Nowadays, the need for roommates is increasing due to the increasing cost of living. Sharing a room can help reduce the feeling of loneliness, especially for those who are living far from home.
+              {room.description || 'No description available'}
             </Text>
           </View>
 
@@ -92,7 +195,7 @@ const RoomDetailScreen = () => {
               </View>
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Kiểu phòng</Text>
-                <Text style={styles.detailValue}>Phòng trọ mặt đất</Text>
+                <Text style={styles.detailValue}>{room.roomType?.roomTypeName || 'Standard Room'}</Text>
               </View>
             </View>
 
@@ -102,7 +205,7 @@ const RoomDetailScreen = () => {
               </View>
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Số người ở tối đa</Text>
-                <Text style={styles.detailValue}>{room.capacity}</Text>
+                <Text style={styles.detailValue}>{room.roomType?.maxOccupancy || 'N/A'}</Text>
               </View>
             </View>
 
@@ -112,7 +215,7 @@ const RoomDetailScreen = () => {
               </View>
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Diện tích</Text>
-                <Text style={styles.detailValue}>{room.area}</Text>
+                <Text style={styles.detailValue}>{room.roomType?.area || 'N/A'} m²</Text>
               </View>
             </View>
           </View>
@@ -121,7 +224,7 @@ const RoomDetailScreen = () => {
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>Tiện ích</Text>
             <View style={styles.amenitiesGrid}>
-              {room.amenities?.map((amenity, index) => (
+              {room.roomAmenities?.map((amenity, index) => (
                 <View key={index} style={styles.amenityItem}>
                   <LinearGradient
                     colors={['#6D5BA3', '#8873BE']}
@@ -129,7 +232,7 @@ const RoomDetailScreen = () => {
                   >
                     <FontAwesome5 name="check" size={12} color="#FFF" />
                   </LinearGradient>
-                  <Text style={styles.amenityText}>{amenity}</Text>
+                  <Text style={styles.amenityText}>{amenity.name}</Text>
                 </View>
               ))}
             </View>
@@ -138,18 +241,26 @@ const RoomDetailScreen = () => {
           {/* Services Section */}
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>Dịch vụ</Text>
-            <View style={styles.servicesCard}>
-              <View style={styles.serviceRow}>
-                <View style={styles.serviceInfo}>
-                  <FontAwesome5 name="wifi" size={16} color="#6D5BA3" />
-                  <Text style={styles.serviceLabel}>Wifi</Text>
+            {room.roomServices?.map((service, index) => (
+              <View key={index} style={styles.servicesCard}>
+                <View style={styles.serviceRow}>
+                  <View style={styles.serviceInfo}>
+                    <FontAwesome5 
+                      name={service.roomServiceName.toLowerCase().includes('wifi') ? 'wifi' : 'concierge-bell'} 
+                      size={16} 
+                      color="#6D5BA3" 
+                    />
+                    <Text style={styles.serviceLabel}>{service.roomServiceName}</Text>
+                  </View>
+                  <Text style={styles.servicePrice}>
+                    {formatPrice(service.prices?.[0]?.price)} / tháng
+                  </Text>
                 </View>
-                <Text style={styles.servicePrice}>100,000 VNĐ / tháng</Text>
+                <View style={styles.serviceDescription}>
+                  <Text style={styles.serviceNote}>{service.description}</Text>
+                </View>
               </View>
-              <View style={styles.serviceDescription}>
-                <Text style={styles.serviceNote}>Có wifi miễn phí và vệ sinh phí đô</Text>
-              </View>
-            </View>
+            ))}
           </View>
 
           {/* Additional Info */}
@@ -158,11 +269,19 @@ const RoomDetailScreen = () => {
             <View style={styles.additionalInfoCard}>
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Bắt đầu vào ở</Text>
-                <Text style={styles.infoValue}>01/05/2025</Text>
+                <Text style={styles.infoValue}>
+                  {room.availableDateToRent ? new Date(room.availableDateToRent).toLocaleDateString() : 'Ngay bây giờ'}
+                </Text>
               </View>
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Tiền cọc</Text>
-                <Text style={styles.infoValue}>5,000,000 VNĐ</Text>
+                <Text style={styles.infoLabel}>Công ty</Text>
+                <Text style={styles.infoValue}>{room.landlord?.companyName || 'N/A'}</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Cập nhật</Text>
+                <Text style={styles.infoValue}>
+                  {room.updatedAt ? new Date(room.updatedAt).toLocaleDateString() : 'N/A'}
+                </Text>
               </View>
             </View>
           </View>
@@ -201,15 +320,54 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#6D5BA3',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#F8F9FA',
+  },
+  errorText: {
+    marginTop: 16,
+    marginBottom: 24,
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+  },
+  retryButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    backgroundColor: '#6D5BA3',
+    borderRadius: 12,
+  },
+  retryButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   imageContainer: {
     width: width,
     height: width * 0.75,
     position: 'relative',
   },
+  imageSlide: {
+    width: width,
+    height: width * 0.75,
+  },
   roomImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
   },
   imageGradient: {
     position: 'absolute',
@@ -229,6 +387,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backdropFilter: 'blur(10px)',
+  },
+  imageIndicators: {
+    position: 'absolute',
+    bottom: 20,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  indicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    marginHorizontal: 4,
+  },
+  activeIndicator: {
+    width: 24,
+    backgroundColor: '#FFF',
   },
   content: {
     flex: 1,
@@ -330,53 +506,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  postedTimeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F0EDF6',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  postedTimeText: {
-    fontSize: 12,
-    color: '#666',
-    marginLeft: 4,
-  },
   descriptionText: {
     fontSize: 14,
     color: '#333',
     lineHeight: 20,
     marginBottom: 16,
-  },
-  highlightContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 8,
-    marginHorizontal: -4,
-  },
-  highlightItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F8F9FA',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    margin: 4,
-  },
-  highlightIcon: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#FFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 6,
-  },
-  highlightText: {
-    fontSize: 12,
-    color: '#333',
-    fontWeight: '500',
   },
   detailsCard: {
     backgroundColor: '#FFF',
@@ -467,6 +601,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 5,
+    marginBottom: 16,
   },
   serviceRow: {
     flexDirection: 'row',
@@ -569,4 +704,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default RoomDetailScreen; 
+export default RoomDetailScreen;

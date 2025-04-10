@@ -1,98 +1,76 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  SafeAreaView,
-  ScrollView,
-  Modal,
-  Pressable,
-} from 'react-native';
-import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
+import { View, Text, StyleSheet, TouchableOpacity, Image, SafeAreaView, ScrollView, Modal, ActivityIndicator, Alert } from 'react-native';
+import { MaterialIcons, FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import roommateService from '../services/roommateService';
 
-const SentRequestsScreen = ({ navigation }) => {
+const SentRequestsScreen = ({ navigation, route }) => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [sentRequests, setSentRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Mock API response data
-  const sentRequests = [
-    {
-      requestId: "20cc55eb-6ba3-4b67-b133-2a43b045216e",
-      message: "Tui se o voi o tan 6 thang",
-      status: "Pending",
-      createdAt: "2025-04-09T12:08:11.037",
-      postInfo: {
-        postId: "A602C186-58AF-4D66-8397-3953DE305431",
-        title: "Studio Apartment for Rent",
-        description: "Căn loft rộng rãi với tầm nhìn đẹp ra toàn cảnh thành phố, đầy đủ nội thất, sẵn sàng cho người thuê",
-        location: "Binh Thanh District",
-        postOwnerName: "Robert Johnson",
-        postOwnerAvatar: "https://hoanghamobile.com/tin-tuc/wp-content/uploads/2024/07/anh-nu-cute-55.jpg",
-        postOwnerPhone: "0778899001",
-        postOwnerEmail: "customer3@example.com"
+  const fetchSentRequests = async () => {
+    setLoading(true);
+    try {
+      const result = await roommateService.getAllSentRoommateRequests();
+      
+      if (result.isSuccess) {
+        setSentRequests(result.data.sentRequestSharingList);
+        
+        // Update total requests count
+        const totalRequests = result.data.totalSentRequests;
+        try {
+          await AsyncStorage.setItem('requestCount', totalRequests.toString());
+        } catch (storageError) {
+          console.error('Error saving request count:', storageError);
+        }
+      } else {
+        console.error('API returned error:', result.message);
+        setError(result.message);
+        Alert.alert('Error', result.message);
       }
-    },
-    {
-      requestId: "c8fc222a-c65d-4ad0-abb1-d2bf14b40aa6",
-      message: "test",
-      status: "Pending",
-      createdAt: "2025-04-09T12:09:58.49",
-      postInfo: {
-        postId: "357D37B1-F96F-4225-9FF8-F867B25246B0",
-        title: "Cần kiếm người ở ghép, share tiền dễ thở",
-        description: "Căn loft rộng rãi với tầm nhìn đẹp ra toàn cảnh thành phố, đầy đủ nội thất, sẵn sàng cho người thuê",
-        location: "Binh Thanh District",
-        postOwnerName: "Michael Wilson",
-        postOwnerAvatar: "https://i.pinimg.com/1200x/a0/cf/86/a0cf86459174c134ee20d44ab763ad21.jpg",
-        postOwnerPhone: "0665544332",
-        postOwnerEmail: "customer5@example.com"
-      }
+    } catch (err) {
+      console.error('Exception in fetchSentRequests:', err);
+      setError('Failed to load sent requests');
+      Alert.alert('Error', 'Failed to load sent requests');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   useEffect(() => {
-    // Update total requests count
-    const totalRequests = sentRequests.length;
+    fetchSentRequests();
     
-    // Save count to AsyncStorage
-    const saveRequestCount = async () => {
-      try {
-        await AsyncStorage.setItem('requestCount', totalRequests.toString());
-      } catch (error) {
-        console.error('Error saving request count:', error);
-      }
-    };
-    
-    saveRequestCount();
-  }, [sentRequests.length]);
+    // Setup focus listener
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchSentRequests();
+    });
+  
+    return unsubscribe;
+  }, [navigation, route.params?.refresh]);
+
+  const formatPrice = (price) => {
+    return price?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + ' đ';
+  };
 
   const getStatusColor = (status) => {
     switch (status.toLowerCase()) {
-      case 'pending':
-        return '#FFA000';
-      case 'accepted':
-        return '#4CAF50';
-      case 'rejected':
-        return '#FF5252';
-      default:
-        return '#666';
+      case 'pending': return '#FFA000';
+      case 'accepted': return '#4CAF50';
+      case 'rejected': return '#FF5252';
+      default: return '#666';
     }
   };
 
   const getStatusText = (status) => {
     switch (status.toLowerCase()) {
-      case 'pending':
-        return 'Đang chờ';
-      case 'accepted':
-        return 'Đã chấp nhận';
-      case 'rejected':
-        return 'Đã từ chối';
-      default:
-        return status;
+      case 'pending': return 'Đang chờ';
+      case 'accepted': return 'Đã chấp nhận';
+      case 'rejected': return 'Đã từ chối';
+      default: return status;
     }
   };
 
@@ -154,9 +132,15 @@ const SentRequestsScreen = ({ navigation }) => {
               {/* Post Title and Location */}
               <View style={styles.postInfo}>
                 <Text style={styles.postTitle}>{request.postInfo.title}</Text>
-                <View style={styles.locationContainer}>
-                  <MaterialIcons name="location-on" size={16} color="#666" />
-                  <Text style={styles.locationText}>{request.postInfo.location}</Text>
+                <View style={styles.locationPriceContainer}>
+                  <View style={styles.locationContainer}>
+                    <MaterialIcons name="location-on" size={16} color="#666" />
+                    <Text style={styles.locationText}>{request.postInfo.location}</Text>
+                  </View>
+                  <View style={styles.priceContainer}>
+                    <Ionicons name="pricetag-outline" size={16} color="#666" />
+                    <Text style={styles.priceText}>{formatPrice(request.postInfo.price)}</Text>
+                  </View>
                 </View>
               </View>
 
@@ -202,12 +186,12 @@ const SentRequestsScreen = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <LinearGradient
-        colors={['#00A67E', '#00A67E']}
+        colors={['#00A67E', '#008C69']}
         style={styles.header}
       >
         <TouchableOpacity 
           style={styles.backButton}
-          onPress={() => navigation.navigate('Menu')}
+          onPress={() => navigation.goBack()}
         >
           <MaterialIcons name="arrow-back" size={24} color="#FFF" />
         </TouchableOpacity>
@@ -215,71 +199,106 @@ const SentRequestsScreen = ({ navigation }) => {
         <View style={styles.placeholder} />
       </LinearGradient>
 
-      <ScrollView style={styles.content}>
-        {sentRequests.map((request) => (
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#00A67E" />
+          <Text style={styles.loadingText}>Đang tải yêu cầu...</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.errorContainer}>
+          <MaterialIcons name="error-outline" size={48} color="#FF5252" />
+          <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity 
-            key={request.requestId}
-            style={styles.requestCard}
-            onPress={() => handleRequestPress(request)}
+            style={styles.retryButton}
+            onPress={fetchSentRequests}
           >
-            {/* Post Owner Info */}
-            <View style={styles.ownerInfo}>
-              <Image 
-                source={{ uri: request.postInfo.postOwnerAvatar }}
-                style={styles.avatar}
-              />
-              <View style={styles.ownerDetails}>
-                <Text style={styles.ownerName}>{request.postInfo.postOwnerName}</Text>
-                <View style={styles.contactInfo}>
-                  <MaterialIcons name="phone" size={14} color="#666" />
-                  <Text style={styles.contactText}>{request.postInfo.postOwnerPhone}</Text>
+            <Text style={styles.retryButtonText}>Thử lại</Text>
+          </TouchableOpacity>
+        </View>
+      ) : sentRequests.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <FontAwesome5 name="inbox" size={48} color="#CCCCCC" />
+          <Text style={styles.emptyText}>Bạn chưa gửi yêu cầu nào</Text>
+          <TouchableOpacity 
+            style={styles.browseButton}
+            onPress={() => navigation.navigate('Home')}
+          >
+            <Text style={styles.browseButtonText}>Tìm kiếm phòng</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <ScrollView style={styles.content}>
+          {sentRequests.map((request) => (
+            <TouchableOpacity 
+              key={request.requestId}
+              style={styles.requestCard}
+              onPress={() => handleRequestPress(request)}
+            >
+              {/* Post Owner Info */}
+              <View style={styles.ownerInfo}>
+                <Image 
+                  source={{ uri: request.postInfo.postOwnerAvatar }}
+                  style={styles.avatar}
+                />
+                <View style={styles.ownerDetails}>
+                  <Text style={styles.ownerName}>{request.postInfo.postOwnerName}</Text>
+                  <View style={styles.contactInfo}>
+                    <MaterialIcons name="phone" size={14} color="#666" />
+                    <Text style={styles.contactText}>{request.postInfo.postOwnerPhone}</Text>
+                  </View>
                 </View>
               </View>
-            </View>
 
-            {/* Post Title and Location */}
-            <View style={styles.postInfo}>
-              <Text style={styles.postTitle}>{request.postInfo.title}</Text>
-              <View style={styles.locationContainer}>
-                <MaterialIcons name="location-on" size={16} color="#666" />
-                <Text style={styles.locationText}>{request.postInfo.location}</Text>
+              {/* Post Title and Location/Price */}
+              <View style={styles.postInfo}>
+                <Text style={styles.postTitle}>{request.postInfo.title}</Text>
+                <View style={styles.locationPriceContainer}>
+                  <View style={styles.locationContainer}>
+                    <MaterialIcons name="location-on" size={16} color="#666" />
+                    <Text style={styles.locationText}>{request.postInfo.location}</Text>
+                  </View>
+                  <View style={styles.priceContainer}>
+                    <Ionicons name="pricetag-outline" size={16} color="#666" />
+                    <Text style={styles.priceText}>{formatPrice(request.postInfo.price)}</Text>
+                  </View>
+                </View>
               </View>
-            </View>
 
-            {/* Description */}
-            <View style={styles.descriptionContainer}>
-              <Text style={styles.descriptionText} numberOfLines={2}>
-                {request.postInfo.description}
-              </Text>
-            </View>
-
-            {/* Request Message */}
-            <View style={styles.messageContainer}>
-              <View style={styles.messageHeader}>
-                <FontAwesome5 name="comment-alt" size={14} color="#666" />
-                <Text style={styles.messageTitle}>Tin nhắn của bạn</Text>
-              </View>
-              <Text style={styles.messageText}>{request.message}</Text>
-            </View>
-
-            {/* Footer */}
-            <View style={styles.requestFooter}>
-              <View style={styles.dateContainer}>
-                <MaterialIcons name="schedule" size={16} color="#666" />
-                <Text style={styles.dateText}>
-                  {formatDate(request.createdAt)}
+              {/* Description */}
+              <View style={styles.descriptionContainer}>
+                <Text style={styles.descriptionText} numberOfLines={2}>
+                  {request.postInfo.description}
                 </Text>
               </View>
-              <View style={[styles.statusBadge, { backgroundColor: getStatusColor(request.status) + '20' }]}>
-                <View style={[styles.statusDot, { backgroundColor: getStatusColor(request.status) }]} />
-                <Text style={[styles.statusText, { color: getStatusColor(request.status) }]}>
-                  {getStatusText(request.status)}
-                </Text>
+
+              {/* Request Message */}
+              <View style={styles.messageContainer}>
+                <View style={styles.messageHeader}>
+                  <FontAwesome5 name="comment-alt" size={14} color="#666" />
+                  <Text style={styles.messageTitle}>Tin nhắn của bạn</Text>
+                </View>
+                <Text style={styles.messageText} numberOfLines={2}>{request.message}</Text>
               </View>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+
+              {/* Footer */}
+              <View style={styles.requestFooter}>
+                <View style={styles.dateContainer}>
+                  <MaterialIcons name="schedule" size={16} color="#666" />
+                  <Text style={styles.dateText}>
+                    {formatDate(request.createdAt)}
+                  </Text>
+                </View>
+                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(request.status) + '20' }]}>
+                  <View style={[styles.statusDot, { backgroundColor: getStatusColor(request.status) }]} />
+                  <Text style={[styles.statusText, { color: getStatusColor(request.status) }]}>
+                    {getStatusText(request.status)}
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
 
       <DetailModal 
         request={selectedRequest}
@@ -291,204 +310,55 @@ const SentRequestsScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  backButton: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FFF',
-  },
-  placeholder: {
-    width: 40,
-  },
-  content: {
-    flex: 1,
-    padding: 16,
-  },
-  requestCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  ownerInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#F0F0F0',
-  },
-  ownerDetails: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  ownerName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1A1A1A',
-    marginBottom: 4,
-  },
-  contactInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 2,
-  },
-  contactText: {
-    fontSize: 14,
-    color: '#666',
-    marginLeft: 4,
-  },
-  postInfo: {
-    marginBottom: 12,
-  },
-  postTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1A1A1A',
-    marginBottom: 8,
-  },
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  locationText: {
-    fontSize: 14,
-    color: '#666',
-    marginLeft: 4,
-  },
-  descriptionContainer: {
-    marginBottom: 12,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  descriptionText: {
-    fontSize: 14,
-    color: '#424242',
-    lineHeight: 20,
-  },
-  messageContainer: {
-    marginBottom: 12,
-  },
-  messageHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  messageTitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#666',
-    marginLeft: 8,
-  },
-  messageText: {
-    fontSize: 14,
-    color: '#424242',
-    lineHeight: 20,
-    paddingLeft: 22,
-  },
-  requestFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  dateContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  dateText: {
-    fontSize: 14,
-    color: '#666',
-    marginLeft: 4,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 6,
-  },
-  statusText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    width: '90%',
-    maxHeight: '80%',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1A1A1A',
-  },
-  closeButton: {
-    padding: 4,
-  },
-  modalBody: {
-    padding: 16,
-  },
-  statusContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-  },
+  container: { flex: 1, backgroundColor: '#F8F9FA' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 16 },
+  backButton: { padding: 8, borderRadius: 8, backgroundColor: 'rgba(255, 255, 255, 0.2)' },
+  headerTitle: { fontSize: 18, fontWeight: '600', color: '#FFF' },
+  placeholder: { width: 40 },
+  content: { flex: 1, padding: 16 },
+  requestCard: { backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 16, elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
+  ownerInfo: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  avatar: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#F0F0F0' },
+  ownerDetails: { flex: 1, marginLeft: 12 },
+  ownerName: { fontSize: 16, fontWeight: '600', color: '#1A1A1A', marginBottom: 4 },
+  contactInfo: { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
+  contactText: { fontSize: 14, color: '#666', marginLeft: 4 },
+  postInfo: { marginBottom: 12 },
+  postTitle: { fontSize: 18, fontWeight: '600', color: '#1A1A1A', marginBottom: 8 },
+  locationPriceContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  locationContainer: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  locationText: { fontSize: 14, color: '#666', marginLeft: 4 },
+  priceContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E8F5E9', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 },
+  priceText: { fontSize: 14, fontWeight: '500', color: '#00A67E', marginLeft: 4 },
+  descriptionContainer: { marginBottom: 12, paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#F0F0F0', borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
+  descriptionText: { fontSize: 14, color: '#424242', lineHeight: 20 },
+  messageContainer: { marginBottom: 12 },
+  messageHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  messageTitle: { fontSize: 14, fontWeight: '500', color: '#666', marginLeft: 8 },
+  messageText: { fontSize: 14, color: '#424242', lineHeight: 20, paddingLeft: 22 },
+  requestFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  dateContainer: { flexDirection: 'row', alignItems: 'center' },
+  dateText: { fontSize: 14, color: '#666', marginLeft: 4 },
+  statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  statusDot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
+  statusText: { fontSize: 14, fontWeight: '500' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', alignItems: 'center' },
+  modalContent: { backgroundColor: '#FFF', borderRadius: 16, width: '90%', maxHeight: '80%', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
+  modalTitle: { fontSize: 18, fontWeight: '600', color: '#1A1A1A' },
+  closeButton: { padding: 4 },
+  modalBody: { padding: 16 },
+  statusContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#F0F0F0' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  loadingText: { marginTop: 12, fontSize: 16, color: '#666' },
+  errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  errorText: { marginTop: 12, fontSize: 16, color: '#666', textAlign: 'center', marginBottom: 16 },
+  retryButton: { backgroundColor: '#00A67E', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
+  retryButtonText: { color: '#FFF', fontWeight: '600' },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  emptyText: { marginTop: 12, fontSize: 16, color: '#666', textAlign: 'center', marginBottom: 16 },
+  browseButton: { backgroundColor: '#00A67E', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
+  browseButtonText: { color: '#FFF', fontWeight: '600' },
 });
 
-export default SentRequestsScreen; 
+export default SentRequestsScreen;
