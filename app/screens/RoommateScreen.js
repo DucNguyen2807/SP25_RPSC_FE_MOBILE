@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, FlatList, TouchableOpacity, TextInput, Dimensions, ScrollView, Modal, ActivityIndicator } from 'react-native';
 import { FontAwesome5, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';  // Import useFocusEffect
 import { LinearGradient } from 'expo-linear-gradient';
 import postService from '../services/postService';
 import { BlurView } from 'expo-blur';
@@ -34,10 +34,7 @@ const RoommateScreen = () => {
     warning: '#F59E0B',
   };
   
-  useEffect(() => {
-    fetchRoommatePosts();
-  }, []);
-
+  // Fetch roommate posts initially
   const fetchRoommatePosts = async () => {
     setLoading(true);
     setError('');
@@ -67,49 +64,6 @@ const RoommateScreen = () => {
       setLoading(false);
     }
   };
-  
-  const handleFilterChange = (type, value) => setFilters(prev => ({ ...prev, [type]: value }));
-  
-  const toggleLifeStyle = (style) => {
-    setFilters(prev => ({
-      ...prev,
-      lifeStyles: prev.lifeStyles.includes(style)
-        ? prev.lifeStyles.filter(item => item !== style)
-        : [...prev.lifeStyles, style]
-    }));
-  };
-
-  const filterOptions = [
-    { id: 'price', icon: 'wallet', label: 'Budget', active: filters.minBudget || filters.maxBudget },
-    { id: 'gender', icon: 'human-male-female', label: 'Gender', active: filters.gender },
-    { id: 'age', icon: 'account-group', label: 'Age', active: filters.minAge || filters.maxAge },
-    { id: 'lifestyle', icon: 'coffee', label: 'Lifestyle', active: filters.lifeStyles.length > 0 },
-  ];
-
-  const FilterInputRange = ({ label1, label2, value1, value2, onChange1, onChange2, placeholder1, placeholder2 }) => (
-    <View style={styles.inputRow}>
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>{label1}</Text>
-        <TextInput
-          style={styles.input}
-          placeholder={placeholder1}
-          keyboardType="numeric"
-          value={value1 ? value1.toString() : ''}
-          onChangeText={onChange1}
-        />
-      </View>
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>{label2}</Text>
-        <TextInput
-          style={styles.input}
-          placeholder={placeholder2}
-          keyboardType="numeric"
-          value={value2 ? value2.toString() : ''}
-          onChangeText={onChange2}
-        />
-      </View>
-    </View>
-  );
 
   const renderFilterContent = () => {
     switch (activeFilter) {
@@ -175,17 +129,11 @@ const RoommateScreen = () => {
               {lifeStyleOptions.map((style) => (
                 <TouchableOpacity
                   key={style}
-                  style={[
-                    styles.chip, 
-                    filters.lifeStyles.includes(style) && styles.chipSelected
-                  ]}
+                  style={[styles.chip, filters.lifeStyles.includes(style) && styles.chipSelected]}
                   onPress={() => toggleLifeStyle(style)}
                 >
                   <Text 
-                    style={[
-                      styles.chipText, 
-                      filters.lifeStyles.includes(style) && styles.chipTextSelected
-                    ]}
+                    style={[styles.chipText, filters.lifeStyles.includes(style) && styles.chipTextSelected]}
                   >
                     {style}
                   </Text>
@@ -199,6 +147,57 @@ const RoommateScreen = () => {
         return null;
     }
   };
+  
+
+  // Use focus effect to reload data when tab is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchRoommatePosts();
+    }, [filters, searchText])  // Dependencies are filters and searchText to trigger a reload
+  );
+
+  const handleFilterChange = (type, value) => setFilters(prev => ({ ...prev, [type]: value }));
+  
+  const toggleLifeStyle = (style) => {
+    setFilters(prev => ({
+      ...prev,
+      lifeStyles: prev.lifeStyles.includes(style)
+        ? prev.lifeStyles.filter(item => item !== style)
+        : [...prev.lifeStyles, style]
+    }));
+  };
+
+  const filterOptions = [
+    { id: 'price', icon: 'wallet', label: 'Budget', active: filters.minBudget || filters.maxBudget },
+    { id: 'gender', icon: 'human-male-female', label: 'Gender', active: filters.gender },
+    { id: 'age', icon: 'account-group', label: 'Age', active: filters.minAge || filters.maxAge },
+    { id: 'lifestyle', icon: 'coffee', label: 'Lifestyle', active: filters.lifeStyles.length > 0 },
+  ];
+
+  const FilterInputRange = ({ label1, label2, value1, value2, onChange1, onChange2, placeholder1, placeholder2 }) => (
+    <View style={styles.inputRow}>
+      <View style={styles.inputGroup}>
+        <Text style={styles.inputLabel}>{label1}</Text>
+        <TextInput
+          style={styles.input}
+          placeholder={placeholder1}
+          keyboardType="numeric"
+          value={value1 ? value1.toString() : ''}
+          onChangeText={onChange1}
+        />
+      </View>
+      <View style={styles.inputGroup}>
+        <Text style={styles.inputLabel}>{label2}</Text>
+        <TextInput
+          style={styles.input}
+          placeholder={placeholder2}
+          keyboardType="numeric"
+          value={value2 ? value2.toString() : ''}
+          onChangeText={onChange2}
+        />
+      </View>
+    </View>
+  );
 
   const renderRoommateCard = ({ item }) => (
     <TouchableOpacity
@@ -328,10 +327,7 @@ const RoommateScreen = () => {
           {filterOptions.map(filter => (
             <TouchableOpacity 
               key={filter.id}
-              style={[
-                styles.filterChip, 
-                filter.active && styles.filterChipActive
-              ]}
+              style={[styles.filterChip, filter.active && styles.filterChipActive]}
               onPress={() => {
                 setActiveFilter(filter.id);
                 setFilterModalVisible(true);
@@ -342,10 +338,7 @@ const RoommateScreen = () => {
                 size={16} 
                 color={filter.active ? "#FFF" : themeColors.accent} 
               />
-              <Text style={[
-                styles.filterChipText,
-                filter.active && styles.filterChipTextActive
-              ]}>
+              <Text style={[styles.filterChipText, filter.active && styles.filterChipTextActive]}>
                 {filter.label}
               </Text>
             </TouchableOpacity>
@@ -381,54 +374,56 @@ const RoommateScreen = () => {
 
       {/* Filter Modal */}
       <Modal
-        visible={filterModalVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setFilterModalVisible(false)}
-      >
+  visible={filterModalVisible}
+  transparent={true}
+  animationType="slide"
+  onRequestClose={() => setFilterModalVisible(false)}
+>
+  <TouchableOpacity 
+    style={styles.modalOverlay} 
+    activeOpacity={1}
+    onPress={() => setFilterModalVisible(false)}
+  >
+    <View 
+      style={styles.modalContainer}
+      onStartShouldSetResponder={() => true}
+      onTouchEnd={e => e.stopPropagation()}
+    >
+      {renderFilterContent()} {/* Gọi hàm renderFilterContent */}
+      
+      <View style={styles.modalActions}>
         <TouchableOpacity 
-          style={styles.modalOverlay} 
-          activeOpacity={1}
-          onPress={() => setFilterModalVisible(false)}
+          style={styles.resetButton} 
+          onPress={() => {
+            setFilters({
+              minBudget: null, maxBudget: null, gender: null, 
+              minAge: null, maxAge: null, lifeStyles: [],
+            });
+            setFilterModalVisible(false);
+            fetchRoommatePosts();
+          }}
         >
-          <View 
-            style={styles.modalContainer}
-            onStartShouldSetResponder={() => true}
-            onTouchEnd={e => e.stopPropagation()}
-          >
-            {renderFilterContent()}
-            
-            <View style={styles.modalActions}>
-              <TouchableOpacity 
-                style={styles.resetButton} 
-                onPress={() => {
-                  setFilters({
-                    minBudget: null, maxBudget: null, gender: null, 
-                    minAge: null, maxAge: null, lifeStyles: [],
-                  });
-                  setFilterModalVisible(false);
-                  fetchRoommatePosts();
-                }}
-              >
-                <Text style={styles.resetButtonText}>Reset</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.applyButton}
-                onPress={() => {
-                  setFilterModalVisible(false);
-                  fetchRoommatePosts();
-                }}
-              >
-                <Text style={styles.applyButtonText}>Apply</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          <Text style={styles.resetButtonText}>Reset</Text>
         </TouchableOpacity>
-      </Modal>
+        
+        <TouchableOpacity 
+          style={styles.applyButton}
+          onPress={() => {
+            setFilterModalVisible(false);
+            fetchRoommatePosts();
+          }}
+        >
+          <Text style={styles.applyButtonText}>Apply</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </TouchableOpacity>
+</Modal>
+
     </View>
   );
 };
+
 
 
 const styles = StyleSheet.create({

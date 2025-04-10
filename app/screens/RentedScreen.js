@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,51 +7,148 @@ import {
   Image,
   TouchableOpacity,
   SafeAreaView,
+  StatusBar,
+  ActivityIndicator,
+  Dimensions,
+  RefreshControl,
 } from 'react-native';
-import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import roomService from '../services/roomService';
+import postService from '../services/postService';
+import { useNavigation } from '@react-navigation/native';
+
+const { width } = Dimensions.get('window');
 
 const RentedScreen = ({ navigation }) => {
-  const rentedRoom = {
-    id: 1,
-    landlord: {
-      name: 'Nguyễn Xuân Đức',
-      avatar: require('../assets/logoEasyRommie.png'),
-      isOnline: true,
-    },
-    price: '2,000,000',
-    address: 'Mạn Thiện, Thủ Đức',
-    image: require('../assets/logoEasyRommie.png'),
-    status: 'Đã có 3 người',
-    timestamp: 'Today',
+  const [rentedRoom, setRentedRoom] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [existingPost, setExistingPost] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [customerType, setCustomerType] = useState(null); // Add state for customer type
+
+  // Move fetchData outside of useEffect so it can be reused
+  const fetchData = async () => {
+    try {
+      // Fetch room stay data
+      const roomResult = await roomService.getRoomStayByCustomerId();
+      if (roomResult.isSuccess) {
+        const roomData = roomResult.data.roomStay;
+        
+        // Store the customer type
+        setCustomerType(roomData.roomStayCustomerType);
+        
+        setRentedRoom({
+          landlordName: roomData.landlordName,
+          landlordAvatar: roomData.landlordAvatar || null, // Add this field
+          price: roomData.room.price,
+          imageUrl: roomData.room.roomCusImages[0]?.imageUrl,
+          status: roomData.room.status,
+          address: roomData.room.location || 'District 2, Ho Chi Minh City',
+          roomId: roomData.room.roomId,
+          title: roomData.room.title,
+          roomTypeName: roomData.room.roomTypeName,
+        });
+        
+        // Only fetch post data if the customer is a Tenant
+        if (roomData.roomStayCustomerType === 'Tenant') {
+          const postResult = await postService.getPostRoommateByCustomerId();
+          if (postResult.isSuccess && postResult.data) {
+            setExistingPost(postResult.data);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false); // Stop refreshing indicator
+    }
   };
 
-  // Giả lập dữ liệu bài đăng của người dùng
-  const myPost = {
-    fullName: 'Nguyễn Xuân Đức',
-    age: '23',
-    gender: 'Nam',
-    occupation: 'Là sinh viên còn đi học',
-    school: 'Đại học FPT',
-    description: 'Xin chào mọi người! Mình là Nguyễn Xuân Đức, hiện đang là sinh viên năm cuối tại trường Đại học FPT, chuyên ngành Công nghệ Thông tin.',
-    price: '4000000',
+  // This function will be called when user pulls to refresh
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchData();
   };
 
-  const handleViewContract = () => {
-    // Navigate to contract view screen
-    navigation.navigate('ContractView');
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Renting':
+        return '#FF9800';
+      case 'Active':
+        return '#4CAF50';
+      case 'Pending':
+        return '#2196F3';
+      default:
+        return '#757575';
+    }
   };
 
-  const handleCreateRoommatePost = () => {
-    navigation.navigate('CreateRoommatePost');
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'Renting':
+        return 'Đang thuê';
+      case 'Active':
+        return 'Hoạt động';
+      case 'Pending':
+        return 'Đang chờ';
+      default:
+        return status;
+    }
   };
 
-  const handleViewMyPost = () => {
-    navigation.navigate('RoommatePostDetail', { postData: myPost });
-  };
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.loadingContainer}>
+        <StatusBar barStyle="light-content" backgroundColor="#6D5BA3" />
+        <ActivityIndicator size="large" color="#6D5BA3" />
+        <Text style={styles.loadingText}>Đang tải thông tin phòng...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (!rentedRoom) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#6D5BA3" />
+        <LinearGradient
+          colors={['#6D5BA3', '#8B75C5']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.header}
+        >
+          <Text style={styles.headerTitle}>Phòng đã thuê</Text>
+          <TouchableOpacity style={styles.notificationButton}>
+            <MaterialIcons name="notifications-none" size={24} color="#FFF" />
+          </TouchableOpacity>
+        </LinearGradient>
+        <View style={styles.emptyStateContainer}>
+          <Ionicons name="home-outline" size={80} color="#6D5BA3" />
+          <Text style={styles.emptyStateText}>Bạn chưa thuê phòng nào</Text>
+          <TouchableOpacity
+            style={styles.browseRoomsButton}
+            onPress={() => navigation.navigate('Browse')}
+          >
+            <Text style={styles.browseRoomsText}>Tìm phòng ngay</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const formattedPrice = rentedRoom.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+  const statusColor = getStatusColor(rentedRoom.status);
+  const statusText = getStatusText(rentedRoom.status);
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#6D5BA3" />
+      
       {/* Header */}
       <LinearGradient
         colors={['#6D5BA3', '#8B75C5']}
@@ -68,129 +165,208 @@ const RentedScreen = ({ navigation }) => {
         </TouchableOpacity>
       </LinearGradient>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Success Message */}
-        <LinearGradient
-          colors={['#E8F5E9', '#F1F8E9']}
-          style={styles.successMessage}
-        >
-          <View style={styles.successIcon}>
-            <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
-          </View>
-          <Text style={styles.successText}>
-            Phòng của bạn đã được thuê thành công, bây giờ bạn có thể xem hợp đồng với chủ trọ
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl 
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#6D5BA3']} // Color of the refresh spinner
+            tintColor={'#6D5BA3'} // For iOS
+          />
+        }
+      >
+        {/* Status Banner */}
+        <View style={[styles.statusBanner, { backgroundColor: getStatusColor(rentedRoom.status) + '20' }]}>
+          <View style={[styles.statusIndicator, { backgroundColor: statusColor }]} />
+          <Text style={styles.statusBannerText}>
+            Trạng thái phòng: <Text style={[styles.statusBannerValue, { color: statusColor }]}>{statusText}</Text>
           </Text>
-        </LinearGradient>
-
-        {/* Room Card */}
-        <View style={styles.roomCard}>
-          <Image source={rentedRoom.image} style={styles.roomImage} />
-          <LinearGradient
-            colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.7)']}
-            style={styles.imageOverlay}
-          >
-            <View style={styles.priceTag}>
-              <Text style={styles.priceText}>{rentedRoom.price}</Text>
-              <Text style={styles.priceUnit}>VNĐ/tháng</Text>
-            </View>
-          </LinearGradient>
-          
-          <View style={styles.roomInfo}>
-            <View style={styles.addressRow}>
-              <MaterialIcons name="location-on" size={16} color="#6D5BA3" />
-              <Text style={styles.address}>{rentedRoom.address}</Text>
-            </View>
-
-            {/* Landlord Info */}
-            <View style={styles.landlordInfo}>
-              <View style={styles.landlordRow}>
-                <View style={styles.avatarContainer}>
-                  <Image source={rentedRoom.landlord.avatar} style={styles.avatar} />
-                  {rentedRoom.landlord.isOnline && <View style={styles.onlineIndicator} />}
+        </View>
+        
+        <TouchableOpacity 
+            activeOpacity={0.9}
+            onPress={() => navigation.navigate('RoomStayDetail')}
+        >
+          {/* Room Card */}
+          <View style={styles.roomCard}>
+            <View style={styles.roomImageContainer}>
+              {rentedRoom.imageUrl ? (
+                <Image 
+                  source={{ uri: rentedRoom.imageUrl }} 
+                  style={styles.roomImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={[styles.roomImage, styles.placeholderImage]}>
+                  <Ionicons name="image-outline" size={50} color="#DDD" />
                 </View>
-                <View>
-                  <Text style={styles.landlordName}>{rentedRoom.landlord.name}</Text>
+              )}
+              
+              <LinearGradient
+                colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.7)']}
+                style={styles.imageOverlay}
+              >
+                <View style={styles.priceTag}>
+                  <Text style={styles.priceText}>{formattedPrice}</Text>
+                  <Text style={styles.priceUnit}>/tháng</Text>
+                </View>
+              </LinearGradient>
+            </View>
+
+            <View style={styles.roomInfo}>
+              {/* Room Title */}
+              <Text style={styles.roomTitle}>{rentedRoom.title || rentedRoom.roomTypeName}</Text>
+              
+              <View style={styles.addressRow}>
+                <MaterialIcons name="location-on" size={18} color="#6D5BA3" />
+                <Text style={styles.address} numberOfLines={2}>{rentedRoom.address}</Text>
+              </View>
+
+              {/* Status */}
+              <View style={styles.statusRow}>
+                <View style={styles.statusIconContainer}>
+                  <Ionicons 
+                    name={
+                      rentedRoom.status === 'Active' ? 'checkmark-circle' : 
+                      rentedRoom.status === 'Renting' ? 'time' : 'alert-circle'
+                    } 
+                    size={22} 
+                    color={statusColor} 
+                  />
+                </View>
+                <View style={styles.statusTextContainer}>
+                  <Text style={styles.statusLabel}>Trạng thái</Text>
+                  <Text style={[styles.statusValue, { color: statusColor }]}>{statusText}</Text>
+                </View>
+              </View>
+
+              {/* Customer Type Badge */}
+              <View style={styles.customerTypeBadge}>
+                <Text style={styles.customerTypeText}>
+                  {customerType === 'Tenant' ? 'Người thuê chính' : 'Người ở ghép'}
+                </Text>
+              </View>
+
+              {/* Divider */}
+              <View style={styles.divider} />
+
+              {/* Landlord Info */}
+              <View style={styles.landlordContainer}>
+                {rentedRoom.landlordAvatar ? (
+                  <Image
+                    source={{ uri: rentedRoom.landlordAvatar }}
+                    style={styles.landlordAvatarImage}
+                  />
+                ) : (
+                  <View style={styles.landlordAvatarContainer}>
+                    <Text style={styles.landlordAvatar}>{rentedRoom.landlordName.charAt(0)}</Text>
+                  </View>
+                )}
+                <View style={styles.landlordDetails}>
+                  <Text style={styles.landlordName}>{rentedRoom.landlordName}</Text>
                   <Text style={styles.landlordTitle}>Chủ trọ</Text>
                 </View>
-              </View>
-              <View style={styles.statusBadge}>
-                <Text style={styles.statusText}>{rentedRoom.status}</Text>
+                <TouchableOpacity style={styles.contactButton}>
+                  <Ionicons name="chatbubble-ellipses" size={20} color="#FFF" />
+                </TouchableOpacity>
               </View>
             </View>
-
-            {/* Action Buttons */}
-            <View style={styles.actionButtons}>
-              <TouchableOpacity onPress={handleViewContract}>
-                <LinearGradient
-                  colors={['#009688', '#26A69A']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={[styles.button, styles.contractButton]}
-                >
-                  <MaterialIcons name="description" size={20} color="#FFF" />
-                  <Text style={styles.buttonText}>Xem hợp đồng</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
           </View>
-        </View>
+        </TouchableOpacity>
 
-        {/* My Post Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Bài đăng của tôi</Text>
-            <TouchableOpacity style={styles.editButton}>
-              <MaterialIcons name="edit" size={20} color="#6D5BA3" />
-            </TouchableOpacity>
-          </View>
-          
-          <TouchableOpacity onPress={handleViewMyPost}>
+        {/* Only show Create New Post Button if customer type is Tenant and no existing post */}
+        {customerType === 'Tenant' && !existingPost && (
+          <TouchableOpacity 
+            onPress={() => {
+              navigation.navigate('CreateRoommatePost', { 
+                roomId: rentedRoom?.roomId
+              });
+            }}
+            activeOpacity={0.8}  
+          >
             <LinearGradient
-              colors={['#F0EDF6', '#F8F9FA']}
-              style={styles.myPostCard}
+              colors={['#6D5BA3', '#8B75C5']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.createButton}
             >
-              <View style={styles.myPostHeader}>
-                <View>
-                  <View style={styles.postTitleRow}>
-                    <FontAwesome5 name="user-friends" size={16} color="#6D5BA3" />
-                    <Text style={styles.myPostTitle}>Tìm người ở ghép</Text>
-                  </View>
-                  <Text style={styles.myPostPrice}>
-                    {Number(myPost.price).toLocaleString('vi-VN')}đ
-                    <Text style={styles.priceUnit}>/tháng</Text>
-                  </Text>
-                </View>
-                <LinearGradient
-                  colors={['#E8F5E9', '#C8E6C9']}
-                  style={styles.badge}
-                >
-                  <View style={styles.badgeDot} />
-                  <Text style={styles.badgeText}>Đang hoạt động</Text>
-                </LinearGradient>
-              </View>
-              <View style={styles.myPostStats}>
-                <View style={styles.statItem}>
-                  <FontAwesome5 name="user-friends" size={14} color="#6D5BA3" />
-                  <Text style={styles.statText}>5 yêu cầu mới</Text>
-                </View>
-                <MaterialIcons name="chevron-right" size={24} color="#6D5BA3" />
-              </View>
+              <Ionicons name="add-circle-outline" size={20} color="#FFF" style={styles.createButtonIcon} />
+              <Text style={styles.createButtonText}>Tạo bài đăng tìm người ở ghép</Text>
             </LinearGradient>
           </TouchableOpacity>
-        </View>
-
-        {/* Create New Post Button */}
-        <TouchableOpacity onPress={handleCreateRoommatePost}>
-          <LinearGradient
-            colors={['#6D5BA3', '#8B75C5']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.createButton}
+        )}
+        
+        {/* Only show Existing Post Information if customer type is Tenant and post exists */}
+        {customerType === 'Tenant' && existingPost && (
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('RoommatePostDetail', { postId: existingPost.postId })}
+            activeOpacity={0.8}
+            style={styles.existingPostContainer}
           >
-            <FontAwesome5 name="plus" size={16} color="#FFF" style={styles.createIcon} />
-            <Text style={styles.createButtonText}>Tạo bài đăng tìm người ở ghép</Text>
-          </LinearGradient>
-        </TouchableOpacity>
+            <View style={styles.existingPostHeader}>
+              <Ionicons name="document-text" size={18} color="#6D5BA3" />
+              <Text style={styles.existingPostTitle}>Bài đăng tìm người ở ghép của bạn</Text>
+            </View>
+            <View style={styles.existingPostContent}>
+              <Text style={styles.existingPostName} numberOfLines={1}>{existingPost.title}</Text>
+              <Text style={styles.existingPostDescription} numberOfLines={2}>{existingPost.description}</Text>
+              <View style={styles.existingPostFooter}>
+                <View style={styles.existingPostPrice}>
+                  <Text style={styles.existingPostPriceValue}>
+                    {existingPost.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
+                  </Text>
+                </View>
+                <View style={[styles.existingPostStatus, { backgroundColor: getStatusColor(existingPost.status) + '20' }]}>
+                  <Text style={[styles.existingPostStatusText, { color: getStatusColor(existingPost.status) }]}>
+                    {getStatusText(existingPost.status)}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </TouchableOpacity>
+        )}
+        
+        {/* Helpful Tips */}
+        <View style={styles.tipsContainer}>
+          <Text style={styles.tipsTitle}>Mẹo hữu ích</Text>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.tipsScrollContent}
+          >
+            <TouchableOpacity 
+              style={styles.tipCard}
+              onPress={() => navigation.navigate('SaveResource')}
+            >
+              <View style={[styles.tipIcon, { backgroundColor: '#E3F2FD' }]}>
+                <Ionicons name="water-outline" size={24} color="#2196F3" />
+              </View>
+              <Text style={styles.tipTitle}>Tiết kiệm điện nước</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.tipCard}
+              onPress={() => navigation.navigate('HarmoniousLiving')}
+            >
+              <View style={[styles.tipIcon, { backgroundColor: '#E8F5E9' }]}>
+                <Ionicons name="people-outline" size={24} color="#4CAF50" />
+              </View>
+              <Text style={styles.tipTitle}>Sống chung hòa thuận</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.tipCard}
+              onPress={() => navigation.navigate('SecuritySafety')}
+            >
+              <View style={[styles.tipIcon, { backgroundColor: '#FFF3E0' }]}>
+                <Ionicons name="shield-checkmark-outline" size={24} color="#FF9800" />
+              </View>
+              <Text style={styles.tipTitle}>An ninh và an toàn</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -201,303 +377,372 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#6D5BA3',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    paddingTop: 12,
+    paddingBottom: 16,
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: 'bold',
     color: '#FFF',
   },
   notificationButton: {
-    padding: 8,
     position: 'relative',
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   notificationBadge: {
     position: 'absolute',
-    top: 4,
-    right: 4,
+    right: 5,
+    top: 5,
     backgroundColor: '#FF5252',
+    borderRadius: 10,
     width: 18,
     height: 18,
-    borderRadius: 9,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FFF',
   },
   badgeNumber: {
-    color: '#FFF',
+    color: 'white',
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   content: {
     flex: 1,
-    padding: 16,
+    paddingHorizontal: 16,
   },
-  successMessage: {
+  statusBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
+    marginTop: 16,
     marginBottom: 16,
+    padding: 12,
+    borderRadius: 8,
   },
-  successIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
+  statusIndicator: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 8,
   },
-  successText: {
-    flex: 1,
-    color: '#2E7D32',
+  statusBannerText: {
     fontSize: 14,
-    lineHeight: 20,
+    color: '#333',
+  },
+  statusBannerValue: {
+    fontWeight: 'bold',
   },
   roomCard: {
     backgroundColor: '#FFF',
-    borderRadius: 16,
+    borderRadius: 12,
+    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    marginBottom: 24,
+    shadowRadius: 4,
+    elevation: 3,
     overflow: 'hidden',
   },
-  roomImage: {
+  roomImageContainer: {
+    position: 'relative',
     width: '100%',
     height: 200,
   },
+  roomImage: {
+    width: '100%',
+    height: '100%',
+  },
+  placeholderImage: {
+    backgroundColor: '#F0F0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   imageOverlay: {
     position: 'absolute',
-    top: 0,
+    bottom: 0,
     left: 0,
     right: 0,
-    height: 200,
+    height: 80,
     justifyContent: 'flex-end',
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
   },
   priceTag: {
     flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'flex-end',
   },
   priceText: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: 'bold',
     color: '#FFF',
   },
   priceUnit: {
     fontSize: 14,
     color: '#FFF',
     marginLeft: 4,
-    opacity: 0.8,
+    marginBottom: 2,
   },
   roomInfo: {
     padding: 16,
   },
+  roomTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 12,
+  },
   addressRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     marginBottom: 16,
   },
   address: {
     fontSize: 16,
-    color: '#1A1A1A',
-    marginLeft: 8,
+    color: '#333',
     fontWeight: '500',
+    flex: 1,
+    marginLeft: 6,
   },
-  landlordInfo: {
+  statusRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
-    backgroundColor: '#F8F9FA',
-    padding: 12,
-    borderRadius: 12,
   },
-  landlordRow: {
+  statusIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+    marginRight: 12,
+  },
+  statusTextContainer: {
+    flex: 1,
+  },
+  statusLabel: {
+    fontSize: 12,
+    color: '#666',
+  },
+  statusValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  customerTypeBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#6D5BA320',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginBottom: 16,
+  },
+  customerTypeText: {
+    color: '#6D5BA3',
+    fontWeight: '600',
+    fontSize: 12,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#EEEEEE',
+    marginVertical: 16,
+  },
+  landlordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  avatarContainer: {
-    position: 'relative',
+  landlordAvatarContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#6D5BA3',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
   },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: '#FFF',
+  landlordAvatarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
   },
-  onlineIndicator: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#4CAF50',
-    borderWidth: 2,
-    borderColor: '#FFF',
+  landlordAvatar: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  landlordDetails: {
+    flex: 1,
   },
   landlordName: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1A1A1A',
-    marginBottom: 2,
+    fontWeight: '500',
+    color: '#333',
   },
   landlordTitle: {
     fontSize: 12,
     color: '#666',
   },
-  statusBadge: {
-    backgroundColor: '#E3F2FD',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  statusText: {
-    fontSize: 12,
-    color: '#1976D2',
-    fontWeight: '500',
-  },
-  actionButtons: {
-    gap: 12,
-  },
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 14,
-    borderRadius: 12,
-    gap: 8,
-  },
-  buttonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1A1A1A',
-  },
-  editButton: {
-    padding: 8,
-    backgroundColor: '#F0EDF6',
-    borderRadius: 8,
-  },
-  myPostCard: {
-    borderRadius: 16,
-    padding: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  myPostHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  postTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
-  },
-  myPostTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1A1A1A',
-  },
-  myPostPrice: {
-    fontSize: 18,
-    color: '#6D5BA3',
-    fontWeight: '700',
-  },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+  contactButton: {
+    width: 40,
+    height: 40,
     borderRadius: 20,
-    gap: 6,
-  },
-  badgeDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#4CAF50',
-  },
-  badgeText: {
-    color: '#2E7D32',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  myPostStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    backgroundColor: '#6D5BA3',
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFF',
-    padding: 12,
-    borderRadius: 12,
-  },
-  statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  statText: {
-    color: '#1A1A1A',
-    fontSize: 14,
-    fontWeight: '500',
   },
   createButton: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 16,
+    padding: 14,
     borderRadius: 12,
-    elevation: 4,
-    shadowColor: '#6D5BA3',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    marginBottom: 20,
   },
-  createIcon: {
+  createButtonIcon: {
     marginRight: 8,
   },
   createButtonText: {
     color: '#FFF',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '500',
+  },
+  tipsContainer: {
+    marginBottom: 24,
+  },
+  tipsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 12,
+  },
+  tipsScrollContent: {
+    paddingRight: 16,
+  },
+  tipCard: {
+    width: 140,
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    padding: 16,
+    marginRight: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  tipIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  tipTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    color: '#333',
+    marginTop: 16,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  browseRoomsButton: {
+    backgroundColor: '#6D5BA3',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  browseRoomsText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  // Styles for existing post display
+  existingPostContainer: {
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    marginBottom: 20,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  existingPostHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  existingPostTitle: {
+    fontSize: 14,
+    color: '#6D5BA3',
+    fontWeight: '500',
+    marginLeft: 8,
+  },
+  existingPostContent: {
+    paddingLeft: 4,
+  },
+  existingPostName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 6,
+  },
+  existingPostDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 12,
+  },
+  existingPostFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  existingPostPrice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  existingPostPriceValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#6D5BA3',
+  },
+  existingPostStatus: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 16,
+  },
+  existingPostStatusText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
 });
 
-export default RentedScreen; 
+export default RentedScreen;

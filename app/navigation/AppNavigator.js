@@ -10,6 +10,11 @@ import RoommateDetailScreen from '../screens/RoommateDetailScreen';
 import RoomDetailScreen from '../screens/RoomDetailScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import OtpVerificationScreen from '../screens/OtpVerificationScreen';
+import SaveResourcesScreen from '../screens/SaveResourcesScreen';
+import HarmoniousLivingScreen from '../screens/HarmoniousLivingScreen'
+import { SecuritySafetyScreen } from '../screens/SaveResourcesScreen';
+import RoomStayDetail from '../screens/RoomStayDetail';
+import RoommatePostDetail from '../screens/RoommatePostDetail';
 const Stack = createStackNavigator();
 
 const AppNavigator = () => {
@@ -52,6 +57,41 @@ const AppNavigator = () => {
       <Stack.Screen 
         name="MainTabs" 
         component={TabNavigator} 
+      />
+      <Stack.Screen 
+        name="RoomStayDetail" 
+        component={RoomStayDetail}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="RoommatePostDetail" 
+        component={RoommatePostDetail}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="SaveResource" 
+        component={SaveResourcesScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="HarmoniousLiving" 
+        component={HarmoniousLivingScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="SecuritySafety" 
+        component={SecuritySafetyScreen}
+        options={{
+          headerShown: false,
+        }}
       />
       <Stack.Screen 
         name="Chat" 

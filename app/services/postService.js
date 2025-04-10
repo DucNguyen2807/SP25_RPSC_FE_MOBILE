@@ -107,7 +107,84 @@ const postService = {
       return { isSuccess: false, message: 'Something went wrong while fetching post detail' };
     }
   },
-  
+  // Thêm phương thức lấy bài đăng của khách hàng
+getPostRoommateByCustomerId: async () => {
+  try {
+    // Lấy token từ AsyncStorage
+    const token = await AsyncStorage.getItem('token');
+
+    // Kiểm tra nếu không có token
+    if (!token) {
+      throw new Error('Unauthorized: No token found');
+    }
+
+    // Cấu trúc URL cho API request
+    const url = `${API_BASE_URL}/post/Get-Post-Roommate-By-CustomerId`;
+
+    // Thực hiện fetch với header Authorization
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`, // Thêm token vào header
+      },
+    });
+
+    // Kiểm tra phản hồi và lấy dữ liệu
+    const data = await response.json();
+    if (data?.isSuccess) {
+      return { isSuccess: true, message: data.message, data: data.data };
+    } else {
+      return { isSuccess: false, message: data.message || 'Failed to fetch post by customer ID' };
+    }
+  } catch (error) {
+    console.error('Error fetching post by customer ID:', error);
+    return { isSuccess: false, message: 'Something went wrong while fetching post by customer ID' };
+  }
+}, 
+createRoommatePost: async (title, description, price, rentalRoomId) => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    
+    const requestData = {
+      Title: title,
+      Description: description,
+      Price: price,
+      RentalRoomId: rentalRoomId,
+    };
+
+    const url = `${API_BASE_URL}/post/create-roommate-post`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(requestData),
+    });
+
+    const data = await response.json();
+    console.log('API Response:', data);
+
+    if (data?.isSuccess) {
+      return { isSuccess: true, message: data.message, data: data.data };
+    } else {
+      // Pass the errors from the API response
+      return { 
+        isSuccess: false, 
+        message: data.message || data.title || 'Failed to create roommate post',
+        errors: data.errors // Include the original errors object
+      };
+    }
+  } catch (error) {
+    console.error('Error creating roommate post:', error);
+    return { isSuccess: false, message: 'Something went wrong while creating roommate post' };
+  }
+},
+
 };
 
 export default postService;

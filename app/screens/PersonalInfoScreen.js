@@ -174,7 +174,7 @@ const PersonalInfoScreen = () => {
       
       if (result.isSuccess) {
         Alert.alert('Success', 'Profile updated successfully!', [
-          { text: 'OK', onPress: () => navigation.replace('MainTabs') }
+          { text: 'OK', onPress: () => navigation.replace('Login') }
         ]);
       } else {
         Alert.alert('Error', result.message || 'Failed to update profile');

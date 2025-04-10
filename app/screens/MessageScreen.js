@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, StatusBar } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';  // Thêm useFocusEffect
 import { LinearGradient } from 'expo-linear-gradient';
 import chatService from '../services/chatService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -11,28 +11,31 @@ const MessageScreen = () => {
   const [messages, setMessages] = useState([]);
   const [myId, setMyId] = useState(null);
 
-  useEffect(() => {
-    const fetchMessages = async () => {
-      const res = await chatService.getHistoryByUserId();
-      if (res.isSuccess) {
-        const data = res.data.map((item, index) => ({
-          id: item.chatId || index.toString(),
-          sender: item.receiver?.username || 'Unknown',
-          userId: item.receiver?.id,
-          message: item.latestMessage || '',
-          description: '',
-          avatar: item.receiver?.avatar
-            ? { uri: item.receiver.avatar }
-            : require('../assets/logoEasyRommie.png'),
-          time: new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          unread: false,
-          online: false,
-        }));
-        setMessages(data);
-      }
-    };
-    fetchMessages();
-  }, []);
+  // Fetch messages when tab is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchMessages = async () => {
+        const res = await chatService.getHistoryByUserId();
+        if (res.isSuccess) {
+          const data = res.data.map((item, index) => ({
+            id: item.chatId || index.toString(),
+            sender: item.receiver?.username || 'Unknown',
+            userId: item.receiver?.id,
+            message: item.latestMessage || '',
+            description: '',
+            avatar: item.receiver?.avatar
+              ? { uri: item.receiver.avatar }
+              : require('../assets/logoEasyRommie.png'),
+            time: new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            unread: false,
+            online: false,
+          }));
+          setMessages(data);
+        }
+      };
+      fetchMessages();
+    }, [])  // Empty dependency array ensures it runs only when tab is focused
+  );
 
   useEffect(() => {
     const getMyIdAndMessages = async () => {
@@ -41,7 +44,7 @@ const MessageScreen = () => {
         if (!currentUserId) return;
         setMyId(currentUserId);
   
-        const res = await chatService.getHistoryByUserId();
+        const res = await chatService.getHistoryByUserId(); 
         if (res.isSuccess) {
           const data = res.data.map((item, index) => ({
             id: item.chatId || index.toString(),
@@ -64,23 +67,20 @@ const MessageScreen = () => {
     };
   
     getMyIdAndMessages();
-  }, []);
-  
-
+  }, []); // Initial load once
 
   const renderMessageItem = ({ item }) => (
     <TouchableOpacity
-  style={styles.messageItem}
-  onPress={() =>
-    navigation.navigate('Chat', {
-      userName: item.sender,
-      avatar: item.avatar,
-      userId: item.userId,
-      myId: myId, // truyền myId sang ChatScreen
-    })
-  }
-  >
-
+      style={styles.messageItem}
+      onPress={() =>
+        navigation.navigate('Chat', {
+          userName: item.sender,
+          avatar: item.avatar,
+          userId: item.userId,
+          myId: myId, // truyền myId sang ChatScreen
+        })
+      }
+    >
       <View style={styles.avatarContainer}>
         <Image source={item.avatar} style={styles.avatar} />
         {item.online && <View style={styles.onlineIndicator} />}
