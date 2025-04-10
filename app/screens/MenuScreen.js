@@ -63,10 +63,16 @@ const MenuScreen = ({ navigation, route }) => {
   };
 
   const handleSentRequestsPress = () => {
-    console.log("MenuScreen: Navigating to SentRequests");
-    
-    navigation.navigate('SentRequests', { refresh: Date.now() });
+    // Thay vì gọi trực tiếp navigation.navigate('SentRequests'), bạn cần đảm bảo bạn điều hướng đúng
+    navigation.navigate('Rented', {
+      screen: 'SentRequests',  // Đảm bảo bạn điều hướng đến màn hình SentRequests trong RentedStackNavigator
+      params: { refresh: Date.now() }
+    });
+  };
+  
 
+  const handleCustomerRequestsPress = () => {
+    navigation.navigate('CustomerRequests');
   };
 
   return (
@@ -106,6 +112,16 @@ const MenuScreen = ({ navigation, route }) => {
           <Text style={styles.menuItemText}>Đánh giá của tôi</Text>
           <MaterialIcons name="chevron-right" size={24} color="#666" />
         </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.menuItem}
+          onPress={handleCustomerRequestsPress}
+        >
+          <MaterialIcons name="assignment" size={24} color="#666" />
+          <Text style={styles.menuItemText}>Yêu cầu thuê phòng</Text>
+          <MaterialIcons name="chevron-right" size={24} color="#666" />
+        </TouchableOpacity>
+
 
         <TouchableOpacity 
           style={styles.menuItem}
