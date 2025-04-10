@@ -12,11 +12,11 @@ import {
 } from 'react-native';
 import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const SentRequestsScreen = ({ navigation, route }) => {
+const SentRequestsScreen = ({ navigation }) => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [totalRequests, setTotalRequests] = useState(0);
 
   // Mock API response data
   const sentRequests = [
@@ -56,12 +56,18 @@ const SentRequestsScreen = ({ navigation, route }) => {
 
   useEffect(() => {
     // Update total requests count
-    setTotalRequests(sentRequests.length);
+    const totalRequests = sentRequests.length;
     
-    // Pass the count back to MenuScreen
-    if (route.params?.onUpdateCount) {
-      route.params.onUpdateCount(sentRequests.length);
-    }
+    // Save count to AsyncStorage
+    const saveRequestCount = async () => {
+      try {
+        await AsyncStorage.setItem('requestCount', totalRequests.toString());
+      } catch (error) {
+        console.error('Error saving request count:', error);
+      }
+    };
+    
+    saveRequestCount();
   }, [sentRequests.length]);
 
   const getStatusColor = (status) => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,9 +10,33 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const MenuScreen = ({ navigation }) => {
+const MenuScreen = ({ navigation, route }) => {
   const [requestCount, setRequestCount] = useState(0);
+
+  useEffect(() => {
+    // Load request count from AsyncStorage
+    const loadRequestCount = async () => {
+      try {
+        const count = await AsyncStorage.getItem('requestCount');
+        if (count !== null) {
+          setRequestCount(parseInt(count));
+        }
+      } catch (error) {
+        console.error('Error loading request count:', error);
+      }
+    };
+
+    loadRequestCount();
+
+    // Add focus listener to update count when screen is focused
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadRequestCount();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   const handleLogout = () => {
     Alert.alert(
@@ -40,12 +64,7 @@ const MenuScreen = ({ navigation }) => {
 
   const handleSentRequestsPress = () => {
     navigation.navigate('Rented', {
-      screen: 'SentRequests',
-      params: {
-        onUpdateCount: (count) => {
-          setRequestCount(count);
-        }
-      }
+      screen: 'SentRequests'
     });
   };
 
