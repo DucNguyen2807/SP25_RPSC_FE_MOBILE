@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,33 +8,79 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
+  Alert,
 } from 'react-native';
 import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import postService from '../services/postService';
 
-const CreateRoommatePost = ({ navigation }) => {
+const CreateRoommatePost = ({ route, navigation }) => {
+  // Get roomId from route params
+  const { roomId } = route.params || {};
+  
   const [formData, setFormData] = useState({
-    fullName: 'Nguyễn Xuân Đức',
-    age: '23',
-    gender: 'Nam',
-    occupation: 'Là sinh viên còn đi học',
-    school: 'Đại học FPT',
-    description: 'Xin chào mọi người! Mình là Trần Vũ Khải, hiện đang là sinh viên năm cuối tại trường Đại học FPT, chuyên ngành Công nghệ Thông tin. Mình có niềm đam mê với phát triển phần mềm và đặc biệt quan tâm đến các dự án liên quan đến web và ứng dụng di động.',
-    price: '4000000',
+    title: '',
+    description: 'Xin chào mọi người! Mình đang tìm người ở ghép, mình là người gọn gàng, sạch sẽ và tôn trọng không gian riêng tư của người khác.',
+    price: '',
   });
 
-  const handleSubmit = () => {
-    // TODO: Submit form data to API
-    navigation.navigate('RoommatePostDetail', { postData: formData });
-  };
+  // Log roomId for debugging purposes
+  useEffect(() => {
+    console.log('Room ID received:', roomId);
+  }, [roomId]);
 
+  const handleSubmit = async () => {
+    try {
+        const { title, description, price } = formData;
+        if (!roomId) {
+            Alert.alert('Error', 'No room ID provided. Please try again.');
+            return;
+        }
+        
+        const result = await postService.createRoommatePost(title, description, parseFloat(price), roomId);
+        console.log('API Response:', result);
+        
+        if (result.isSuccess) {
+            navigation.navigate('RentedMain', {
+                postId: result.data?.postId,
+                postData: formData
+            });
+            Alert.alert('Success', 'Roommate post created successfully!');
+        } else {
+            // Check if there are validation errors in the result
+            if (result.errors && Object.keys(result.errors).length > 0) {
+                // Create error message string from the errors object
+                const errorMessages = Object.entries(result.errors)
+                    .map(([field, messages]) => {
+                        if (Array.isArray(messages)) {
+                            return `${field}: ${messages.join(', ')}`;
+                        } else {
+                            return `${field}: ${messages}`;
+                        }
+                    })
+                    .join('\n');
+                
+                console.log('Validation Errors:', errorMessages);
+                Alert.alert('Validation Error', errorMessages);
+            } else {
+                // If no validation errors, show general error message
+                Alert.alert('Error', result.message || 'Failed to create roommate post');
+            }
+        }
+    } catch (error) {
+        console.error('Error submitting the form:', error);
+        Alert.alert('Error', 'Something went wrong while creating the post');
+    }
+};
+
+  
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="light-content" />
       
       {/* Header */}
       <LinearGradient
-        colors={['#6D5BA3', '#8B75C5']}
+        colors={['#6366F1', '#4F46E5']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.header}
@@ -45,109 +91,87 @@ const CreateRoommatePost = ({ navigation }) => {
         >
           <MaterialIcons name="arrow-back" size={24} color="#FFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Tạo bài đăng tìm người ở ghép</Text>
+        <Text style={styles.headerTitle}>Tạo Bài Đăng Tìm Bạn Ở Ghép</Text>
       </LinearGradient>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Personal Information */}
-        <View style={styles.section}>
-          <LinearGradient
-            colors={['#F0EDF6', '#F8F9FA']}
-            style={styles.greetingContainer}
-          >
-            <Text style={styles.greeting}>Hello, tui là {formData.fullName}</Text>
-            <View style={styles.infoRow}>
-              <View style={styles.infoBadge}>
-                <FontAwesome5 name="birthday-cake" size={12} color="#6D5BA3" style={styles.infoIcon} />
-                <Text style={styles.infoText}>{formData.age} tuổi</Text>
-              </View>
-              <View style={styles.infoBadge}>
-                <FontAwesome5 name="user" size={12} color="#6D5BA3" style={styles.infoIcon} />
-                <Text style={styles.infoText}>{formData.gender}</Text>
-              </View>
+        {/* Header Illustration */}
+        <View style={styles.illustrationContainer}>
+          <FontAwesome5 name="home" size={64} color="#6366F1" />
+          <Text style={styles.illustrationText}>Tìm Người Ở Ghép</Text>
+        </View>
+        
+        {/* Form Container */}
+        <View style={styles.formContainer}>
+          {/* Title Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Tiêu đề bài đăng</Text>
+            <View style={styles.inputContainer}>
+              <FontAwesome5 name="heading" size={16} color="#6366F1" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                value={formData.title}
+                onChangeText={(text) => setFormData({...formData, title: text})}
+                placeholder="Nhập tiêu đề bài đăng lớn hơn 10 kí tự"
+                placeholderTextColor="#A0A0A0"
+              />
             </View>
-          </LinearGradient>
-        </View>
-
-        {/* Occupation Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <FontAwesome5 name="briefcase" size={16} color="#6D5BA3" />
-            <Text style={styles.sectionTitle}>Công việc/Học vấn hiện tại</Text>
           </View>
-          <TextInput
-            style={styles.input}
-            value={formData.occupation}
-            onChangeText={(text) => setFormData({...formData, occupation: text})}
-            placeholder="VD: Sinh viên năm 3, Nhân viên văn phòng,..."
-            placeholderTextColor="#A0A0A0"
-          />
-        </View>
 
-        {/* School/Company Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <FontAwesome5 name="building" size={16} color="#6D5BA3" />
-            <Text style={styles.sectionTitle}>Nơi học tập/làm việc</Text>
-          </View>
-          <TextInput
-            style={styles.input}
-            value={formData.school}
-            onChangeText={(text) => setFormData({...formData, school: text})}
-            placeholder="VD: Đại học FPT, Công ty ABC,..."
-            placeholderTextColor="#A0A0A0"
-          />
-        </View>
-
-        {/* Description Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <FontAwesome5 name="user-circle" size={16} color="#6D5BA3" />
+          {/* Description Section */}
+          <View style={styles.section}>
             <Text style={styles.sectionTitle}>Giới thiệu về bản thân</Text>
+            <View style={styles.inputContainer}>
+              <FontAwesome5 name="comment-alt" size={16} color="#6366F1" style={[styles.inputIcon, {marginTop: 12}]} />
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={formData.description}
+                onChangeText={(text) => setFormData({...formData, description: text})}
+                placeholder="Chia sẻ về bản thân, thói quen sinh hoạt..."
+                placeholderTextColor="#A0A0A0"
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+            </View>
           </View>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            value={formData.description}
-            onChangeText={(text) => setFormData({...formData, description: text})}
-            placeholder="Chia sẻ về bản thân, sở thích, thói quen sinh hoạt..."
-            placeholderTextColor="#A0A0A0"
-            multiline
-            numberOfLines={4}
-            textAlignVertical="top"
-          />
-        </View>
 
-        {/* Price Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <FontAwesome5 name="money-bill-wave" size={16} color="#6D5BA3" />
-            <Text style={styles.sectionTitle}>Giá phòng muốn share</Text>
-          </View>
-          <View style={styles.priceContainer}>
-            <TextInput
-              style={[styles.input, styles.priceInput]}
-              value={formData.price}
-              onChangeText={(text) => setFormData({...formData, price: text})}
-              placeholder="Giá phòng"
-              placeholderTextColor="#A0A0A0"
-              keyboardType="numeric"
-            />
-            <Text style={styles.priceUnit}>/tháng</Text>
+          {/* Price Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Giá phòng chia sẻ</Text>
+            <View style={styles.inputContainer}>
+              <FontAwesome5 name="coins" size={16} color="#6366F1" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                value={formData.price}
+                onChangeText={(text) => setFormData({...formData, price: text.replace(/[^0-9]/g, '')})}
+                placeholder="Giá phòng (VNĐ)"
+                placeholderTextColor="#A0A0A0"
+                keyboardType="numeric"
+              />
+              <Text style={styles.priceUnit}>VNĐ/tháng</Text>
+            </View>
           </View>
         </View>
 
         {/* Submit Button */}
-        <TouchableOpacity onPress={handleSubmit}>
+        <TouchableOpacity onPress={handleSubmit} activeOpacity={0.8}>
           <LinearGradient
-            colors={['#6D5BA3', '#8B75C5']}
+            colors={['#6366F1', '#4F46E5']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.submitButton}
           >
             <FontAwesome5 name="paper-plane" size={16} color="#FFF" style={styles.submitIcon} />
-            <Text style={styles.submitButtonText}>Đăng tin</Text>
+            <Text style={styles.submitButtonText}>Đăng Tin</Text>
           </LinearGradient>
         </TouchableOpacity>
+        
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            Bài đăng của bạn sẽ được hiển thị cho những người đang tìm phòng ở ghép
+          </Text>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -156,7 +180,7 @@ const CreateRoommatePost = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
+    backgroundColor: '#F9FAFB',
   },
   header: {
     flexDirection: 'row',
@@ -177,106 +201,88 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#FFF',
   },
   content: {
     flex: 1,
     padding: 16,
   },
-  section: {
-    marginBottom: 24,
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+  illustrationContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 20,
+    paddingVertical: 16,
   },
-  greetingContainer: {
-    borderRadius: 12,
-    padding: 16,
-  },
-  greeting: {
-    fontSize: 24,
+  illustrationText: {
+    fontSize: 22,
     fontWeight: '700',
-    color: '#6D5BA3',
-    marginBottom: 12,
+    color: '#4F46E5',
+    marginTop: 12,
   },
-  infoRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  infoBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+  formContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 1,
+    shadowRadius: 12,
+    elevation: 4,
+    marginBottom: 20,
   },
-  infoIcon: {
-    marginRight: 6,
-  },
-  infoText: {
-    fontSize: 14,
-    color: '#666',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
+  section: {
+    marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1A1A1A',
-    marginLeft: 8,
+    color: '#111827',
+    marginBottom: 8,
+  },
+  inputContainer: {
+    position: 'relative',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  inputIcon: {
+    position: 'absolute',
+    left: 12,
+    zIndex: 1,
   },
   input: {
+    flex: 1,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
-    padding: 12,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingLeft: 40,
+    paddingRight: 12,
     fontSize: 16,
-    color: '#1A1A1A',
-    backgroundColor: '#F8F9FA',
+    color: '#111827',
+    backgroundColor: '#F9FAFB',
   },
   textArea: {
     height: 120,
+    paddingTop: 12,
     textAlignVertical: 'top',
-  },
-  priceContainer: {
-    position: 'relative',
-  },
-  priceInput: {
-    paddingRight: 64,
   },
   priceUnit: {
     position: 'absolute',
     right: 12,
-    top: '50%',
-    transform: [{ translateY: -10 }],
-    color: '#666',
-    fontSize: 16,
+    color: '#6B7280',
+    fontSize: 14,
   },
   submitButton: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     marginTop: 8,
-    marginBottom: 32,
+    marginBottom: 16,
     elevation: 4,
-    shadowColor: '#6D5BA3',
+    shadowColor: '#4F46E5',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -289,6 +295,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  footer: {
+    marginBottom: 32,
+    alignItems: 'center',
+  },
+  footerText: {
+    fontSize: 13,
+    color: '#6B7280',
+    textAlign: 'center',
+    paddingHorizontal: 16,
+  },
 });
 
-export default CreateRoommatePost; 
+export default CreateRoommatePost;
+
