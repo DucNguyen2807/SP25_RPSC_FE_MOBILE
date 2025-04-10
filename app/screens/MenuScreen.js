@@ -63,13 +63,10 @@ const MenuScreen = ({ navigation, route }) => {
   };
 
   const handleSentRequestsPress = () => {
-    navigation.navigate('Rented', {
-      screen: 'SentRequests'
-    });
-  };
+    console.log("MenuScreen: Navigating to SentRequests");
+    
+    navigation.navigate('SentRequests', { refresh: Date.now() });
 
-  const handleCustomerRequestsPress = () => {
-    navigation.navigate('CustomerRequests');
   };
 
   return (
@@ -119,15 +116,6 @@ const MenuScreen = ({ navigation, route }) => {
           <View style={styles.badgeContainer}>
             <Text style={styles.badgeText}>{requestCount}</Text>
           </View>
-          <MaterialIcons name="chevron-right" size={24} color="#666" />
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.menuItem}
-          onPress={handleCustomerRequestsPress}
-        >
-          <MaterialIcons name="assignment" size={24} color="#666" />
-          <Text style={styles.menuItemText}>Yêu cầu thuê phòng</Text>
           <MaterialIcons name="chevron-right" size={24} color="#666" />
         </TouchableOpacity>
 
