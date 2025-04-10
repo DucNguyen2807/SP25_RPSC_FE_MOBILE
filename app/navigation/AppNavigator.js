@@ -15,6 +15,8 @@ import HarmoniousLivingScreen from '../screens/HarmoniousLivingScreen'
 import { SecuritySafetyScreen } from '../screens/SaveResourcesScreen';
 import RoomStayDetail from '../screens/RoomStayDetail';
 import RoommatePostDetail from '../screens/RoommatePostDetail';
+import CustomerRequestsScreen from '../screens/CustomerRequestsScreen';
+
 const Stack = createStackNavigator();
 
 const AppNavigator = () => {
@@ -121,12 +123,13 @@ const AppNavigator = () => {
           headerShown: false,
         }}
       />
-      {/* Thêm các màn hình phụ khác ở đây */}
-      {/* Ví dụ:
-      <Stack.Screen name="RoomDetail" component={RoomDetailScreen} />
-      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-      <Stack.Screen name="Settings" component={SettingsScreen} />
-      */}
+      <Stack.Screen 
+        name="CustomerRequests" 
+        component={CustomerRequestsScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
     </Stack.Navigator>
   );
 };

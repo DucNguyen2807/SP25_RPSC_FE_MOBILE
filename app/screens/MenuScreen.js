@@ -68,6 +68,10 @@ const MenuScreen = ({ navigation, route }) => {
     });
   };
 
+  const handleCustomerRequestsPress = () => {
+    navigation.navigate('CustomerRequests');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -115,6 +119,15 @@ const MenuScreen = ({ navigation, route }) => {
           <View style={styles.badgeContainer}>
             <Text style={styles.badgeText}>{requestCount}</Text>
           </View>
+          <MaterialIcons name="chevron-right" size={24} color="#666" />
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.menuItem}
+          onPress={handleCustomerRequestsPress}
+        >
+          <MaterialIcons name="assignment" size={24} color="#666" />
+          <Text style={styles.menuItemText}>Yêu cầu thuê phòng</Text>
           <MaterialIcons name="chevron-right" size={24} color="#666" />
         </TouchableOpacity>
 
