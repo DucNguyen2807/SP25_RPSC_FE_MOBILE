@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Image,
   ActivityIndicator,
   Alert,
 } from 'react-native';
@@ -13,43 +12,94 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { API_BASE_URL } from '../constants/config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+// Import NetInfo from the community package
+import NetInfo from '@react-native-community/netinfo';
 
-const CustomerRequestsScreen = ({ navigation }) => {
+const CustomerRequestsScreen = ({ navigation, route }) => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [cancelling, setCancelling] = useState(false);
+  const [isConnected, setIsConnected] = useState(true);
+  
+  // Get roomId from route params or use default value 111 as provided in your comment
+  const roomId = route.params?.roomId || '111';
 
   useEffect(() => {
-    fetchRequests();
-  }, []);
+    // Check network connectivity
+    const checkConnection = async () => {
+      try {
+        const networkState = await NetInfo.fetch();
+        setIsConnected(networkState.isConnected);
+        if (networkState.isConnected) {
+          fetchRequests();
+        } else {
+          setError('No internet connection. Please check your network settings.');
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Network check error:', err);
+        // Try to fetch anyway
+        fetchRequests();
+      }
+    };
+
+    checkConnection();
+
+    // Add refresh listener for when the screen comes into focus
+    const unsubscribe = navigation.addListener('focus', () => {
+      checkConnection();
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   const fetchRequests = async () => {
     try {
       setLoading(true);
+      setError(null);
+      
       const token = await AsyncStorage.getItem('token');
       if (!token) {
         throw new Error('Authentication token not found');
       }
 
-      const response = await fetch(`${API_BASE_URL}/customerrequestrent/room-rent-request`, {
+      console.log('Using token:', token.substring(0, 10) + '...');
+
+      // Build the URL with required roomId parameter
+      const url = `${API_BASE_URL}/customerrequestrent/room-rent-request?roomId=${roomId}`;
+      
+      console.log('Fetching from URL:', url);
+
+      const response = await fetch(url, {
+        method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch requests');
-      }
+      console.log('Response status:', response.status);
+      
+      // For debugging - log the raw response
+      const responseText = await response.text();
+      console.log('Response text:', responseText);
+      
+      // Now parse the response as JSON if it's not empty
+      const data = responseText ? JSON.parse(responseText) : {};
 
-      const data = await response.json();
-      if (data.isSuccess) {
-        setRequests(data.data);
+      if (response.ok && data.isSuccess) {
+        setRequests(data.data || []);
       } else {
-        throw new Error(data.message || 'Failed to fetch requests');
+        throw new Error(data.message || `Server error: ${response.status}`);
       }
     } catch (err) {
-      setError(err.message);
+      // Handle specific error types
+      if (err.message.includes('Network request failed')) {
+        setError('Network request failed. Please check your connection.');
+      } else {
+        setError(err.message || 'An unknown error occurred');
+      }
       console.error('Error fetching requests:', err);
     } finally {
       setLoading(false);
@@ -68,24 +118,27 @@ const CustomerRequestsScreen = ({ navigation }) => {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'accept': '*/*'
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
         }
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to cancel request');
-      }
+      // For debugging - log the raw response
+      const responseText = await response.text();
+      console.log('Cancel response text:', responseText);
+      
+      // Parse the response if there's content
+      const data = responseText ? JSON.parse(responseText) : {};
 
-      const data = await response.json();
-      if (data.isSuccess) {
+      if (response.ok && data.isSuccess) {
         Alert.alert('Success', 'Request cancelled successfully');
         // Refresh the requests list
         fetchRequests();
       } else {
-        throw new Error(data.message || 'Failed to cancel request');
+        throw new Error(data.message || `Server error: ${response.status}`);
       }
     } catch (err) {
-      Alert.alert('Error', err.message);
+      Alert.alert('Error', err.message || 'An unknown error occurred');
       console.error('Error cancelling request:', err);
     } finally {
       setCancelling(false);
@@ -137,7 +190,7 @@ const CustomerRequestsScreen = ({ navigation }) => {
         <View style={styles.detailRow}>
           <MaterialIcons name="message" size={16} color="#666" />
           <Text style={styles.detailText} numberOfLines={2}>
-            Message: {item.message}
+            Message: {item.message || 'No message'}
           </Text>
         </View>
       </View>
@@ -189,17 +242,6 @@ const CustomerRequestsScreen = ({ navigation }) => {
     );
   }
 
-  if (error) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={fetchRequests}>
-          <Text style={styles.retryButtonText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -213,21 +255,38 @@ const CustomerRequestsScreen = ({ navigation }) => {
           <MaterialIcons name="arrow-back" size={24} color="#FFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Room Requests</Text>
-        <View style={styles.placeholder} />
+        <TouchableOpacity 
+          style={styles.refreshButton}
+          onPress={fetchRequests}
+        >
+          <MaterialIcons name="refresh" size={24} color="#FFF" />
+        </TouchableOpacity>
       </LinearGradient>
 
-      <FlatList
-        data={requests}
-        renderItem={renderRequestItem}
-        keyExtractor={(item) => item.roomRequestId}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <MaterialIcons name="inbox" size={48} color="#666" />
-            <Text style={styles.emptyText}>No requests found</Text>
-          </View>
-        }
-      />
+      {error ? (
+        <View style={styles.errorContainer}>
+          <MaterialIcons name="error-outline" size={48} color="#F44336" />
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={fetchRequests}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={requests}
+          renderItem={renderRequestItem}
+          keyExtractor={(item) => item.roomRequestId}
+          contentContainerStyle={styles.listContent}
+          refreshing={loading}
+          onRefresh={fetchRequests}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <MaterialIcons name="inbox" size={48} color="#666" />
+              <Text style={styles.emptyText}>No requests found</Text>
+            </View>
+          }
+        />
+      )}
     </View>
   );
 };
@@ -248,6 +307,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
+  refreshButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
   headerTitle: {
     flex: 1,
     fontSize: 20,
@@ -256,11 +320,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginHorizontal: 16,
   },
-  placeholder: {
-    width: 40,
-  },
   listContent: {
     padding: 16,
+    flexGrow: 1,
   },
   requestCard: {
     backgroundColor: '#FFF',
@@ -333,7 +395,7 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#F44336',
     fontSize: 16,
-    marginBottom: 16,
+    marginVertical: 16,
     textAlign: 'center',
   },
   retryButton: {
@@ -350,7 +412,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 40,
   },
   emptyText: {
     fontSize: 16,
@@ -375,4 +437,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CustomerRequestsScreen; 
+export default CustomerRequestsScreen;

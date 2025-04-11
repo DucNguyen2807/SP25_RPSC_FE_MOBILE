@@ -495,7 +495,7 @@ const handleRejectRequest = async (requestId) => {
     );
   }
 
-  if (!postData) {
+  if (postData) {
     return (
       <SafeAreaView style={styles.container}>
         <LinearGradient
