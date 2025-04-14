@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { useFocusEffect } from '@react-navigation/native';
 import roomStayService from '../services/roomStayService';
 import { useAuth } from '../context/AuthContext';
 
@@ -42,61 +43,67 @@ const RoomMembersScreen = ({ navigation }) => {
   const { token, isLoading: authLoading } = useAuth();
   const [selectedMember, setSelectedMember] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (authLoading) {
-        return; // Wait for auth to load
-      }
+  const fetchData = useCallback(async () => {
+    if (authLoading) {
+      return;
+    }
 
-      if (!token) {
-        Alert.alert(
-          'Lỗi xác thực',
-          'Vui lòng đăng nhập để xem danh sách thành viên',
-          [
-            {
-              text: 'Đăng nhập',
-              onPress: () => navigation.navigate('Login')
-            },
-            {
-              text: 'Hủy',
-              onPress: () => navigation.goBack(),
-              style: 'cancel'
-            }
-          ]
-        );
-        setLoading(false);
-        return;
-      }
+    if (!token) {
+      Alert.alert(
+        'Lỗi xác thực',
+        'Vui lòng đăng nhập để xem danh sách thành viên',
+        [
+          {
+            text: 'Đăng nhập',
+            onPress: () => navigation.navigate('Login')
+          },
+          {
+            text: 'Hủy',
+            onPress: () => navigation.goBack(),
+            style: 'cancel'
+          }
+        ]
+      );
+      setLoading(false);
+      return;
+    }
 
-      try {
-        const response = await roomStayService.getRoommatesByCustomer(token);
+    try {
+      const response = await roomStayService.getRoommatesByCustomer(token);
+      
+      if (response.isSuccess) {
+        const sortedRoommateList = [...response.data.roommateList].sort((a, b) => {
+          if (a.roomerType === 'Tenant' && b.roomerType !== 'Tenant') return -1;
+          if (a.roomerType !== 'Tenant' && b.roomerType === 'Tenant') return 1;
+          return 0;
+        });
         
-        if (response.isSuccess) {
-          // Sort roommate list to put Tenant at the top
-          const sortedRoommateList = [...response.data.roommateList].sort((a, b) => {
-            if (a.roomerType === 'Tenant' && b.roomerType !== 'Tenant') return -1;
-            if (a.roomerType !== 'Tenant' && b.roomerType === 'Tenant') return 1;
-            return 0;
-          });
-          
-          setRoomData({
-            ...response.data,
-            roommateList: sortedRoommateList
-          });
-        } else {
-          Alert.alert('Lỗi', response.message || 'Không thể tải danh sách thành viên');
-        }
-      } catch (error) {
-        console.error('Error fetching room members:', error);
-        Alert.alert('Lỗi', 'Đã có lỗi xảy ra khi tải danh sách thành viên');
-      } finally {
-        setLoading(false);
+        const currentUserData = sortedRoommateList.find(member => member.isCurrentUser);
+        setCurrentUser(currentUserData);
+        
+        setRoomData({
+          ...response.data,
+          roommateList: sortedRoommateList
+        });
+      } else {
+        Alert.alert('Lỗi', response.message || 'Không thể tải danh sách thành viên');
       }
-    };
-
-    fetchData();
+    } catch (error) {
+      console.error('Error fetching room members:', error);
+      Alert.alert('Lỗi', 'Đã có lỗi xảy ra khi tải danh sách thành viên');
+    } finally {
+      setLoading(false);
+    }
   }, [token, authLoading, navigation]);
+
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      fetchData();
+    }, [fetchData])
+  );
 
   const formatDate = (dateString) => {
     return format(new Date(dateString), 'dd/MM/yyyy', { locale: vi });
@@ -115,6 +122,45 @@ const RoomMembersScreen = ({ navigation }) => {
   const handleOptionPress = (action) => {
     handleMenuClose();
     action();
+  };
+
+  const handleLeaveRoom = async () => {
+    Alert.alert(
+      "Xác nhận rời phòng",
+      "Bạn có chắc chắn muốn gửi yêu cầu rời phòng?",
+      [
+        {
+          text: "Hủy",
+          style: "cancel"
+        },
+        { 
+          text: "Gửi yêu cầu", 
+          onPress: async () => {
+            try {
+              const result = await roomStayService.requestLeaveRoomByMember(token);
+              if (result.isSuccess) {
+                Alert.alert(
+                  "Thành công",
+                  result.message,
+                  [
+                    {
+                      text: "OK",
+                      onPress: () => navigation.goBack()
+                    }
+                  ]
+                );
+              } else {
+                Alert.alert("Lỗi", result.message);
+              }
+            } catch (error) {
+              console.error('Leave room error:', error);
+              Alert.alert('Lỗi', 'Có lỗi xảy ra khi gửi yêu cầu rời phòng');
+            }
+          },
+          style: 'destructive'
+        }
+      ]
+    );
   };
 
   if (loading) {
@@ -354,15 +400,26 @@ const RoomMembersScreen = ({ navigation }) => {
                   />
                 </>
               )}
-              {selectedMember?.roomerType === 'Tenant' && (
-                <MenuOption
-                  icon="exit-to-app"
-                  label="Xem yêu cầu rời phòng"
-                  onPress={() => handleOptionPress(() => 
-                    navigation.navigate('LeaveRequests', { roomId: roomData.roomStay.roomId })
+              {selectedMember?.isCurrentUser && (
+                <>
+                  {currentUser?.roomerType === 'Tenant' ? (
+                    <MenuOption
+                      icon="exit-to-app"
+                      label="Xem yêu cầu rời phòng"
+                      onPress={() => handleOptionPress(() => 
+                        navigation.navigate('LeaveRequests', { roomId: roomData.roomStay.roomId })
+                      )}
+                      color="#00A67E"
+                    />
+                  ) : (
+                    <MenuOption
+                      icon="logout"
+                      label="Rời phòng"
+                      onPress={() => handleOptionPress(handleLeaveRoom)}
+                      color="#FF5252"
+                    />
                   )}
-                  color="#00A67E"
-                />
+                </>
               )}
             </View>
           </BlurView>

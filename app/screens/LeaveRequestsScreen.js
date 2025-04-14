@@ -74,6 +74,36 @@ const LeaveRequestsScreen = ({ navigation }) => {
     }
   };
 
+  const handleAcceptRequest = async (requestId) => {
+    try {
+      const result = await roomStayService.acceptLeaveRoomRequest(token, requestId);
+      if (result.isSuccess) {
+        Alert.alert(
+          "Thành công",
+          "Yêu cầu rời phòng đã được chấp nhận thành công. Danh sách thành viên sẽ được cập nhật.",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                navigation.goBack();
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert("Lỗi", result.message || "Không thể chấp nhận yêu cầu rời phòng");
+      }
+    } catch (error) {
+      console.error('Accept request error:', error);
+      Alert.alert('Lỗi', 'Có lỗi xảy ra khi chấp nhận yêu cầu');
+    }
+  };
+
+  const handleRejectRequest = async (requestId) => {
+    // TODO: Implement reject request functionality
+    Alert.alert('Thông báo', 'Chức năng từ chối yêu cầu sẽ được cập nhật sau');
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
@@ -151,17 +181,13 @@ const LeaveRequestsScreen = ({ navigation }) => {
                     <View style={styles.actionButtons}>
                       <TouchableOpacity 
                         style={[styles.actionButton, styles.acceptButton]}
-                        onPress={() => {
-                          // TODO: Implement accept request
-                        }}
+                        onPress={() => handleAcceptRequest(request.cmoid)}
                       >
                         <Text style={styles.actionButtonText}>Chấp nhận</Text>
                       </TouchableOpacity>
                       <TouchableOpacity 
                         style={[styles.actionButton, styles.rejectButton]}
-                        onPress={() => {
-                          // TODO: Implement reject request
-                        }}
+                        onPress={() => handleRejectRequest(request.cmoid)}
                       >
                         <Text style={styles.actionButtonText}>Từ chối</Text>
                       </TouchableOpacity>

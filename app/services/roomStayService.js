@@ -51,6 +51,48 @@ const roomStayService = {
       console.error('Error fetching leave room requests:', error);
       throw error;
     }
+  },
+
+  async requestLeaveRoomByMember(token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/customer/request-leave-room-by-member`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error requesting leave room:', error);
+      return {
+        isSuccess: false,
+        message: 'Có lỗi xảy ra khi gửi yêu cầu rời phòng'
+      };
+    }
+  },
+
+  async acceptLeaveRoomRequest(token, requestId) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/customer/accept-leave-room-request/${requestId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error accepting leave room request:', error);
+      return {
+        isSuccess: false,
+        message: 'Có lỗi xảy ra khi chấp nhận yêu cầu rời phòng'
+      };
+    }
   }
 };
 
