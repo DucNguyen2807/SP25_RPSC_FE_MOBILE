@@ -80,7 +80,7 @@ const LeaveRequestsScreen = ({ navigation }) => {
       if (result.isSuccess) {
         Alert.alert(
           "Thành công",
-          "Yêu cầu rời phòng đã được chấp nhận thành công. Danh sách thành viên sẽ được cập nhật.",
+          "Yêu cầu rời phòng đã được chấp nhận thành công.",
           [
             {
               text: "OK",

@@ -153,7 +153,7 @@ const RentedScreen = ({ navigation }) => {
           <Text style={styles.emptyStateText}>Bạn chưa thuê phòng nào</Text>
           <TouchableOpacity
             style={styles.browseRoomsButton}
-            onPress={() => navigation.navigate('Browse')}
+            onPress={() => navigation.navigate('MainTabs', { screen: 'Room' })}
           >
             <Text style={styles.browseRoomsText}>Tìm phòng ngay</Text>
           </TouchableOpacity>

@@ -18,6 +18,10 @@ const roomStayService = {
       console.log('API Response:', response.data);
       return response.data;
     } catch (error) {
+      if (error.response?.status === 404) {
+        return error.response.data;
+      }
+      
       if (error.response) {
         // The request was made and the server responded with a status code
         // that falls out of the range of 2xx

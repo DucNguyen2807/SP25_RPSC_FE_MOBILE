@@ -73,6 +73,11 @@ const RoomMembersScreen = ({ navigation }) => {
     try {
       const response = await roomStayService.getRoommatesByCustomer(token);
       
+      if (!response.isSuccess && response.code === 404) {
+        setRoomData(null);
+        return;
+      }
+      
       if (response.isSuccess) {
         const sortedRoommateList = [...response.data.roommateList].sort((a, b) => {
           if (a.roomerType === 'Tenant' && b.roomerType !== 'Tenant') return -1;
@@ -91,8 +96,41 @@ const RoomMembersScreen = ({ navigation }) => {
         Alert.alert('Lỗi', response.message || 'Không thể tải danh sách thành viên');
       }
     } catch (error) {
-      console.error('Error fetching room members:', error);
-      Alert.alert('Lỗi', 'Đã có lỗi xảy ra khi tải danh sách thành viên');
+      const errorMessage = error.response?.data?.message || error.message;
+      
+      if (error.response?.status === 400 || error.response?.status === 401) {
+        Alert.alert(
+          'Lỗi',
+          'Không thể tải danh sách thành viên. Vui lòng đăng nhập lại.',
+          [
+            {
+              text: 'Đăng nhập',
+              onPress: () => navigation.navigate('Login')
+            },
+            {
+              text: 'Hủy',
+              onPress: () => navigation.goBack(),
+              style: 'cancel'
+            }
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Lỗi',
+          'Đã có lỗi xảy ra khi tải danh sách thành viên. Vui lòng thử lại sau.',
+          [
+            {
+              text: 'Thử lại',
+              onPress: () => fetchData()
+            },
+            {
+              text: 'Hủy',
+              onPress: () => navigation.goBack(),
+              style: 'cancel'
+            }
+          ]
+        );
+      }
     } finally {
       setLoading(false);
     }
