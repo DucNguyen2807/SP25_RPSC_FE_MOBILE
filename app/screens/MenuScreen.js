@@ -11,6 +11,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import authService from '../services/authService';
 
 const MenuScreen = ({ navigation, route }) => {
   const [requestCount, setRequestCount] = useState(0);
@@ -38,7 +39,7 @@ const MenuScreen = ({ navigation, route }) => {
     return unsubscribe;
   }, [navigation]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     Alert.alert(
       "Đăng xuất",
       "Bạn có chắc chắn muốn đăng xuất?",
@@ -49,12 +50,27 @@ const MenuScreen = ({ navigation, route }) => {
         },
         { 
           text: "Đăng xuất", 
-          onPress: () => {
-            // TODO: Implement logout logic here
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Login' }],
-            });
+          onPress: async () => {
+            try {
+              const refreshToken = await AsyncStorage.getItem('refreshToken');
+              if (!refreshToken) {
+                Alert.alert('Lỗi', 'Không tìm thấy refresh token');
+                return;
+              }
+
+              const result = await authService.logout(refreshToken);
+              if (result.isSuccess) {
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'Login' }],
+                });
+              } else {
+                Alert.alert('Lỗi', result.message || 'Đăng xuất thất bại');
+              }
+            } catch (error) {
+              console.error('Logout error:', error);
+              Alert.alert('Lỗi', 'Có lỗi xảy ra khi đăng xuất');
+            }
           },
           style: 'destructive'
         }

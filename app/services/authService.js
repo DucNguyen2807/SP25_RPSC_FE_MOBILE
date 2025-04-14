@@ -183,6 +183,34 @@ const authService = {
         message: 'An error occurred while updating profile: ' + error.message 
       };
     }
+  },
+
+  logout: async (refreshToken) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/authentication/logout`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ refreshToken }),
+      });
+      
+      const data = await response.json();
+      
+      if (data?.isSuccess) {
+        // Clear all stored data
+        await AsyncStorage.multiRemove(['token', 'user', 'userId', 'refreshToken']);
+        return { isSuccess: true, message: 'Logout successful' };
+      } else {
+        return { isSuccess: false, message: data.message || 'Logout failed' };
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      return { isSuccess: false, message: 'Something went wrong' };
+    }
   }
 };
 
