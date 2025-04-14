@@ -11,6 +11,8 @@ import {
   ActivityIndicator,
   Dimensions,
   Alert,
+  Modal,
+  Pressable,
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -22,10 +24,24 @@ import { useAuth } from '../context/AuthContext';
 
 const { width } = Dimensions.get('window');
 
+const MenuOption = ({ icon, label, onPress, color = '#333' }) => (
+  <TouchableOpacity 
+    style={styles.menuOption}
+    onPress={onPress}
+  >
+    <View style={styles.menuOptionIcon}>
+      <MaterialIcons name={icon} size={24} color={color} />
+    </View>
+    <Text style={[styles.menuOptionText, { color }]}>{label}</Text>
+  </TouchableOpacity>
+);
+
 const RoomMembersScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [roomData, setRoomData] = useState(null);
   const { token, isLoading: authLoading } = useAuth();
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [showMenu, setShowMenu] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -84,6 +100,21 @@ const RoomMembersScreen = ({ navigation }) => {
 
   const formatDate = (dateString) => {
     return format(new Date(dateString), 'dd/MM/yyyy', { locale: vi });
+  };
+
+  const handleMenuPress = (member) => {
+    setSelectedMember(member);
+    setShowMenu(true);
+  };
+
+  const handleMenuClose = () => {
+    setShowMenu(false);
+    setSelectedMember(null);
+  };
+
+  const handleOptionPress = (action) => {
+    handleMenuClose();
+    action();
   };
 
   if (loading) {
@@ -204,11 +235,9 @@ const RoomMembersScreen = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
       >
         {roomData.roommateList.map((member, index) => (
-          <TouchableOpacity 
+          <View 
             key={member.customerId}
             style={styles.memberCard}
-            onPress={() => navigation.navigate('MemberDetail', { member })}
-            activeOpacity={0.9}
           >
             <LinearGradient
               colors={['rgba(255,255,255,0.9)', 'rgba(255,255,255,0.95)']}
@@ -256,7 +285,12 @@ const RoomMembersScreen = ({ navigation }) => {
                   <Text style={styles.memberType}>{member.customerType}</Text>
                 </View>
                 
-                <MaterialIcons name="chevron-right" size={24} color="#666" />
+                <TouchableOpacity 
+                  style={styles.menuButton}
+                  onPress={() => handleMenuPress(member)}
+                >
+                  <MaterialIcons name="more-vert" size={24} color="#666" />
+                </TouchableOpacity>
               </View>
 
               <View style={styles.memberDetails}>
@@ -281,9 +315,59 @@ const RoomMembersScreen = ({ navigation }) => {
                 </Text>
               </View>
             </LinearGradient>
-          </TouchableOpacity>
+          </View>
         ))}
       </ScrollView>
+
+      {/* Custom Menu Modal */}
+      <Modal
+        visible={showMenu}
+        transparent
+        animationType="fade"
+        onRequestClose={handleMenuClose}
+      >
+        <Pressable style={styles.modalOverlay} onPress={handleMenuClose}>
+          <BlurView intensity={20} style={styles.menuContainer}>
+            <View style={styles.menuHeader}>
+              <Text style={styles.menuTitle}>Tùy chọn</Text>
+              <TouchableOpacity onPress={handleMenuClose}>
+                <MaterialIcons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.menuContent}>
+              {!selectedMember?.isCurrentUser && (
+                <>
+                  <MenuOption
+                    icon="person"
+                    label="Xem chi tiết"
+                    onPress={() => handleOptionPress(() => 
+                      navigation.navigate('MemberDetail', { member: selectedMember })
+                    )}
+                  />
+                  <MenuOption
+                    icon="chat"
+                    label="Nhắn tin"
+                    onPress={() => handleOptionPress(() => {
+                      // TODO: Implement chat functionality
+                    })}
+                  />
+                </>
+              )}
+              {selectedMember?.roomerType === 'Tenant' && (
+                <MenuOption
+                  icon="exit-to-app"
+                  label="Xem yêu cầu rời phòng"
+                  onPress={() => handleOptionPress(() => 
+                    navigation.navigate('LeaveRequests', { roomId: roomData.roomStay.roomId })
+                  )}
+                  color="#00A67E"
+                />
+              )}
+            </View>
+          </BlurView>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -539,6 +623,61 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  menuButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  menuContainer: {
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: '50%',
+  },
+  menuHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
+  },
+  menuTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+  menuContent: {
+    gap: 12,
+  },
+  menuOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+  },
+  menuOptionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  menuOptionText: {
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
 

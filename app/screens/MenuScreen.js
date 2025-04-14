@@ -52,13 +52,7 @@ const MenuScreen = ({ navigation, route }) => {
           text: "Đăng xuất", 
           onPress: async () => {
             try {
-              const refreshToken = await AsyncStorage.getItem('refreshToken');
-              if (!refreshToken) {
-                Alert.alert('Lỗi', 'Không tìm thấy refresh token');
-                return;
-              }
-
-              const result = await authService.logout(refreshToken);
+              const result = await authService.logout();
               if (result.isSuccess) {
                 navigation.reset({
                   index: 0,
@@ -69,7 +63,7 @@ const MenuScreen = ({ navigation, route }) => {
               }
             } catch (error) {
               console.error('Logout error:', error);
-              Alert.alert('Lỗi', 'Có lỗi xảy ra khi đăng xuất');
+              Alert.alert('Lỗi', error.message || 'Có lỗi xảy ra khi đăng xuất');
             }
           },
           style: 'destructive'

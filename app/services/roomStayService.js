@@ -33,6 +33,24 @@ const roomStayService = {
       }
       throw error;
     }
+  },
+
+  getLeaveRoomRequests: async (token) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/customer/get-leave-room-requests`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching leave room requests:', error);
+      throw error;
+    }
   }
 };
 

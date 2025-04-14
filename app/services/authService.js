@@ -17,16 +17,17 @@ const authService = {
       
       if (data?.isSuccess) {
         if (data.data.role === 'Customer') {
-          // Lưu user và token vào AsyncStorage
+          // Lưu user, token và refreshToken vào AsyncStorage
           await AsyncStorage.setItem('user', JSON.stringify(data.data));
-          await AsyncStorage.setItem('token', data.data.token);  
-          await AsyncStorage.setItem('userId', data.data.userId); 
+          await AsyncStorage.setItem('token', data.data.token);
+          await AsyncStorage.setItem('refreshToken', data.data.refreshToken);
+          await AsyncStorage.setItem('userId', data.data.userId);
           return { 
             isSuccess: true, 
             message: 'Login successful', 
             user: {
               ...data.data,
-              token: data.data.token // Đảm bảo token được trả về trong user object
+              token: data.data.token
             } 
           };
         } else {
@@ -185,9 +186,15 @@ const authService = {
     }
   },
 
-  logout: async (refreshToken) => {
+  logout: async () => {
     try {
       const token = await AsyncStorage.getItem('token');
+      const refreshToken = await AsyncStorage.getItem('refreshToken');
+      
+      if (!refreshToken) {
+        throw new Error('No refresh token found');
+      }
+
       const response = await fetch(`${API_BASE_URL}/authentication/logout`, {
         method: 'POST',
         headers: {
@@ -209,7 +216,7 @@ const authService = {
       }
     } catch (error) {
       console.error('Logout error:', error);
-      return { isSuccess: false, message: 'Something went wrong' };
+      return { isSuccess: false, message: error.message || 'Something went wrong' };
     }
   }
 };
