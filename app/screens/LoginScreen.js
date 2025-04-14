@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import authService from '../services/authService';
+import { useAuth } from '../context/AuthContext';
 
 const LoginScreen = ({ navigation }) => {
   const [emailOrPhone, setEmailOrPhone] = useState('');
@@ -22,6 +23,7 @@ const LoginScreen = ({ navigation }) => {
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { signIn } = useAuth();
 
   const handleLogin = async () => {
     if (!emailOrPhone || !password) {
@@ -31,12 +33,12 @@ const LoginScreen = ({ navigation }) => {
     
     setIsLoading(true);
     try {
-      // We'll need to update the authService to handle either email or phone
       const result = await authService.login(emailOrPhone, password);
       
       if (result.isSuccess) {
         if (result.user.role === 'Customer') {
-          navigation.replace('MainTabs');  // Navigate to main screen for Customer
+          await signIn(result.user.token);
+          navigation.replace('MainTabs');
         } else {
           Alert.alert('Error', 'You do not have the correct role to access this app.');
         }

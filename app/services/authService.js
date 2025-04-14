@@ -21,7 +21,14 @@ const authService = {
           await AsyncStorage.setItem('user', JSON.stringify(data.data));
           await AsyncStorage.setItem('token', data.data.token);  
           await AsyncStorage.setItem('userId', data.data.userId); 
-          return { isSuccess: true, message: 'Login successful', user: data.data };
+          return { 
+            isSuccess: true, 
+            message: 'Login successful', 
+            user: {
+              ...data.data,
+              token: data.data.token // Đảm bảo token được trả về trong user object
+            } 
+          };
         } else {
           return { isSuccess: false, message: 'You do not have the correct role to access this app.' };
         }

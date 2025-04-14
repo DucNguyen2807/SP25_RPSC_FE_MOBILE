@@ -16,6 +16,7 @@ import { SecuritySafetyScreen } from '../screens/SaveResourcesScreen';
 import RoomStayDetail from '../screens/RoomStayDetail';
 import RoommatePostDetail from '../screens/RoommatePostDetail';
 import CustomerRequestsScreen from '../screens/CustomerRequestsScreen';
+import RoomMembersScreen from '../screens/RoomMembersScreen';
 
 const Stack = createStackNavigator();
 
@@ -126,6 +127,13 @@ const AppNavigator = () => {
       <Stack.Screen 
         name="CustomerRequests" 
         component={CustomerRequestsScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="RoomMembers" 
+        component={RoomMembersScreen}
         options={{
           headerShown: false,
         }}
