@@ -210,9 +210,9 @@ const RoommateDetailScreen = ({ route }) => {
           </TouchableOpacity>
 
           <View style={styles.priceTag}>
-            <Text style={styles.priceText}>
-              {typeof roomInfo?.price === 'number' ? roomInfo.price.toLocaleString() : 'N/A'}đ
-            </Text>
+          <Text style={styles.priceText}>
+  {(postDetail.priceShare || (typeof roomInfo?.price === 'number' ? roomInfo.price : 0)).toLocaleString()}đ
+</Text>
             <Text style={styles.priceSubtext}>/month</Text>
           </View>
         </View>
@@ -326,16 +326,16 @@ const RoommateDetailScreen = ({ route }) => {
             </Text>
 
             {(roomInfo?.services || []).map((service) => (
-              <View key={service.serviceId} style={styles.serviceItem}>
-                <View style={styles.serviceHeader}>
-                  <Text style={styles.serviceName}>{service.serviceName}</Text>
-                  <Text style={styles.servicePrice}>
-                    {(service.price ?? 0).toLocaleString()}đ/mo
-                  </Text>
-                </View>
-                <Text style={styles.serviceDesc}>{service.description}</Text>
-              </View>
-            ))}
+  <View key={service.serviceId} style={styles.serviceItem}>
+    <View style={styles.serviceHeader}>
+      <Text style={styles.serviceName}>{service.serviceName}</Text>
+      <Text style={styles.servicePrice}>
+  {(service.price !== null && service.price !== undefined ? service.price : 0).toLocaleString()}đ/{service.description === 'month' ? 'mo' : service.description}
+</Text>
+    </View>
+    <Text style={styles.serviceDesc}>{service.description}</Text>
+  </View>
+))}
           </View>
 
           {/* Bottom padding to ensure content isn't hidden behind footer */}

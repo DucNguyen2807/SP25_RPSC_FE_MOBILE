@@ -17,21 +17,22 @@ import { Ionicons } from '@expo/vector-icons';
 import authService from '../services/authService';
 
 const LoginScreen = ({ navigation }) => {
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [emailOrPhone, setEmailOrPhone] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!phoneNumber || !password) {
-      Alert.alert('Error', 'Please enter both phone number and password');
+    if (!emailOrPhone || !password) {
+      Alert.alert('Error', 'Please enter both email/phone and password');
       return;
     }
     
     setIsLoading(true);
     try {
-      const result = await authService.login(phoneNumber, password);
+      // We'll need to update the authService to handle either email or phone
+      const result = await authService.login(emailOrPhone, password);
       
       if (result.isSuccess) {
         if (result.user.role === 'Customer') {
@@ -69,14 +70,14 @@ const LoginScreen = ({ navigation }) => {
           
           <View style={styles.formContainer}>
             <View style={styles.inputContainer}>
-              <Ionicons name="call-outline" size={22} color="#6C63FF" style={styles.inputIcon} />
+              <Ionicons name="person-outline" size={22} color="#6C63FF" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Phone Number"
+                placeholder="Email or Phone Number"
                 placeholderTextColor="#ACACAC"
-                value={phoneNumber}
-                onChangeText={setPhoneNumber}
-                keyboardType="phone-pad"
+                value={emailOrPhone}
+                onChangeText={setEmailOrPhone}
+                keyboardType="email-address"
                 autoCapitalize="none"
               />
             </View>

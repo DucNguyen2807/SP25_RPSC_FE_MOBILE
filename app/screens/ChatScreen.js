@@ -51,8 +51,8 @@ const ChatScreen = ({ route }) => {
   useEffect(() => {
     const connectToSignalR = async () => {
       const newConnection = new signalR.HubConnectionBuilder()
-        // .withUrl('http://10.0.2.2:5262/chatHub')
-        .withUrl('http://192.168.0.100:5262/chatHub')
+         .withUrl('http://10.0.2.2:5262/chatHub')
+       //withUrl('http://192.168.0.100:5262/chatHub')
         .withAutomaticReconnect()
         .build();
 

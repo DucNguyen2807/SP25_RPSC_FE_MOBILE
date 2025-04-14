@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -25,10 +25,10 @@ const RentedScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [existingPost, setExistingPost] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [customerType, setCustomerType] = useState(null); // Add state for customer type
+  const [customerType, setCustomerType] = useState(null);
 
-  // Move fetchData outside of useEffect so it can be reused
-  const fetchData = async () => {
+  // Enhanced fetchData function with improved error handling
+  const fetchData = useCallback(async () => {
     try {
       // Fetch room stay data
       const roomResult = await roomService.getRoomStayByCustomerId();
@@ -40,7 +40,7 @@ const RentedScreen = ({ navigation }) => {
         
         setRentedRoom({
           landlordName: roomData.landlordName,
-          landlordAvatar: roomData.landlordAvatar || null, // Add this field
+          landlordAvatar: roomData.landlordAvatar || null,
           price: roomData.room.price,
           imageUrl: roomData.room.roomCusImages[0]?.imageUrl,
           status: roomData.room.status,
@@ -55,26 +55,36 @@ const RentedScreen = ({ navigation }) => {
           const postResult = await postService.getPostRoommateByCustomerId();
           if (postResult.isSuccess && postResult.data) {
             setExistingPost(postResult.data);
+          } else {
+            setExistingPost(null);
           }
         }
+      } else {
+        // Handle case where room fetch was not successful
+        setRentedRoom(null);
+        console.warn('Failed to fetch room data:', roomResult.message || 'Unknown error');
       }
     } catch (error) {
       console.error('Error fetching data:', error);
+      // You might want to show an error message to the user here
     } finally {
       setLoading(false);
       setRefreshing(false); // Stop refreshing indicator
     }
-  };
+  }, []);
 
-  // This function will be called when user pulls to refresh
-  const onRefresh = () => {
+  // Enhanced onRefresh function with wait time to show refresh animation
+  const onRefresh = useCallback(() => {
     setRefreshing(true);
-    fetchData();
-  };
+    // Make sure the refresh spinner shows for at least a moment to give user feedback
+    setTimeout(() => {
+      fetchData();
+    }, 500); // Short delay to ensure refresh spinner is visible
+  }, [fetchData]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -127,7 +137,18 @@ const RentedScreen = ({ navigation }) => {
             <MaterialIcons name="notifications-none" size={24} color="#FFF" />
           </TouchableOpacity>
         </LinearGradient>
-        <View style={styles.emptyStateContainer}>
+        <ScrollView 
+          contentContainerStyle={styles.emptyStateContainer}
+          refreshControl={
+            <RefreshControl 
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#6D5BA3']}
+              tintColor={'#6D5BA3'}
+              progressBackgroundColor="#FFF"
+            />
+          }
+        >
           <Ionicons name="home-outline" size={80} color="#6D5BA3" />
           <Text style={styles.emptyStateText}>Bạn chưa thuê phòng nào</Text>
           <TouchableOpacity
@@ -136,7 +157,7 @@ const RentedScreen = ({ navigation }) => {
           >
             <Text style={styles.browseRoomsText}>Tìm phòng ngay</Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -172,8 +193,11 @@ const RentedScreen = ({ navigation }) => {
           <RefreshControl 
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={['#6D5BA3']} // Color of the refresh spinner
-            tintColor={'#6D5BA3'} // For iOS
+            colors={['#6D5BA3']}
+            tintColor={'#6D5BA3'}
+            progressBackgroundColor="#FFF"
+            progressViewOffset={20} // Adds some offset to make the spinner more visible
+            size="large" // Make spinner bigger for better visibility
           />
         }
       >
@@ -186,8 +210,8 @@ const RentedScreen = ({ navigation }) => {
         </View>
         
         <TouchableOpacity 
-            activeOpacity={0.9}
-            onPress={() => navigation.navigate('RoomStayDetail')}
+          activeOpacity={0.9}
+          onPress={() => navigation.navigate('RoomStayDetail')}
         >
           {/* Room Card */}
           <View style={styles.roomCard}>
@@ -660,7 +684,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   emptyStateContainer: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
