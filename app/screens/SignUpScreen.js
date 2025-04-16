@@ -10,10 +10,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  SafeAreaView
+  SafeAreaView,
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import authService from '../services/authService';
+import { colors, typography, spacing, borderRadius, components, layout } from '../theme/theme';
 
 const SignUpScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -73,23 +75,23 @@ const SignUpScreen = ({ navigation }) => {
           </View>
           
           <View style={styles.formContainer}>
-            <View style={styles.inputContainer}>
-              <Ionicons name="person-outline" size={22} color="#6C63FF" style={styles.inputIcon} />
+            <View style={[components.input, styles.inputContainer]}>
+              <Ionicons name="person-outline" size={22} color={colors.text.secondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Full Name"
-                placeholderTextColor="#ACACAC"
+                placeholderTextColor={colors.text.disabled}
                 value={fullName}
                 onChangeText={setFullName}
               />
             </View>
             
-            <View style={styles.inputContainer}>
-              <Ionicons name="mail-outline" size={22} color="#6C63FF" style={styles.inputIcon} />
+            <View style={[components.input, styles.inputContainer]}>
+              <Ionicons name="mail-outline" size={22} color={colors.text.secondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Email"
-                placeholderTextColor="#ACACAC"
+                placeholderTextColor={colors.text.disabled}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -97,12 +99,12 @@ const SignUpScreen = ({ navigation }) => {
               />
             </View>
             
-            <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={22} color="#6C63FF" style={styles.inputIcon} />
+            <View style={[components.input, styles.inputContainer]}>
+              <Ionicons name="lock-closed-outline" size={22} color={colors.text.secondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Password"
-                placeholderTextColor="#ACACAC"
+                placeholderTextColor={colors.text.disabled}
                 secureTextEntry={!showPassword}
                 value={password}
                 onChangeText={setPassword}
@@ -111,17 +113,17 @@ const SignUpScreen = ({ navigation }) => {
                 <Ionicons 
                   name={showPassword ? "eye-off-outline" : "eye-outline"} 
                   size={22} 
-                  color="#ACACAC" 
+                  color={colors.text.secondary} 
                 />
               </TouchableOpacity>
             </View>
             
-            <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={22} color="#6C63FF" style={styles.inputIcon} />
+            <View style={[components.input, styles.inputContainer]}>
+              <Ionicons name="lock-closed-outline" size={22} color={colors.text.secondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Confirm Password"
-                placeholderTextColor="#ACACAC"
+                placeholderTextColor={colors.text.disabled}
                 secureTextEntry={!showConfirmPassword}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
@@ -130,7 +132,7 @@ const SignUpScreen = ({ navigation }) => {
                 <Ionicons 
                   name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} 
                   size={22} 
-                  color="#ACACAC" 
+                  color={colors.text.secondary} 
                 />
               </TouchableOpacity>
             </View>
@@ -145,7 +147,7 @@ const SignUpScreen = ({ navigation }) => {
                   <Ionicons 
                     name="school-outline" 
                     size={20} 
-                    color={isStudent ? "#FFFFFF" : "#6C63FF"} 
+                    color={isStudent ? colors.white : colors.text.secondary} 
                     style={styles.userTypeIcon}
                   />
                   <Text style={[styles.userTypeText, isStudent && styles.userTypeTextActive]}>Student</Text>
@@ -158,7 +160,7 @@ const SignUpScreen = ({ navigation }) => {
                   <Ionicons 
                     name="briefcase-outline" 
                     size={20} 
-                    color={!isStudent ? "#FFFFFF" : "#6C63FF"} 
+                    color={!isStudent ? colors.white : colors.text.secondary} 
                     style={styles.userTypeIcon}
                   />
                   <Text style={[styles.userTypeText, !isStudent && styles.userTypeTextActive]}>Worker</Text>
@@ -196,127 +198,135 @@ const SignUpScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.background.secondary,
   },
   keyboardAvoid: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 30,
-    paddingBottom: 24,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.lg,
   },
   headerContainer: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: spacing.xl,
   },
   logo: {
-    width: 100,
-    height: 100,
-    marginBottom: 16,
+    width: 120,
+    height: 120,
+    marginBottom: spacing.lg,
   },
   titleText: {
-    fontSize: 28,
+    fontSize: typography.fontSize.xxxl,
     fontWeight: '700',
-    color: '#333333',
-    marginBottom: 8,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+    textAlign: 'center',
   },
   subtitleText: {
-    fontSize: 16,
-    color: '#888888',
+    fontSize: typography.fontSize.md,
+    color: colors.text.secondary,
     textAlign: 'center',
+    lineHeight: 24,
   },
   formContainer: {
     width: '100%',
-    marginBottom: 24,
+    marginBottom: spacing.lg,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F7F8F9',
-    borderRadius: 12,
-    marginBottom: 16,
-    paddingHorizontal: 16,
-    height: 60,
+    backgroundColor: colors.background.tertiary,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.md,
+    height: 56,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: '#EAEAEA',
+    borderColor: colors.border.light,
   },
   inputIcon: {
-    marginRight: 12,
+    marginRight: spacing.sm,
   },
   input: {
     flex: 1,
     height: '100%',
-    fontSize: 16,
-    color: '#333333',
+    fontSize: typography.fontSize.md,
+    color: colors.text.primary,
+    paddingVertical: spacing.sm,
   },
   eyeIcon: {
-    padding: 8,
+    padding: spacing.xs,
   },
   userTypeContainer: {
-    marginBottom: 24,
+    marginBottom: spacing.lg,
   },
   userTypeLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333333',
-    marginBottom: 10,
+    fontSize: typography.fontSize.md,
+    fontWeight: '600',
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
   },
   userTypeOptions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: spacing.md,
   },
   userTypeButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F7F8F9',
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    backgroundColor: colors.background.tertiary,
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
     borderWidth: 1,
-    borderColor: '#6C63FF',
-    width: '48%',
+    borderColor: colors.primary,
+    height: 56,
   },
   userTypeActive: {
-    backgroundColor: '#6C63FF',
+    backgroundColor: colors.primary,
   },
   userTypeIcon: {
-    marginRight: 8,
+    marginRight: spacing.sm,
   },
   userTypeText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#6C63FF',
+    fontSize: typography.fontSize.md,
+    fontWeight: '600',
+    color: colors.primary,
   },
   userTypeTextActive: {
-    color: '#FFFFFF',
+    color: colors.white,
   },
   signUpButton: {
-    backgroundColor: '#6C63FF',
-    borderRadius: 12,
     height: 56,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#6C63FF',
+    borderRadius: borderRadius.lg,
+    marginTop: spacing.lg,
+    backgroundColor: colors.primary,
+    shadowColor: colors.primary,
     shadowOffset: {
       width: 0,
       height: 4,
     },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
-    elevation: 6,
+    elevation: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   signUpButtonText: {
-    color: 'white',
-    fontSize: 18,
+    color: colors.white,
+    fontSize: typography.fontSize.md,
     fontWeight: '600',
+    textAlign: 'center',
   },
   footerContainer: {
-    marginTop: 'auto',
-    alignItems: 'center',
-    paddingVertical: 20,
+    marginTop: spacing.xl,
+    paddingVertical: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: colors.border.light,
   },
   loginLinkContainer: {
     flexDirection: 'row',
@@ -324,13 +334,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loginText: {
-    fontSize: 16,
-    color: '#888888',
+    fontSize: typography.fontSize.md,
+    color: colors.text.secondary,
   },
   loginLink: {
-    fontSize: 16,
-    color: '#6C63FF',
+    fontSize: typography.fontSize.md,
+    color: colors.primary,
     fontWeight: '600',
+    marginLeft: spacing.xs,
   },
 });
 

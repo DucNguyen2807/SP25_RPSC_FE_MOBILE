@@ -16,6 +16,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import authService from '../services/authService';
 import { useAuth } from '../context/AuthContext';
+import { colors, typography, spacing, borderRadius, components, layout } from '../theme/theme';
 
 const LoginScreen = ({ navigation }) => {
   const [emailOrPhone, setEmailOrPhone] = useState('');
@@ -54,7 +55,7 @@ const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[layout.container, styles.container]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoid}
@@ -71,12 +72,12 @@ const LoginScreen = ({ navigation }) => {
           </View>
           
           <View style={styles.formContainer}>
-            <View style={styles.inputContainer}>
-              <Ionicons name="person-outline" size={22} color="#6C63FF" style={styles.inputIcon} />
+            <View style={[components.input, styles.inputContainer]}>
+              <Ionicons name="person-outline" size={22} color={colors.primary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Email or Phone Number"
-                placeholderTextColor="#ACACAC"
+                placeholderTextColor={colors.text.disabled}
                 value={emailOrPhone}
                 onChangeText={setEmailOrPhone}
                 keyboardType="email-address"
@@ -84,12 +85,12 @@ const LoginScreen = ({ navigation }) => {
               />
             </View>
             
-            <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={22} color="#6C63FF" style={styles.inputIcon} />
+            <View style={[components.input, styles.inputContainer]}>
+              <Ionicons name="lock-closed-outline" size={22} color={colors.primary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Password"
-                placeholderTextColor="#ACACAC"
+                placeholderTextColor={colors.text.disabled}
                 secureTextEntry={!showPassword}
                 value={password}
                 onChangeText={setPassword}
@@ -98,7 +99,7 @@ const LoginScreen = ({ navigation }) => {
                 <Ionicons 
                   name={showPassword ? "eye-off-outline" : "eye-outline"} 
                   size={22} 
-                  color="#ACACAC" 
+                  color={colors.text.disabled} 
                 />
               </TouchableOpacity>
             </View>
@@ -109,7 +110,7 @@ const LoginScreen = ({ navigation }) => {
                 style={styles.rememberMeContainer}
               >
                 <View style={[styles.checkbox, rememberMe && styles.checkboxActive]}>
-                  {rememberMe && <Ionicons name="checkmark" size={16} color="white" />}
+                  {rememberMe && <Ionicons name="checkmark" size={16} color={colors.white} />}
                 </View>
                 <Text style={styles.rememberMeText}>Remember me</Text>
               </TouchableOpacity>
@@ -121,13 +122,13 @@ const LoginScreen = ({ navigation }) => {
             
             <TouchableOpacity 
               onPress={handleLogin} 
-              style={styles.loginButton}
+              style={[components.button, components.buttonPrimary, styles.loginButton]}
               disabled={isLoading}
             >
               {isLoading ? (
-                <ActivityIndicator color="white" size="small" />
+                <ActivityIndicator color={colors.white} size="small" />
               ) : (
-                <Text style={styles.loginButtonText}>Log In</Text>
+                <Text style={components.buttonText}>Log In</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -148,122 +149,118 @@ const LoginScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.background.secondary,
   },
   keyboardAvoid: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 40,
-    paddingBottom: 24,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.xl,
   },
   headerContainer: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: spacing.xxl,
   },
   logo: {
-    width: 120,
-    height: 120,
-    marginBottom: 24,
+    width: 140,
+    height: 140,
+    marginBottom: spacing.xl,
   },
   welcomeText: {
-    fontSize: 28,
+    fontSize: typography.fontSize.xxxl,
     fontWeight: '700',
-    color: '#333333',
-    marginBottom: 8,
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
   },
   subtitleText: {
-    fontSize: 16,
-    color: '#888888',
+    fontSize: typography.fontSize.md,
+    color: colors.text.secondary,
     textAlign: 'center',
+    lineHeight: 24,
   },
   formContainer: {
     width: '100%',
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F7F8F9',
-    borderRadius: 12,
-    marginBottom: 16,
-    paddingHorizontal: 16,
-    height: 60,
+    backgroundColor: colors.background.tertiary,
+    marginBottom: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    height: 56,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: '#EAEAEA',
+    borderColor: colors.gray[200],
   },
   inputIcon: {
-    marginRight: 12,
+    marginRight: spacing.md,
   },
   input: {
     flex: 1,
     height: '100%',
-    fontSize: 16,
-    color: '#333333',
+    fontSize: typography.fontSize.md,
+    color: colors.text.primary,
+    paddingVertical: spacing.sm,
   },
   eyeIcon: {
-    padding: 8,
+    padding: spacing.sm,
   },
   optionsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   rememberMeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
+    width: 24,
+    height: 24,
+    borderRadius: borderRadius.sm,
     borderWidth: 1,
-    borderColor: '#DADADA',
+    borderColor: colors.gray[300],
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 8,
+    marginRight: spacing.sm,
   },
   checkboxActive: {
-    backgroundColor: '#6C63FF',
-    borderColor: '#6C63FF',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   rememberMeText: {
-    fontSize: 14,
-    color: '#666666',
+    fontSize: typography.fontSize.md,
+    color: colors.text.secondary,
   },
   forgotPassword: {
-    fontSize: 14,
-    color: '#6C63FF',
-    fontWeight: '500',
+    fontSize: typography.fontSize.md,
+    color: colors.primary,
+    fontWeight: '600',
   },
   loginButton: {
-    backgroundColor: '#6C63FF',
-    borderRadius: 12,
     height: 56,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#6C63FF',
+    borderRadius: borderRadius.lg,
+    ...components.buttonPrimary,
+    shadowColor: colors.primary,
     shadowOffset: {
       width: 0,
       height: 4,
     },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
-    elevation: 6,
-  },
-  loginButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '600',
+    elevation: 4,
   },
   footerContainer: {
-    marginTop: 'auto',
-    alignItems: 'center',
-    paddingVertical: 20,
+    marginTop: spacing.xxl,
+    paddingTop: spacing.xl,
+    borderTopWidth: 1,
+    borderTopColor: colors.gray[200],
   },
   signUpContainer: {
     flexDirection: 'row',
@@ -271,13 +268,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   signUpText: {
-    fontSize: 16,
-    color: '#888888',
+    fontSize: typography.fontSize.md,
+    color: colors.text.secondary,
   },
   signUpLink: {
-    fontSize: 16,
-    color: '#6C63FF',
+    fontSize: typography.fontSize.md,
+    color: colors.primary,
     fontWeight: '600',
+    marginLeft: spacing.xs,
   },
 });
 

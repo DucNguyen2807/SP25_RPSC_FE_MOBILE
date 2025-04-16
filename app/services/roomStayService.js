@@ -97,6 +97,32 @@ const roomStayService = {
         message: 'Có lỗi xảy ra khi chấp nhận yêu cầu rời phòng'
       };
     }
+  },
+
+  requestLeaveRoomByTenant: async (token, userDepositeId) => {
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/customer/request-leave-room-by-tenant`,
+        {
+          userDepositeId
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'accept': '*/*'
+          }
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error requesting leave room by tenant:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+        console.error('Error status:', error.response.status);
+      }
+      throw error;
+    }
   }
 };
 

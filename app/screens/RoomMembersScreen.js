@@ -44,6 +44,8 @@ const RoomMembersScreen = ({ navigation }) => {
   const [selectedMember, setSelectedMember] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [selectedNewTenant, setSelectedNewTenant] = useState(null);
 
   const fetchData = useCallback(async () => {
     if (authLoading) {
@@ -196,6 +198,60 @@ const RoomMembersScreen = ({ navigation }) => {
             }
           },
           style: 'destructive'
+        }
+      ]
+    );
+  };
+
+  const handleTransferTenantRole = async () => {
+    if (!selectedNewTenant) {
+      Alert.alert("Lỗi", "Vui lòng chọn người thay thế");
+      return;
+    }
+
+    Alert.alert(
+      "Xác nhận chuyển cọc",
+      `Bạn có chắc chắn muốn chuyển tiền cọc cho ${selectedNewTenant.fullName}?`,
+      [
+        {
+          text: "Hủy",
+          style: "cancel"
+        },
+        {
+          text: "Xác nhận",
+          onPress: async () => {
+            try {
+              const result = await roomStayService.requestLeaveRoomByTenant(
+                token,
+                selectedNewTenant.userId
+              );
+              
+              if (result.isSuccess) {
+                Alert.alert(
+                  "Thành công",
+                  "Đã gửi yêu cầu rời phòng và chuyển cọc thành công",
+                  [
+                    {
+                      text: "OK",
+                      onPress: () => {
+                        setShowTransferModal(false);
+                        navigation.goBack();
+                      }
+                    }
+                  ]
+                );
+              } else {
+                Alert.alert("Lỗi", result.message);
+              }
+            } catch (error) {
+              console.error('Leave room error:', error);
+              if (error.response?.data?.message) {
+                Alert.alert('Lỗi', error.response.data.message);
+              } else {
+                Alert.alert('Lỗi', 'Có lỗi xảy ra khi gửi yêu cầu rời phòng');
+              }
+            }
+          }
         }
       ]
     );
@@ -441,14 +497,22 @@ const RoomMembersScreen = ({ navigation }) => {
               {selectedMember?.isCurrentUser && (
                 <>
                   {currentUser?.roomerType === 'Tenant' ? (
-                    <MenuOption
-                      icon="exit-to-app"
-                      label="Xem yêu cầu rời phòng"
-                      onPress={() => handleOptionPress(() => 
-                        navigation.navigate('LeaveRequests', { roomId: roomData.roomStay.roomId })
-                      )}
-                      color="#00A67E"
-                    />
+                    <>
+                      <MenuOption
+                        icon="exit-to-app"
+                        label="Rời phòng và chuyển cọc"
+                        onPress={() => handleOptionPress(() => setShowTransferModal(true))}
+                        color="#00A67E"
+                      />
+                      <MenuOption
+                        icon="list"
+                        label="Xem yêu cầu rời phòng"
+                        onPress={() => handleOptionPress(() => 
+                          navigation.navigate('LeaveRequests', { roomId: roomData.roomStay.roomId })
+                        )}
+                        color="#00A67E"
+                      />
+                    </>
                   ) : (
                     <MenuOption
                       icon="logout"
@@ -459,6 +523,65 @@ const RoomMembersScreen = ({ navigation }) => {
                   )}
                 </>
               )}
+            </View>
+          </BlurView>
+        </Pressable>
+      </Modal>
+
+      {/* Transfer Tenant Role Modal */}
+      <Modal
+        visible={showTransferModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowTransferModal(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setShowTransferModal(false)}>
+          <BlurView intensity={20} style={styles.transferModalContainer}>
+            <View style={styles.transferModalHeader}>
+              <Text style={styles.transferModalTitle}>Chọn người thay thế</Text>
+              <TouchableOpacity onPress={() => setShowTransferModal(false)}>
+                <MaterialIcons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.transferModalContent}>
+              <Text style={styles.transferModalDescription}>
+                Vui lòng chọn người sẽ thay thế bạn làm người thuê chính. Người này sẽ nhận tiền cọc và quản lý phòng.
+              </Text>
+
+              <ScrollView style={styles.memberSelectionList}>
+                {roomData.roommateList
+                  .filter(member => !member.isCurrentUser && member.roomerType !== 'Tenant')
+                  .map(member => (
+                    <TouchableOpacity
+                      key={member.customerId}
+                      style={[
+                        styles.memberSelectionItem,
+                        selectedNewTenant?.customerId === member.customerId && styles.selectedMember
+                      ]}
+                      onPress={() => setSelectedNewTenant(member)}
+                    >
+                      <View style={styles.memberSelectionInfo}>
+                        <Text style={styles.memberSelectionName}>{member.fullName}</Text>
+                        <Text style={styles.memberSelectionType}>{member.customerType}</Text>
+                      </View>
+                      {selectedNewTenant?.customerId === member.customerId && (
+                        <MaterialIcons name="check" size={24} color="#00A67E" />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+              </ScrollView>
+
+              <TouchableOpacity
+                style={[
+                  styles.transferButton,
+                  !selectedNewTenant && styles.transferButtonDisabled
+                ]}
+                onPress={handleTransferTenantRole}
+                disabled={!selectedNewTenant}
+              >
+                <Text style={styles.transferButtonText}>Xác nhận chuyển quyền</Text>
+              </TouchableOpacity>
             </View>
           </BlurView>
         </Pressable>
@@ -773,6 +896,81 @@ const styles = StyleSheet.create({
   menuOptionText: {
     fontSize: 16,
     fontWeight: '500',
+  },
+  transferModalContainer: {
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: '80%',
+  },
+  transferModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
+  },
+  transferModalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+  transferModalContent: {
+    gap: 16,
+  },
+  transferModalDescription: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  memberSelectionList: {
+    maxHeight: 300,
+  },
+  memberSelectionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.1)',
+  },
+  selectedMember: {
+    borderColor: '#00A67E',
+    backgroundColor: 'rgba(0,166,126,0.05)',
+  },
+  memberSelectionInfo: {
+    flex: 1,
+  },
+  memberSelectionName: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+    marginBottom: 4,
+  },
+  memberSelectionType: {
+    fontSize: 14,
+    color: '#666',
+  },
+  transferButton: {
+    backgroundColor: '#00A67E',
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  transferButtonDisabled: {
+    backgroundColor: '#CCC',
+  },
+  transferButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 
