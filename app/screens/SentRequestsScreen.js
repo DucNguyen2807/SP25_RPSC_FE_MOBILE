@@ -191,7 +191,7 @@ const SentRequestsScreen = ({ navigation, route }) => {
       >
         <TouchableOpacity 
           style={styles.backButton}
-          onPress={() => navigation.goBack()}
+          onPress={() =>  navigation.navigate('Menu')}
         >
           <MaterialIcons name="arrow-back" size={24} color="#FFF" />
         </TouchableOpacity>
@@ -221,7 +221,7 @@ const SentRequestsScreen = ({ navigation, route }) => {
           <Text style={styles.emptyText}>Bạn chưa gửi yêu cầu nào</Text>
           <TouchableOpacity 
             style={styles.browseButton}
-            onPress={() => navigation.navigate('Home')}
+            onPress={() => navigation.navigate('Room')}
           >
             <Text style={styles.browseButtonText}>Tìm kiếm phòng</Text>
           </TouchableOpacity>

@@ -18,7 +18,7 @@ import RoommatePostDetail from '../screens/RoommatePostDetail';
 import CustomerRequestsScreen from '../screens/CustomerRequestsScreen';
 import RoomMembersScreen from '../screens/RoomMembersScreen';
 import LeaveRequestsScreen from '../screens/LeaveRequestsScreen';
-
+import EditProfile from '../screens/EditProfile';
 const Stack = createStackNavigator();
 
 const AppNavigator = () => {
@@ -93,6 +93,13 @@ const AppNavigator = () => {
       <Stack.Screen 
         name="SecuritySafety" 
         component={SecuritySafetyScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="EditProfile" 
+        component={EditProfile}
         options={{
           headerShown: false,
         }}

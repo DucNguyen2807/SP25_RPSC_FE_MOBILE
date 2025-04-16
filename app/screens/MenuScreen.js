@@ -7,6 +7,8 @@ import {
   Image,
   SafeAreaView,
   Alert,
+  RefreshControl,
+  ScrollView,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -15,25 +17,40 @@ import authService from '../services/authService';
 
 const MenuScreen = ({ navigation, route }) => {
   const [requestCount, setRequestCount] = useState(0);
+  const [userData, setUserData] = useState({
+    fullName: '',
+    avatar: null
+  });
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchData = async () => {
+    try {
+      // Load request count
+      const count = await AsyncStorage.getItem('requestCount');
+      if (count !== null) {
+        setRequestCount(parseInt(count));
+      }
+      
+      // Use getInforProfile instead of AsyncStorage for user data
+      const profileResult = await authService.getInforProfile();
+      if (profileResult.isSuccess && profileResult.data) {
+        const user = profileResult.data.user;
+        setUserData({
+          fullName: user.fullName || 'User',
+          avatar: user.avatar || null
+        });
+      }
+    } catch (error) {
+      console.error('Error loading data:', error);
+    }
+  };
 
   useEffect(() => {
-    // Load request count from AsyncStorage
-    const loadRequestCount = async () => {
-      try {
-        const count = await AsyncStorage.getItem('requestCount');
-        if (count !== null) {
-          setRequestCount(parseInt(count));
-        }
-      } catch (error) {
-        console.error('Error loading request count:', error);
-      }
-    };
+    fetchData();
 
-    loadRequestCount();
-
-    // Add focus listener to update count when screen is focused
+    // Add focus listener to update data when screen is focused
     const unsubscribe = navigation.addListener('focus', () => {
-      loadRequestCount();
+      fetchData();
     });
 
     return unsubscribe;
@@ -73,107 +90,143 @@ const MenuScreen = ({ navigation, route }) => {
   };
 
   const handleSentRequestsPress = () => {
-    // Thay vì gọi trực tiếp navigation.navigate('SentRequests'), bạn cần đảm bảo bạn điều hướng đúng
     navigation.navigate('Rented', {
-      screen: 'SentRequests',  // Đảm bảo bạn điều hướng đến màn hình SentRequests trong RentedStackNavigator
+      screen: 'SentRequests',
       params: { refresh: Date.now() }
     });
   };
   
-
   const handleCustomerRequestsPress = () => {
     navigation.navigate('CustomerRequests');
   };
 
+  const goBack = () => {
+    navigation.goBack();
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
+      {/* The rest of the component remains the same */}
       {/* Header */}
       <LinearGradient
         colors={['#00A67E', '#00A67E']}
         style={styles.header}
       >
-        <View style={styles.placeholder} />
+        <TouchableOpacity style={styles.backButton} onPress={goBack}>
+          <MaterialIcons name="arrow-back" size={24} color="#FFF" />
+        </TouchableOpacity>
+        <View style={styles.headerTitle}>
+          <Text style={styles.headerText}>My Profile</Text>
+        </View>
         <TouchableOpacity style={styles.notificationButton}>
           <MaterialIcons name="notifications-none" size={24} color="#FFF" />
         </TouchableOpacity>
       </LinearGradient>
 
-      {/* Profile Section */}
-      <View style={styles.profileSection}>
-        <Image
-          source={require('../assets/logoEasyRommie.png')}
-          style={styles.avatar}
-        />
-        <Text style={styles.userName}>Nguyễn Xuân Đức</Text>
-        <TouchableOpacity style={styles.editButton}>
-          <Text style={styles.editButtonText}>Edit Profile</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Menu Options */}
-      <View style={styles.menuSection}>
-        <TouchableOpacity style={styles.menuItem}>
-          <MaterialIcons name="favorite-border" size={24} color="#666" />
-          <Text style={styles.menuItemText}>Phòng đã thích</Text>
-          <MaterialIcons name="chevron-right" size={24} color="#666" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
-          <MaterialIcons name="star-border" size={24} color="#666" />
-          <Text style={styles.menuItemText}>Đánh giá của tôi</Text>
-          <MaterialIcons name="chevron-right" size={24} color="#666" />
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.menuItem}
-          onPress={handleCustomerRequestsPress}
-        >
-          <MaterialIcons name="assignment" size={24} color="#666" />
-          <Text style={styles.menuItemText}>Yêu cầu thuê phòng</Text>
-          <MaterialIcons name="chevron-right" size={24} color="#666" />
-        </TouchableOpacity>
-
-
-        <TouchableOpacity 
-          style={styles.menuItem}
-          onPress={handleSentRequestsPress}
-        >
-          <MaterialIcons name="send" size={24} color="#666" />
-          <Text style={styles.menuItemText}>Yêu cầu ở ghép đã gửi</Text>
-          <View style={styles.badgeContainer}>
-            <Text style={styles.badgeText}>{requestCount}</Text>
-          </View>
-          <MaterialIcons name="chevron-right" size={24} color="#666" />
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.menuItem}
-          onPress={() => navigation.navigate('RoomMembers')}
-        >
-          <MaterialIcons name="people" size={24} color="#666" />
-          <Text style={styles.menuItemText}>Danh sách người trong phòng</Text>
-          <MaterialIcons name="chevron-right" size={24} color="#666" />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem}>
-          <MaterialIcons name="help-outline" size={24} color="#666" />
-          <Text style={styles.menuItemText}>Trợ giúp & Phản hồi</Text>
-          <MaterialIcons name="chevron-right" size={24} color="#666" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Logout Button */}
-      <TouchableOpacity 
-        style={styles.logoutButton}
-        onPress={handleLogout}
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#00A67E']}
+            tintColor={'#00A67E'}
+          />
+        }
       >
-        <MaterialIcons name="logout" size={24} color="#FF5252" />
-        <Text style={styles.logoutText}>Đăng xuất</Text>
-      </TouchableOpacity>
+        {/* Profile Section */}
+        <View style={styles.profileSection}>
+          {userData.avatar ? (
+            <Image
+              source={{ uri: userData.avatar }}
+              style={styles.avatar}
+            />
+          ) : (
+            <Image
+              source={require('../assets/logoEasyRommie.png')}
+              style={styles.avatar}
+            />
+          )}
+          <Text style={styles.userName}>{userData.fullName}</Text>
+          <TouchableOpacity 
+              style={styles.editButton}
+              onPress={() => navigation.navigate('EditProfile')}
+            >
+              <Text style={styles.editButtonText}>Edit Profile</Text>
+            </TouchableOpacity>
+        </View>
+
+        {/* Menu Options */}
+        <View style={styles.menuSection}>
+          <TouchableOpacity style={styles.menuItem}>
+            <MaterialIcons name="favorite-border" size={24} color="#666" />
+            <Text style={styles.menuItemText}>Phòng đã thích</Text>
+            <MaterialIcons name="chevron-right" size={24} color="#666" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem}>
+            <MaterialIcons name="star-border" size={24} color="#666" />
+            <Text style={styles.menuItemText}>Đánh giá của tôi</Text>
+            <MaterialIcons name="chevron-right" size={24} color="#666" />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={handleCustomerRequestsPress}
+          >
+            <MaterialIcons name="assignment" size={24} color="#666" />
+            <Text style={styles.menuItemText}>Yêu cầu thuê phòng</Text>
+            <MaterialIcons name="chevron-right" size={24} color="#666" />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={handleSentRequestsPress}
+          >
+            <MaterialIcons name="send" size={24} color="#666" />
+            <Text style={styles.menuItemText}>Yêu cầu ở ghép đã gửi</Text>
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>{requestCount}</Text>
+            </View>
+            <MaterialIcons name="chevron-right" size={24} color="#666" />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('RoomMembers')}
+          >
+            <MaterialIcons name="people" size={24} color="#666" />
+            <Text style={styles.menuItemText}>Danh sách người trong phòng</Text>
+            <MaterialIcons name="chevron-right" size={24} color="#666" />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.menuItem}>
+            <MaterialIcons name="help-outline" size={24} color="#666" />
+            <Text style={styles.menuItemText}>Trợ giúp & Phản hồi</Text>
+            <MaterialIcons name="chevron-right" size={24} color="#666" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Logout Button */}
+        <TouchableOpacity 
+          style={styles.logoutButton}
+          onPress={handleLogout}
+        >
+          <MaterialIcons name="logout" size={24} color="#FF5252" />
+          <Text style={styles.logoutText}>Đăng xuất</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  // Style definitions remain unchanged
   container: {
     flex: 1,
     backgroundColor: '#F8F9FA',
@@ -185,13 +238,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
-  placeholder: {
+  backButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  headerTitle: {
     flex: 1,
+    alignItems: 'center',
+  },
+  headerText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFF',
   },
   notificationButton: {
     padding: 8,
     borderRadius: 8,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   profileSection: {
     alignItems: 'center',
@@ -245,7 +312,7 @@ const styles = StyleSheet.create({
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 'auto',
+    marginTop: 20,
     marginBottom: 32,
     marginHorizontal: 16,
     paddingVertical: 12,
@@ -275,4 +342,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default MenuScreen; 
+export default MenuScreen;

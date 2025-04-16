@@ -218,7 +218,127 @@ const authService = {
       console.error('Logout error:', error);
       return { isSuccess: false, message: error.message || 'Something went wrong' };
     }
+  },
+  getInforProfile: async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      
+      if (!token) {
+        return { isSuccess: false, message: 'User is not authenticated. Token not found.' };
+      }
+
+      const response = await fetch(`${API_BASE_URL}/user/Get-Customer-By-UserId`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`, 
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        return { isSuccess: true, message: 'Customer information retrieved successfully.', data: data.data };
+      } else {
+        const errorData = await response.json();
+        return { isSuccess: false, message: errorData.message || 'Failed to retrieve customer information.' };
+      }
+    } catch (error) {
+      console.error('Error retrieving customer information:', error);
+      return { isSuccess: false, message: 'An error occurred while retrieving customer information.' };
+    }
+  },
+
+  // Add these functions to your authService object
+
+updateUserProfile: async (userData) => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    
+    if (!token) {
+      return { isSuccess: false, message: 'User is not authenticated. Token not found.' };
+    }
+
+    // Format date if it exists
+    let formattedData = {...userData};
+    if (formattedData.Dob) {
+      // Ensure Dob is in YYYY-MM-DD format for DateOnly in C#
+      formattedData.Dob = new Date(formattedData.Dob).toISOString().split('T')[0];
+    }
+
+    // Handle Avatar if it's a file object from React Native
+    if (formattedData.Avatar && formattedData.Avatar.uri) {
+      // If it's a file upload, we'll convert base64 or keep the URI depending on your API
+      // This assumes your API expects a base64 string in the JSON payload
+      // For file uploads, consider using FormData approach like in updateCustomerProfile
+      formattedData.Avatar = formattedData.Avatar.uri;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/user/Update-User-Profile`, {
+      method: 'PUT',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(formattedData),
+    });
+
+    const data = await response.json();
+    
+    if (data?.isSuccess) {
+      return { isSuccess: true, message: data.message || 'User profile updated successfully' };
+    } else {
+      return { isSuccess: false, message: data.message || 'Failed to update user profile' };
+    }
+  } catch (error) {
+    console.error('Update user profile error:', error);
+    return { 
+      isSuccess: false, 
+      message: 'An error occurred while updating user profile: ' + error.message 
+    };
   }
+},
+
+updateCustomerDetails: async (customerData) => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    
+    if (!token) {
+      return { isSuccess: false, message: 'User is not authenticated. Token not found.' };
+    }
+
+    const response = await fetch(`${API_BASE_URL}/user/Edit-Customer-Profile`, {
+      method: 'PUT',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(customerData),
+    });
+
+    const data = await response.json();
+    
+    if (data?.isSuccess) {
+      return { isSuccess: true, message: data.message || 'Customer details updated successfully' };
+    } else {
+      console.log('Sending customer data:', JSON.stringify(customerData));
+      console.log('Full server response:', JSON.stringify(data));
+      console.log('Error response:', data);
+      console.log('Error message:', data.message);
+      return { isSuccess: false, message: data.message || 'Failed to update customer details' };
+    }
+  } catch (error) {
+    console.error('Update customer details error:', error);
+    return { 
+      isSuccess: false, 
+      message: 'An error occurred while updating customer details: ' + error.message 
+    };
+  }
+}
 };
 
 export default authService;
+
+
