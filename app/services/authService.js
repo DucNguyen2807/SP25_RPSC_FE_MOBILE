@@ -251,54 +251,64 @@ const authService = {
 
   // Add these functions to your authService object
 
-updateUserProfile: async (userData) => {
-  try {
-    const token = await AsyncStorage.getItem('token');
-    
-    if (!token) {
-      return { isSuccess: false, message: 'User is not authenticated. Token not found.' };
+  updateUserProfile: async (userData) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      
+      if (!token) {
+        return { isSuccess: false, message: 'User is not authenticated. Token not found.' };
+      }
+  
+      // Create FormData object
+      const formData = new FormData();
+  
+      // Add all fields to FormData
+      if (userData.FullName) formData.append('FullName', userData.FullName);
+      if (userData.PhoneNumber) formData.append('PhoneNumber', userData.PhoneNumber);
+      if (userData.Address) formData.append('Address', userData.Address);
+      if (userData.Gender) formData.append('Gender', userData.Gender);
+      
+      // Format date if it exists
+      if (userData.Dob) {
+        const formattedDate = new Date(userData.Dob).toISOString().split('T')[0];
+        formData.append('Dob', formattedDate);
+      }
+  
+      // Handle Avatar if it's a file object from React Native
+      if (userData.Avatar && userData.Avatar.uri) {
+        const avatarFileObject = {
+          uri: userData.Avatar.uri,
+          type: userData.Avatar.type || 'image/jpeg', // Default to jpeg if type is not provided
+          name: userData.Avatar.name || 'avatar.jpg', // Default name if not provided
+        };
+        formData.append('Avatar', avatarFileObject);
+      }
+  
+      const response = await fetch(`${API_BASE_URL}/user/Update-User-Profile`, {
+        method: 'PUT',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          // Don't set Content-Type header when using FormData - fetch will set it automatically
+        },
+        body: formData, // Send FormData instead of JSON
+      });
+  
+      const data = await response.json();
+      
+      if (data?.isSuccess) {
+        return { isSuccess: true, message: data.message || 'User profile updated successfully' };
+      } else {
+        return { isSuccess: false, message: data.message || 'Failed to update user profile' };
+      }
+    } catch (error) {
+      console.error('Update user profile error:', error);
+      return { 
+        isSuccess: false, 
+        message: 'An error occurred while updating user profile: ' + error.message 
+      };
     }
-
-    // Format date if it exists
-    let formattedData = {...userData};
-    if (formattedData.Dob) {
-      // Ensure Dob is in YYYY-MM-DD format for DateOnly in C#
-      formattedData.Dob = new Date(formattedData.Dob).toISOString().split('T')[0];
-    }
-
-    // Handle Avatar if it's a file object from React Native
-    if (formattedData.Avatar && formattedData.Avatar.uri) {
-      // If it's a file upload, we'll convert base64 or keep the URI depending on your API
-      // This assumes your API expects a base64 string in the JSON payload
-      // For file uploads, consider using FormData approach like in updateCustomerProfile
-      formattedData.Avatar = formattedData.Avatar.uri;
-    }
-
-    const response = await fetch(`${API_BASE_URL}/user/Update-User-Profile`, {
-      method: 'PUT',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(formattedData),
-    });
-
-    const data = await response.json();
-    
-    if (data?.isSuccess) {
-      return { isSuccess: true, message: data.message || 'User profile updated successfully' };
-    } else {
-      return { isSuccess: false, message: data.message || 'Failed to update user profile' };
-    }
-  } catch (error) {
-    console.error('Update user profile error:', error);
-    return { 
-      isSuccess: false, 
-      message: 'An error occurred while updating user profile: ' + error.message 
-    };
-  }
-},
+  },
 
 updateCustomerDetails: async (customerData) => {
   try {
