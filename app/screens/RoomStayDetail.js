@@ -11,11 +11,14 @@ import {
   ActivityIndicator,
   Dimensions,
   Linking,
-  FlatList
+  Modal,
+  TextInput,
+  Alert
 } from 'react-native';
 import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import roomService from '../services/roomService';
+import contractService from '../services/contractService';
 import { useNavigation, useRoute } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
@@ -24,6 +27,10 @@ const RoomStayDetail = () => {
   const [roomStay, setRoomStay] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showExtendModal, setShowExtendModal] = useState(false);
+  const [messageCustomer, setMessageCustomer] = useState('');
+  const [monthWantToRent, setMonthWantToRent] = useState('1');
+  const [submitting, setSubmitting] = useState(false);
   const navigation = useNavigation();
   const route = useRoute();
 
@@ -51,6 +58,56 @@ const RoomStayDetail = () => {
       month: '2-digit',
       year: 'numeric'
     });
+  };
+
+  const isWithinTwoMonthsOfEndDate = (endDateString) => {
+    const endDate = new Date(endDateString);
+    const today = new Date();
+    const twoMonthsInMs = 60 * 24 * 60 * 60 * 1000; // 60 days in milliseconds
+    
+    // Calculate the difference in milliseconds
+    const diffInMs = endDate.getTime() - today.getTime();
+    
+    // Return true if the difference is less than two months and greater than 0 (contract hasn't ended yet)
+    return diffInMs > 0 && diffInMs <= twoMonthsInMs;
+  };
+
+  const handleExtendContract = async () => {
+    if (!messageCustomer.trim()) {
+      Alert.alert('Thông báo', 'Vui lòng nhập lời nhắn cho chủ trọ');
+      return;
+    }
+
+    // Validate monthWantToRent is a number and greater than 0
+    const months = parseInt(monthWantToRent);
+    if (isNaN(months) || months <= 0) {
+      Alert.alert('Thông báo', 'Số tháng muốn gia hạn phải là số dương');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const result = await contractService.createExtendContractRequest({
+        messageCustomer,
+        monthWantToRent: months,
+        landlordId: roomStay.roomStay.landlordId,
+        contractId: roomStay.customerContract.contractId,
+      });
+
+      if (result.isSuccess) {
+        Alert.alert('Thành công', 'Yêu cầu gia hạn hợp đồng đã được gửi thành công');
+        setShowExtendModal(false);
+        setMessageCustomer('');
+        setMonthWantToRent('1');
+      } else {
+        Alert.alert('Lỗi', result.message || 'Không thể gửi yêu cầu gia hạn');
+      }
+    } catch (error) {
+      console.error('Error extending contract:', error);
+      Alert.alert('Lỗi', 'Đã xảy ra lỗi khi gửi yêu cầu gia hạn');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const formatCurrency = (amount) => {
@@ -138,6 +195,7 @@ const RoomStayDetail = () => {
 
   const { roomStay: roomStayData, customerContract } = roomStay;
   const { room } = roomStayData;
+  const showExtendButton = isWithinTwoMonthsOfEndDate(customerContract.endDate);
   
   return (
     <SafeAreaView style={styles.container}>
@@ -214,7 +272,7 @@ const RoomStayDetail = () => {
             Trạng thái phòng: <Text style={[styles.statusBannerValue, { color: getStatusColor(room.status) }]}>{getStatusText(room.status)}</Text>
           </Text>
         </View>
-
+          
         {/* Room Basic Info */}
         <View style={styles.infoCard}>
           <Text style={styles.roomTitle}>{room.title}</Text>
@@ -231,38 +289,38 @@ const RoomStayDetail = () => {
 
         {/* Room Details */}
         <View style={styles.sectionCard}>
-  <Text style={styles.sectionTitle}>Thông tin chi tiết</Text>
-  
-  <View style={styles.detailItem}>
-    <Ionicons name="key-outline" size={20} color="#6D5BA3" />
-    <Text style={styles.detailLabel}>Mã phòng:</Text>
-    <Text style={styles.detailValue}>{room.roomNumber}</Text>
-  </View>
-  
-  <View style={styles.detailItem}>
-    <MaterialIcons name="category" size={20} color="#6D5BA3" />
-    <Text style={styles.detailLabel}>Loại phòng:</Text>
-    <Text style={styles.detailValue}>{room.roomTypeName}</Text>
-  </View>
-  
-  <View style={styles.detailItem}>
-    <FontAwesome5 name="coins" size={18} color="#6D5BA3" />
-    <Text style={styles.detailLabel}>Tiền đặt cọc:</Text>
-    <Text style={styles.detailValue}>{formatCurrency(room.deposite)}</Text>
-  </View>
-  
-  <View style={styles.detailItem}>
-    <MaterialIcons name="people" size={20} color="#6D5BA3" />
-    <Text style={styles.detailLabel}>Người tối đa:</Text>
-    <Text style={styles.detailValue}>{room.maxOccupancy} người</Text>
-  </View>
-  
-  <View style={styles.detailItem}>
-    <MaterialIcons name="square-foot" size={20} color="#6D5BA3" />
-    <Text style={styles.detailLabel}>Diện tích:</Text>
-    <Text style={styles.detailValue}>{room.square} m²</Text>
-  </View>
-</View>
+          <Text style={styles.sectionTitle}>Thông tin chi tiết</Text>
+          
+          <View style={styles.detailItem}>
+            <Ionicons name="key-outline" size={20} color="#6D5BA3" />
+            <Text style={styles.detailLabel}>Mã phòng:</Text>
+            <Text style={styles.detailValue}>{room.roomNumber}</Text>
+          </View>
+          
+          <View style={styles.detailItem}>
+            <MaterialIcons name="category" size={20} color="#6D5BA3" />
+            <Text style={styles.detailLabel}>Loại phòng:</Text>
+            <Text style={styles.detailValue}>{room.roomTypeName}</Text>
+          </View>
+          
+          <View style={styles.detailItem}>
+            <FontAwesome5 name="coins" size={18} color="#6D5BA3" />
+            <Text style={styles.detailLabel}>Tiền đặt cọc:</Text>
+            <Text style={styles.detailValue}>{formatCurrency(room.deposite)}</Text>
+          </View>
+          
+          <View style={styles.detailItem}>
+            <MaterialIcons name="people" size={20} color="#6D5BA3" />
+            <Text style={styles.detailLabel}>Người tối đa:</Text>
+            <Text style={styles.detailValue}>{room.maxOccupancy} người</Text>
+          </View>
+          
+          <View style={styles.detailItem}>
+            <MaterialIcons name="square-foot" size={20} color="#6D5BA3" />
+            <Text style={styles.detailLabel}>Diện tích:</Text>
+            <Text style={styles.detailValue}>{room.square} m²</Text>
+          </View>
+        </View>
 
         {/* Room Amenities */}
         <View style={styles.sectionCard}>
@@ -329,6 +387,24 @@ const RoomStayDetail = () => {
                 {getStatusText(customerContract.status)}
               </Text>
             </View>
+            {/* Warning Message */}
+            <View style={styles.warningContainer}>
+              <MaterialIcons name="warning" size={18} color="#FF9800" />
+              <Text style={styles.warningText}>
+                Bạn cần phải gia hạn hợp đồng trước 2 tháng
+              </Text>
+            </View>
+            {/* Contract Extension Button */}
+            {showExtendButton && (
+              <TouchableOpacity 
+                style={styles.extendContractButton}
+                onPress={() => setShowExtendModal(true)}
+              >
+                <MaterialIcons name="autorenew" size={20} color="#FFF" />
+                <Text style={styles.extendContractText}>Gia hạn hợp đồng</Text>
+              </TouchableOpacity>
+            )}
+            
             <TouchableOpacity 
               style={styles.viewContractButton}
               onPress={() => openContractPDF(customerContract.term)}
@@ -339,6 +415,71 @@ const RoomStayDetail = () => {
           </View>
         </View>
       </ScrollView>
+      
+      {/* Contract Extension Modal */}
+      <Modal
+        visible={showExtendModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowExtendModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Gia hạn hợp đồng</Text>
+              <TouchableOpacity 
+                style={styles.closeButton}
+                onPress={() => setShowExtendModal(false)}
+              >
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.formContainer}>
+              <Text style={styles.formLabel}>Số tháng muốn gia hạn:</Text>
+              <TextInput
+                style={styles.input}
+                value={monthWantToRent}
+                onChangeText={setMonthWantToRent}
+                placeholder="Nhập số tháng (1, 3, 6, 12...)"
+                keyboardType="number-pad"
+              />
+              
+              <Text style={styles.formLabel}>Lời nhắn cho chủ trọ:</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={messageCustomer}
+                onChangeText={setMessageCustomer}
+                placeholder="Nhập lời nhắn của bạn (ví dụ: Tôi muốn gia hạn hợp đồng thêm...)"
+                multiline={true}
+                numberOfLines={4}
+              />
+              
+              <View style={styles.buttonRow}>
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.cancelButton]}
+                  onPress={() => setShowExtendModal(false)}
+                  disabled={submitting}
+                >
+                  <Text style={styles.cancelButtonText}>Hủy</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.submitButton]}
+                  onPress={handleExtendContract}
+                  disabled={submitting}
+                >
+                  {submitting ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <Text style={styles.submitButtonText}>Gửi yêu cầu</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -511,6 +652,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginHorizontal: 16,
     marginTop: 16,
+    marginBottom: 16,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -655,6 +797,130 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginLeft: 8,
   },
+  extendContractButton: {
+    backgroundColor: '#FF9800',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  extendContractText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  modalContainer: {
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    width: '90%',
+    maxWidth: 400,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEEEEE',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  formContainer: {
+    padding: 16,
+  },
+  formLabel: {
+    fontSize: 15,
+    color: '#333',
+    marginBottom: 6,
+    fontWeight: '500',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#DDD',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 15,
+    color: '#333',
+    backgroundColor: '#F9F9F9',
+    marginBottom: 16,
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  actionButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#F5F5F5',
+    marginRight: 8,
+  },
+  cancelButtonText: {
+    color: '#666',
+    fontWeight: 'bold',
+    fontSize: 15,
+  },
+  submitButton: {
+    backgroundColor: '#6D5BA3',
+    marginLeft: 8,
+  },
+  submitButtonText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 15,
+  },
+  // Add these to your existing styles object
+warningContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  backgroundColor: '#FFF3E0',
+  paddingVertical: 10,
+  paddingHorizontal: 16,
+  marginHorizontal: 16,
+  marginTop: 8,
+  borderRadius: 8,
+  borderLeftWidth: 4,
+  borderLeftColor: '#FF9800',
+},
+warningText: {
+  flex: 1,
+  marginLeft: 8,
+  fontSize: 14,
+  color: '#E65100',
+  fontWeight: '500',
+},
 });
 
 export default RoomStayDetail;

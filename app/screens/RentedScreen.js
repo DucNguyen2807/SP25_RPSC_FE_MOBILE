@@ -41,12 +41,14 @@ const RentedScreen = ({ navigation }) => {
         setRentedRoom({
           landlordName: roomData.landlordName,
           landlordAvatar: roomData.landlordAvatar || null,
+          statusOfMaxRoom: roomData.statusOfMaxRoom,  // This line is already correctly stored
           price: roomData.room.price,
           imageUrl: roomData.room.roomCusImages[0]?.imageUrl,
           status: roomData.room.status,
           address: roomData.room.location || 'District 2, Ho Chi Minh City',
           roomId: roomData.room.roomId,
           title: roomData.room.title,
+          maxOccupancy: roomData.room.maxOccupancy,
           roomTypeName: roomData.room.roomTypeName,
         });
         
@@ -165,6 +167,9 @@ const RentedScreen = ({ navigation }) => {
   const formattedPrice = rentedRoom.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
   const statusColor = getStatusColor(rentedRoom.status);
   const statusText = getStatusText(rentedRoom.status);
+
+  // Calculate suggested price
+  const suggestedPrice = rentedRoom.price / rentedRoom.maxOccupancy;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -301,11 +306,12 @@ const RentedScreen = ({ navigation }) => {
         </TouchableOpacity>
 
         {/* Only show Create New Post Button if customer type is Tenant and no existing post */}
-        {customerType === 'Tenant' && !existingPost && (
+        {customerType === 'Tenant' && !existingPost && rentedRoom?.statusOfMaxRoom === 'NotEnough' && (
           <TouchableOpacity 
             onPress={() => {
               navigation.navigate('CreateRoommatePost', { 
-                roomId: rentedRoom?.roomId
+                roomId: rentedRoom?.roomId,
+                suggestedPrice: suggestedPrice // Pass the calculated suggested price
               });
             }}
             activeOpacity={0.8}  

@@ -19,6 +19,8 @@ import CustomerRequestsScreen from '../screens/CustomerRequestsScreen';
 import RoomMembersScreen from '../screens/RoomMembersScreen';
 import LeaveRequestsScreen from '../screens/LeaveRequestsScreen';
 import EditProfile from '../screens/EditProfile';
+import ViewAllRequestExtendContract from '../screens/ViewAllRequestExtendContract';
+
 const Stack = createStackNavigator();
 
 const AppNavigator = () => {
@@ -93,6 +95,13 @@ const AppNavigator = () => {
       <Stack.Screen 
         name="SecuritySafety" 
         component={SecuritySafetyScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="History-Request-Extend-Contract" 
+        component={ViewAllRequestExtendContract}
         options={{
           headerShown: false,
         }}

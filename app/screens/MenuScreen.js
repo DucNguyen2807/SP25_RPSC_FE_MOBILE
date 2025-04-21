@@ -100,6 +100,10 @@ const MenuScreen = ({ navigation, route }) => {
     navigation.navigate('CustomerRequests');
   };
 
+  const handleExtendContractRequestsPress = () => {
+    navigation.navigate('History-Request-Extend-Contract');
+  };
+
   const goBack = () => {
     navigation.goBack();
   };
@@ -112,7 +116,6 @@ const MenuScreen = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* The rest of the component remains the same */}
       {/* Header */}
       <LinearGradient
         colors={['#00A67E', '#00A67E']}
@@ -196,6 +199,16 @@ const MenuScreen = ({ navigation, route }) => {
             <MaterialIcons name="chevron-right" size={24} color="#666" />
           </TouchableOpacity>
 
+          {/* New Button for Extend Contract Requests */}
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={handleExtendContractRequestsPress}
+          >
+            <MaterialIcons name="history" size={24} color="#666" />
+            <Text style={styles.menuItemText}>Yêu cầu gia hạn hợp đồng</Text>
+            <MaterialIcons name="chevron-right" size={24} color="#666" />
+          </TouchableOpacity>
+
           <TouchableOpacity 
             style={styles.menuItem}
             onPress={() => navigation.navigate('RoomMembers')}
@@ -226,7 +239,6 @@ const MenuScreen = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-  // Style definitions remain unchanged
   container: {
     flex: 1,
     backgroundColor: '#F8F9FA',

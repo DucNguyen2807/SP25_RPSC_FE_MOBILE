@@ -31,128 +31,145 @@ const RoommatePostDetail = ({ route, navigation }) => {
   const [processingRequest, setProcessingRequest] = useState(null);
 
   // Fetch post data if only postId is provided
-  useEffect(() => {
-    const fetchPostData = async () => {
-      if (postId && !postData) {
-        try {
-          setLoading(true);
-          const result = await postService.getPostRoommateByCustomerId();
-          if (result.isSuccess) {
-            // Format the data to match our component's expectations
-            const fetchedPost = result.data;
-            setPost({
-              postId: fetchedPost.postId,
-              title: fetchedPost.title,
-              fullName: fetchedPost.customerName,
-              email: fetchedPost.customerEmail,
-              phoneNumber: fetchedPost.customerPhoneNumber,
-              price: fetchedPost.price.toString(),
-              description: fetchedPost.description,
-              status: fetchedPost.status,
-              createdAt: new Date(fetchedPost.createdAt).toLocaleDateString('vi-VN'),
-            });
-          } else {
-            console.error('Failed to fetch post data:', result.message);
-          }
-        } catch (error) {
-          console.error('Error fetching post data:', error);
-        } finally {
-          setLoading(false);
+  const fetchPostData = async () => {
+    if (postId && !postData) {
+      try {
+        setLoading(true);
+        const result = await postService.getPostRoommateByCustomerId();
+        if (result.isSuccess) {
+          // Format the data to match our component's expectations
+          const fetchedPost = result.data;
+          setPost({
+            postId: fetchedPost.postId,
+            title: fetchedPost.title,
+            fullName: fetchedPost.customerName,
+            email: fetchedPost.customerEmail,
+            phoneNumber: fetchedPost.customerPhoneNumber,
+            price: fetchedPost.price.toString(),
+            description: fetchedPost.description,
+            status: fetchedPost.status,
+            createdAt: new Date(fetchedPost.createdAt).toLocaleDateString('vi-VN'),
+          });
+        } else {
+          // Silently handle the failure, no console error
+          // Just set empty/null state
+          setPost(null);
         }
-      } else if (postData) {
-        // If postData is provided directly, just use it
-        setPost(postData);
-        setLoading(false);
-      } else {
+      } catch (error) {
+        // Silently handle the error, no console error
+        // Just set empty/null state
+        setPost(null);
+      } finally {
         setLoading(false);
       }
-    };
+    } else if (postData) {
+      // If postData is provided directly, just use it
+      setPost(postData);
+      setLoading(false);
+    } else {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchPostData();
   }, [postId, postData]);
 
   // Fetch roommate requests using roommateService
-  // Fetch roommate requests using roommateService
-const fetchRoommateRequests = async () => {
-  try {
-    setRequestLoading(true);
-    const result = await roommateService.getAllRoommateRequests();
-    
-    if (result.isSuccess && result.data) {
-      setRoommateRequests(result.data.requestSharingList || []);
-    } else {
-      console.error('Failed to fetch roommate requests:', result.message);
-      // Set empty array as fallback
+  const fetchRoommateRequests = async () => {
+    try {
+      setRequestLoading(true);
+      const result = await roommateService.getAllRoommateRequests();
+      
+      if (result.isSuccess && result.data) {
+        setRoommateRequests(result.data.requestSharingList || []);
+      } else {
+        // Silently handle the failure, just set empty array
+        setRoommateRequests([]);
+      }
+    } catch (error) {
+      // Silently handle the error, no console error
+      // Just set empty array
       setRoommateRequests([]);
+    } finally {
+      setRequestLoading(false);
     }
-  } catch (error) {
-    console.error('Error fetching roommate requests:', error);
-    // Set empty array on error
-    setRoommateRequests([]);
-  } finally {
-    setRequestLoading(false);
-  }
-};
+  };
+
   useEffect(() => {
     fetchRoommateRequests();
   }, []);
 
   // Handle accepting a roommate request
-  // Handle accepting a roommate request
-const handleAcceptRequest = async (requestId) => {
-  try {
-    setProcessingRequest(requestId);
-    const result = await roommateService.acceptRoommateRequest(requestId);
-    if (result.isSuccess) {
-      Alert.alert(
-        "Thành công",
-        "Đã chấp nhận yêu cầu ở ghép thành công",
-        [{ 
-          text: "OK", 
-          onPress: () => {
-            // Navigate to RentedMain after successful acceptance
-            navigation.navigate('RentedMain');
-          } 
-        }]
-      );
-    } else {
-      Alert.alert("Lỗi", result.message || "Không thể chấp nhận yêu cầu");
+  const handleAcceptRequest = async (requestId) => {
+    try {
+      setProcessingRequest(requestId);
+      const result = await roommateService.acceptRoommateRequest(requestId);
+      if (result.isSuccess) {
+        Alert.alert(
+          "Thành công",
+          "Đã chấp nhận yêu cầu ở ghép thành công",
+          [{ 
+            text: "OK", 
+            onPress: async () => {
+              // Reload page data
+              await fetchPostData();
+              
+              // Check if post status is now Inactive and navigate if so
+              const updatedResult = await postService.getPostRoommateByCustomerId();
+              if (updatedResult.isSuccess && updatedResult.data) {
+                const updatedPost = updatedResult.data;
+                if (updatedPost.status === 'Inactive') {
+                  navigation.navigate('RentedMain');
+                } else {
+                  // If not inactive, still reload roommate requests
+                  fetchRoommateRequests();
+                }
+              } else {
+                // Fallback: reload roommate requests if post check fails
+                fetchRoommateRequests();
+              }
+            } 
+          }]
+        );
+      } else {
+        Alert.alert("Lỗi", result.message || "Không thể chấp nhận yêu cầu");
+      }
+    } catch (error) {
+      console.error('Error accepting request:', error);
+      Alert.alert("Lỗi", "Đã xảy ra lỗi khi xử lý yêu cầu");
+    } finally {
+      setProcessingRequest(null);
     }
-  } catch (error) {
-    console.error('Error accepting request:', error);
-    Alert.alert("Lỗi", "Đã xảy ra lỗi khi xử lý yêu cầu");
-  } finally {
-    setProcessingRequest(null);
-  }
-};
+  };
 
-// Handle rejecting a roommate request
-const handleRejectRequest = async (requestId) => {
-  try {
-    setProcessingRequest(requestId);
-    const result = await roommateService.rejectRoommateRequest(requestId);
-    if (result.isSuccess) {
-      Alert.alert(
-        "Thành công",
-        "Đã từ chối yêu cầu ở ghép thành công",
-        [{ 
-          text: "OK", 
-          onPress: () => {
-            // Fetch roommate requests again after successful rejection
-            fetchRoommateRequests();
-          } 
-        }]
-      );
-    } else {
-      Alert.alert("Lỗi", result.message || "Không thể từ chối yêu cầu");
+  // Handle rejecting a roommate request
+  const handleRejectRequest = async (requestId) => {
+    try {
+      setProcessingRequest(requestId);
+      const result = await roommateService.rejectRoommateRequest(requestId);
+      if (result.isSuccess) {
+        Alert.alert(
+          "Thành công",
+          "Đã từ chối yêu cầu ở ghép thành công",
+          [{ 
+            text: "OK", 
+            onPress: () => {
+              // Fetch roommate requests again after successful rejection
+              fetchRoommateRequests();
+            } 
+          }]
+        );
+      } else {
+        Alert.alert("Lỗi", result.message || "Không thể từ chối yêu cầu");
+      }
+    } catch (error) {
+      console.error('Error rejecting request:', error);
+      Alert.alert("Lỗi", "Đã xảy ra lỗi khi xử lý yêu cầu");
+    } finally {
+      setProcessingRequest(null);
     }
-  } catch (error) {
-    console.error('Error rejecting request:', error);
-    Alert.alert("Lỗi", "Đã xảy ra lỗi khi xử lý yêu cầu");
-  } finally {
-    setProcessingRequest(null);
-  }
-}; 
+  };
 
   // Helper function to calculate age from DOB
   const calculateAge = (dob) => {
@@ -400,12 +417,16 @@ const handleRejectRequest = async (requestId) => {
         {/* Two buttons side by side for Accept and Reject */}
         <View style={styles.buttonRow}>
           <TouchableOpacity 
-            style={[styles.actionBtn, styles.acceptButton]}
+            style={[
+              styles.actionBtn, 
+              styles.acceptButton,
+              post?.status === 'Inactive' && styles.disabledButton
+            ]}
             onPress={() => handleAcceptRequest(request.requestId)}
-            disabled={processingRequest === request.requestId}
+            disabled={processingRequest === request.requestId || post?.status === 'Inactive'}
           >
             <LinearGradient
-              colors={['#4CAF50', '#66BB6A']}
+              colors={post?.status === 'Inactive' ? ['#BDBDBD', '#9E9E9E'] : ['#4CAF50', '#66BB6A']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.acceptButtonGradient}
@@ -418,12 +439,16 @@ const handleRejectRequest = async (requestId) => {
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={[styles.actionBtn, styles.rejectButton]}
+            style={[
+              styles.actionBtn, 
+              styles.rejectButton,
+              post?.status === 'Inactive' && styles.disabledButton
+            ]}
             onPress={() => handleRejectRequest(request.requestId)}
-            disabled={processingRequest === request.requestId}
+            disabled={processingRequest === request.requestId || post?.status === 'Inactive'}
           >
             <LinearGradient
-              colors={['#F44336', '#E57373']}
+              colors={post?.status === 'Inactive' ? ['#BDBDBD', '#9E9E9E'] : ['#F44336', '#E57373']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.rejectButtonGradient}
@@ -490,27 +515,6 @@ const handleRejectRequest = async (requestId) => {
           >
             <Text style={styles.retryText}>Quay lại</Text>
           </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (postData) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <LinearGradient
-          colors={['#00A67E', '#00A67E']}
-          style={styles.header}
-        >
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <MaterialIcons name="arrow-back" size={24} color="#FFF" />
-          </TouchableOpacity>
-        </LinearGradient>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Không tìm thấy thông tin bài đăng</Text>
         </View>
       </SafeAreaView>
     );

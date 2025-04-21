@@ -15,19 +15,30 @@ import { LinearGradient } from 'expo-linear-gradient';
 import postService from '../services/postService';
 
 const CreateRoommatePost = ({ route, navigation }) => {
-  // Get roomId from route params
-  const { roomId } = route.params || {};
+  // Get roomId and suggestedPrice from route params
+  const { roomId, suggestedPrice } = route.params || {};
   
   const [formData, setFormData] = useState({
     title: '',
     description: 'Xin chào mọi người! Mình đang tìm người ở ghép, mình là người gọn gàng, sạch sẽ và tôn trọng không gian riêng tư của người khác.',
-    price: '',
+    price: suggestedPrice ? suggestedPrice.toString() : '', // Set suggested price if available
   });
 
-  // Log roomId for debugging purposes
+  // Update price if suggestedPrice changes
+  useEffect(() => {
+    if (suggestedPrice) {
+      setFormData(prevData => ({
+        ...prevData,
+        price: suggestedPrice.toString()
+      }));
+    }
+  }, [suggestedPrice]);
+
+  // Log roomId and suggested price for debugging purposes
   useEffect(() => {
     console.log('Room ID received:', roomId);
-  }, [roomId]);
+    console.log('Suggested price received:', suggestedPrice);
+  }, [roomId, suggestedPrice]);
 
   const handleSubmit = async () => {
     try {
