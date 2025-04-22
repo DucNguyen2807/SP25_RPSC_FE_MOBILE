@@ -17,12 +17,129 @@ import {
 import { AntDesign, Ionicons, MaterialIcons, Feather, FontAwesome5 } from '@expo/vector-icons';
 import { Calendar } from 'react-native-calendars';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 import authService from '../services/authService';
 import { LinearGradient } from 'expo-linear-gradient';
-
+import { Picker } from '@react-native-picker/picker';
 const { width, height } = Dimensions.get('window');
+
+// Multi-select component for preferences, requirements, and lifestyle
+const MultiSelect = ({ 
+  options, 
+  selectedValues, 
+  onSelectionChange, 
+  title, 
+  placeholder 
+}) => {
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [localSelection, setLocalSelection] = useState([]);
+
+  useEffect(() => {
+    // Initialize local selection from props
+    if (selectedValues) {
+      setLocalSelection(selectedValues.split(', ').filter(item => item !== ''));
+    } else {
+      setLocalSelection([]);
+    }
+  }, [selectedValues]);
+
+  const toggleOption = (option) => {
+    let newSelection = [...localSelection];
+    
+    if (newSelection.includes(option)) {
+      // Remove option if already selected
+      newSelection = newSelection.filter(item => item !== option);
+    } else {
+      // Add option if not already selected
+      newSelection.push(option);
+    }
+    
+    setLocalSelection(newSelection);
+  };
+
+  const handleConfirm = () => {
+    // Join selected options with comma and space
+    onSelectionChange(localSelection.join(', '));
+    setIsModalVisible(false);
+  };
+
+  return (
+    <View>
+      <TouchableOpacity 
+        style={styles.selectButton}
+        onPress={() => setIsModalVisible(true)}
+      >
+        <Text style={[
+          styles.selectButtonText,
+          (!selectedValues || selectedValues.length === 0) && styles.placeholderText
+        ]}>
+          {selectedValues && selectedValues.length > 0 
+            ? selectedValues 
+            : placeholder || "Select options"}
+        </Text>
+        <Ionicons name="chevron-down" size={24} color="#666" />
+      </TouchableOpacity>
+
+      <Modal
+        visible={isModalVisible}
+        transparent={true}
+        animationType="slide"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{title}</Text>
+              <TouchableOpacity 
+                onPress={() => setIsModalVisible(false)}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.optionsList}>
+              {options.map((option, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.optionItem,
+                    localSelection.includes(option) && styles.selectedOption
+                  ]}
+                  onPress={() => toggleOption(option)}
+                >
+                  <Text style={[
+                    styles.optionText,
+                    localSelection.includes(option) && styles.selectedOptionText
+                  ]}>
+                    {option}
+                  </Text>
+                  {localSelection.includes(option) && (
+                    <Ionicons name="checkmark" size={22} color="#1E88E5" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity 
+                style={styles.cancelButton}
+                onPress={() => setIsModalVisible(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.confirmButton}
+                onPress={handleConfirm}
+              >
+                <Text style={styles.confirmButtonText}>Confirm</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
+};
 
 const PersonalInfoScreen = () => {
   const navigation = useNavigation();
@@ -164,6 +281,164 @@ const PersonalInfoScreen = () => {
         }).start();
       });
     }
+  };
+
+ // Update these functions with improved styling
+const renderPreferencesDropdown = () => {
+  const preferencesOptions = [
+    "Không gian yên tĩnh",
+    "Gần trung tâm thành phố",
+    "Khu vực làm việc riêng",
+    "View đẹp",
+    "Không gian xanh",
+    "Tiện ích hiện đại",
+    "Khác"
+  ];
+
+  return (
+    <View style={styles.inputWrapper}>
+      <Text style={styles.stepTitle}>Your Preferences</Text>
+      <Text style={styles.stepDescription}>Select the features that matter most to you in your living space</Text>
+      
+      <MultiSelect
+        options={preferencesOptions}
+        selectedValues={preferences}
+        onSelectionChange={setPreferences}
+        title="Chọn sở thích của bạn"
+        placeholder="Tap to select preferences"
+      />
+      
+      {preferences && preferences.length > 0 && (
+        <View style={styles.selectedOptionsDisplay}>
+          <Text style={styles.selectedOptionsText}>
+            <Text style={styles.selectedOptionsLabel}>Selected: </Text>
+            {preferences}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+};
+
+const renderRequirementDropdown = () => {
+  const requirementOptions = [
+    "Chỗ để xe",
+    "Ban công",
+    "Hồ bơi",
+    "Phòng gym",
+    "An ninh 24/7",
+    "Cho phép nuôi thú cưng",
+    "Khác"
+  ];
+
+  return (
+    <View style={styles.inputWrapper}>
+      <Text style={styles.stepTitle}>Requirements</Text>
+      <Text style={styles.stepDescription}>What features are must-haves for your new place?</Text>
+      
+      <MultiSelect
+        options={requirementOptions}
+        selectedValues={requirement}
+        onSelectionChange={setRequirement}
+        title="Chọn yêu cầu của bạn"
+        placeholder="Tap to select requirements"
+      />
+      
+      {requirement && requirement.length > 0 && (
+        <View style={styles.selectedOptionsDisplay}>
+          <Text style={styles.selectedOptionsText}>
+            <Text style={styles.selectedOptionsLabel}>Selected: </Text>
+            {requirement}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+};
+
+const renderLifestyleDropdown = () => {
+  const lifestyleOptions = [
+    "Năng động",
+    "Thích hoạt động cộng đồng",
+    "Thích sự yên tĩnh",
+    "Thích làm việc tại nhà",
+    "Thường xuyên đi công tác",
+    "Gia đình có trẻ nhỏ",
+    "Khác"
+  ];
+
+  return (
+    <View style={styles.inputWrapper}>
+      <Text style={styles.stepTitle}>Lifestyle</Text>
+      <Text style={styles.stepDescription}>Tell us about your lifestyle to help find your perfect match</Text>
+      
+      <MultiSelect
+        options={lifestyleOptions}
+        selectedValues={lifeStyle}
+        onSelectionChange={setLifeStyle}
+        title="Chọn phong cách sống của bạn"
+        placeholder="Tap to select lifestyle options"
+      />
+      
+      {lifeStyle && lifeStyle.length > 0 && (
+        <View style={styles.selectedOptionsDisplay}>
+          <Text style={styles.selectedOptionsText}>
+            <Text style={styles.selectedOptionsLabel}>Selected: </Text>
+            {lifeStyle}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+};
+
+  const renderPreferredLocationDropdown = () => {
+    return (
+      <View style={styles.inputGroup}>
+        <Text style={styles.inputLabel}>Khu vực ưa thích</Text>
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={preferredLocation}
+            onValueChange={setPreferredLocation}
+            style={styles.input}
+          >
+            <Picker.Item label="Chọn khu vực ưa thích" value="" />
+            <Picker.Item label="An Khánh" value="An Khánh" />
+            <Picker.Item label="An Lợi Đông" value="An Lợi Đông" />
+            <Picker.Item label="An Phú" value="An Phú" />
+            <Picker.Item label="Bình Chiểu" value="Bình Chiểu" />
+            <Picker.Item label="Bình Thọ" value="Bình Thọ" />
+            <Picker.Item label="Cát Lái" value="Cát Lái" />
+            <Picker.Item label="Hiệp Bình Chánh" value="Hiệp Bình Chánh" />
+            <Picker.Item label="Hiệp Bình Phước" value="Hiệp Bình Phước" />
+            <Picker.Item label="Hiệp Phú" value="Hiệp Phú" />
+            <Picker.Item label="Linh Chiểu" value="Linh Chiểu" />
+            <Picker.Item label="Linh Đông" value="Linh Đông" />
+            <Picker.Item label="Linh Tây" value="Linh Tây" />
+            <Picker.Item label="Linh Trung" value="Linh Trung" />
+            <Picker.Item label="Linh Xuân" value="Linh Xuân" />
+            <Picker.Item label="Long Bình" value="Long Bình" />
+            <Picker.Item label="Long Phước" value="Long Phước" />
+            <Picker.Item label="Long Thạnh Mỹ" value="Long Thạnh Mỹ" />
+            <Picker.Item label="Long Trường" value="Long Trường" />
+            <Picker.Item label="Phú Hữu" value="Phú Hữu" />
+            <Picker.Item label="Phước Bình" value="Phước Bình" />
+            <Picker.Item label="Phước Long A" value="Phước Long A" />
+            <Picker.Item label="Phước Long B" value="Phước Long B" />
+            <Picker.Item label="Tân Phú" value="Tân Phú" />
+            <Picker.Item label="Tam Bình" value="Tam Bình" />
+            <Picker.Item label="Tam Phú" value="Tam Phú" />
+            <Picker.Item label="Tăng Nhơn Phú A" value="Tăng Nhơn Phú A" />
+            <Picker.Item label="Tăng Nhơn Phú B" value="Tăng Nhơn Phú B" />
+            <Picker.Item label="Thảo Điền" value="Thảo Điền" />
+            <Picker.Item label="Thạnh Mỹ Lợi" value="Thạnh Mỹ Lợi" />
+            <Picker.Item label="Thủ Thiêm" value="Thủ Thiêm" />
+            <Picker.Item label="Trường Thạnh" value="Trường Thạnh" />
+            <Picker.Item label="Trường Thọ" value="Trường Thọ" />
+          </Picker>
+        </View>
+      </View>
+    );
   };
 
   const handleUpdateProfile = async () => {
@@ -330,64 +605,14 @@ const PersonalInfoScreen = () => {
             />
           </View>
         );
-      case 3:
-        return (
-          <View style={styles.inputWrapper}>
-            <Text style={styles.inputLabel}>What are your preferences?</Text>
-            <TextInput 
-              style={[styles.input, styles.textArea]} 
-              value={preferences} 
-              onChangeText={setPreferences}
-              placeholder="Tell us what you're looking for..."
-              multiline
-              numberOfLines={4}
-              placeholderTextColor="#888"
-            />
-          </View>
-        );
-      case 4:
-        return (
-          <View style={styles.inputWrapper}>
-            <Text style={styles.inputLabel}>What are your requirements?</Text>
-            <TextInput 
-              style={[styles.input, styles.textArea]} 
-              value={requirement} 
-              onChangeText={setRequirement}
-              placeholder="What features do you need?"
-              multiline
-              numberOfLines={4}
-              placeholderTextColor="#888"
-            />
-          </View>
-        );
-      case 5:
-        return (
-          <View style={styles.inputWrapper}>
-            <Text style={styles.inputLabel}>Describe your lifestyle</Text>
-            <TextInput 
-              style={[styles.input, styles.textArea]} 
-              value={lifeStyle} 
-              onChangeText={setLifeStyle}
-              placeholder="Tell us about your daily routines..."
-              multiline
-              numberOfLines={4}
-              placeholderTextColor="#888"
-            />
-          </View>
-        );
-      case 6:
-        return (
-          <View style={styles.inputWrapper}>
-            <Text style={styles.inputLabel}>Where would you like to live?</Text>
-            <TextInput 
-              style={styles.input} 
-              value={preferredLocation} 
-              onChangeText={setPreferredLocation}
-              placeholder="Enter preferred location"
-              placeholderTextColor="#888"
-            />
-          </View>
-        );
+        case 3:
+          return renderPreferencesDropdown();
+        case 4:
+          return renderRequirementDropdown();
+        case 5:
+          return renderLifestyleDropdown();
+        case 6:
+          return renderPreferredLocationDropdown();
       case 7:
         return (
           <View style={styles.inputWrapper}>
@@ -525,7 +750,116 @@ const PersonalInfoScreen = () => {
     </LinearGradient>
   );
 };
-
+const additionalStyles = {
+  // Enhanced styling for the MultiSelect component
+  stepTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  stepDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 20,
+    textAlign: 'center',
+    paddingHorizontal: 10,
+  },
+  selectedOptionsDisplay: {
+    backgroundColor: 'rgba(30, 136, 229, 0.1)',
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 15,
+  },
+  selectedOptionsText: {
+    color: '#1E88E5',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  selectedOptionsLabel: {
+    fontWeight: '600',
+  },
+  // Make the MultiSelect button more appealing
+  selectButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 15,
+    borderWidth: 1,
+    borderColor: 'rgba(30, 136, 229, 0.3)',
+  },
+  // Enhance the modal appearance
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 24,
+    width: '100%',
+    maxHeight: height * 0.7,
+    padding: 0,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    backgroundColor: '#f9f9f9',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+  // Enhance the option items
+  optionItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  selectedOption: {
+    backgroundColor: 'rgba(30, 136, 229, 0.1)',
+  },
+  // Add more attractive buttons in the footer
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    backgroundColor: '#f9f9f9',
+  },
+  confirmButton: {
+    backgroundColor: '#1E88E5',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    alignItems: 'center',
+    minWidth: 120,
+    shadowColor: '#1E88E5',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  confirmButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+};
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -773,7 +1107,21 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     padding: 5,
-  }
+  },
+  stepTitle: additionalStyles.stepTitle,
+  stepDescription: additionalStyles.stepDescription,
+  selectedOptionsDisplay: additionalStyles.selectedOptionsDisplay,
+  selectedOptionsText: additionalStyles.selectedOptionsText,
+  selectedOptionsLabel: additionalStyles.selectedOptionsLabel,
+  selectButton: additionalStyles.selectButton,
+  modalContent: additionalStyles.modalContent,
+  modalHeader: additionalStyles.modalHeader,
+  modalTitle: additionalStyles.modalTitle,
+  optionItem: additionalStyles.optionItem,
+  selectedOption: additionalStyles.selectedOption,
+  modalFooter: additionalStyles.modalFooter,
+  confirmButton: additionalStyles.confirmButton,
+  confirmButtonText: additionalStyles.confirmButtonText,
 });
 
 export default PersonalInfoScreen;

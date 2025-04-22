@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Dimensions,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -41,7 +42,7 @@ const RentedScreen = ({ navigation }) => {
         setRentedRoom({
           landlordName: roomData.landlordName,
           landlordAvatar: roomData.landlordAvatar || null,
-          statusOfMaxRoom: roomData.statusOfMaxRoom,  // This line is already correctly stored
+          statusOfMaxRoom: roomData.statusOfMaxRoom,
           price: roomData.room.price,
           imageUrl: roomData.room.roomCusImages[0]?.imageUrl,
           status: roomData.room.status,
@@ -116,20 +117,11 @@ const RentedScreen = ({ navigation }) => {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <StatusBar barStyle="light-content" backgroundColor="#6D5BA3" />
-        <ActivityIndicator size="large" color="#6D5BA3" />
-        <Text style={styles.loadingText}>Đang tải thông tin phòng...</Text>
-      </SafeAreaView>
-    );
-  }
-
-  if (!rentedRoom) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#6D5BA3" />
+      <View style={styles.container}>
+        
+        <StatusBar barStyle="light-content" backgroundColor="#ACDCD0" />
         <LinearGradient
-          colors={['#6D5BA3', '#8B75C5']}
+          colors={['#ACDCD0', '#ACDCD0']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.header}
@@ -137,21 +129,52 @@ const RentedScreen = ({ navigation }) => {
           <Text style={styles.headerTitle}>Phòng đã thuê</Text>
           <TouchableOpacity style={styles.notificationButton}>
             <MaterialIcons name="notifications-none" size={24} color="#FFF" />
+            <View style={styles.notificationBadge}>
+              <Text style={styles.badgeNumber}>2</Text>
+            </View>
           </TouchableOpacity>
         </LinearGradient>
+        
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#ACDCD0" />
+          <Text style={styles.loadingText}>Đang tải thông tin phòng...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (!rentedRoom) {
+    return (
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#ACDCD0" />
+        <LinearGradient
+          colors={['#ACDCD0', '#ACDCD0']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.header}
+        >
+          <Text style={styles.headerTitle}>Phòng đã thuê</Text>
+          <TouchableOpacity style={styles.notificationButton}>
+            <MaterialIcons name="notifications-none" size={24} color="#FFF" />
+            <View style={styles.notificationBadge}>
+              <Text style={styles.badgeNumber}>2</Text>
+            </View>
+          </TouchableOpacity>
+        </LinearGradient>
+        
         <ScrollView 
           contentContainerStyle={styles.emptyStateContainer}
           refreshControl={
             <RefreshControl 
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={['#6D5BA3']}
-              tintColor={'#6D5BA3'}
+              colors={['#ACDCD0']}
+              tintColor={'#ACDCD0'}
               progressBackgroundColor="#FFF"
             />
           }
         >
-          <Ionicons name="home-outline" size={80} color="#6D5BA3" />
+          <Ionicons name="home-outline" size={80} color="#ACDCD0" />
           <Text style={styles.emptyStateText}>Bạn chưa thuê phòng nào</Text>
           <TouchableOpacity
             style={styles.browseRoomsButton}
@@ -160,7 +183,7 @@ const RentedScreen = ({ navigation }) => {
             <Text style={styles.browseRoomsText}>Tìm phòng ngay</Text>
           </TouchableOpacity>
         </ScrollView>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -172,12 +195,11 @@ const RentedScreen = ({ navigation }) => {
   const suggestedPrice = rentedRoom.price / rentedRoom.maxOccupancy;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#6D5BA3" />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#ACDCD0" />
       
-      {/* Header */}
       <LinearGradient
-        colors={['#6D5BA3', '#8B75C5']}
+        colors={['#ACDCD0', '#ACDCD0']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.header}
@@ -198,8 +220,8 @@ const RentedScreen = ({ navigation }) => {
           <RefreshControl 
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={['#6D5BA3']}
-            tintColor={'#6D5BA3'}
+            colors={['#ACDCD0']}
+            tintColor={'#ACDCD0'}
             progressBackgroundColor="#FFF"
             progressViewOffset={20} // Adds some offset to make the spinner more visible
             size="large" // Make spinner bigger for better visibility
@@ -249,7 +271,7 @@ const RentedScreen = ({ navigation }) => {
               <Text style={styles.roomTitle}>{rentedRoom.title || rentedRoom.roomTypeName}</Text>
               
               <View style={styles.addressRow}>
-                <MaterialIcons name="location-on" size={18} color="#6D5BA3" />
+                <MaterialIcons name="location-on" size={18} color="#ACDCD0" />
                 <Text style={styles.address} numberOfLines={2}>{rentedRoom.address}</Text>
               </View>
 
@@ -317,7 +339,7 @@ const RentedScreen = ({ navigation }) => {
             activeOpacity={0.8}  
           >
             <LinearGradient
-              colors={['#6D5BA3', '#8B75C5']}
+              colors={['#ACDCD0', '#ACDCD0']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.createButton}
@@ -336,7 +358,7 @@ const RentedScreen = ({ navigation }) => {
             style={styles.existingPostContainer}
           >
             <View style={styles.existingPostHeader}>
-              <Ionicons name="document-text" size={18} color="#6D5BA3" />
+              <Ionicons name="document-text" size={18} color="#ACDCD0" />
               <Text style={styles.existingPostTitle}>Bài đăng tìm người ở ghép của bạn</Text>
             </View>
             <View style={styles.existingPostContent}>
@@ -398,7 +420,7 @@ const RentedScreen = ({ navigation }) => {
           </ScrollView>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -416,20 +438,22 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#6D5BA3',
+    color: '#ACDCD0',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 16,
+    paddingTop: Platform.OS === 'ios' ? 44 : 12, // Adjusted for iOS status bar
+    paddingBottom: 12,
+    width: '100%',
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#FFF',
+    flex: 1,
   },
   notificationButton: {
     position: 'relative',
@@ -576,14 +600,14 @@ const styles = StyleSheet.create({
   },
   customerTypeBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#6D5BA320',
+    backgroundColor: '#ACDCD020',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
     marginBottom: 16,
   },
   customerTypeText: {
-    color: '#6D5BA3',
+    color: '#ACDCD0',
     fontWeight: '600',
     fontSize: 12,
   },
@@ -600,7 +624,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#6D5BA3',
+    backgroundColor: '#ACDCD0',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -632,7 +656,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#6D5BA3',
+    backgroundColor: '#ACDCD0',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -703,7 +727,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   browseRoomsButton: {
-    backgroundColor: '#6D5BA3',
+    backgroundColor: '#ACDCD0',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
@@ -732,7 +756,7 @@ const styles = StyleSheet.create({
   },
   existingPostTitle: {
     fontSize: 14,
-    color: '#6D5BA3',
+    color: '#ACDCD0',
     fontWeight: '500',
     marginLeft: 8,
   },
@@ -762,7 +786,7 @@ const styles = StyleSheet.create({
   existingPostPriceValue: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#6D5BA3',
+    color: '#ACDCD0',
   },
   existingPostStatus: {
     paddingHorizontal: 12,

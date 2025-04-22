@@ -13,6 +13,7 @@ import {
   Alert,
   Modal,
   Pressable,
+  Platform,
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -257,208 +258,256 @@ const RoomMembersScreen = ({ navigation }) => {
     );
   };
 
+  // Loading state with fixed header
   if (loading) {
     return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <StatusBar barStyle="light-content" backgroundColor="#00A67E" />
-        <ActivityIndicator size="large" color="#00A67E" />
-        <Text style={styles.loadingText}>Đang tải danh sách thành viên...</Text>
-      </SafeAreaView>
-    );
-  }
-
-  if (!roomData) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#00A67E" />
+      <View style={styles.container}>
+        <StatusBar 
+          barStyle="light-content" 
+          backgroundColor="#00A67E"
+          translucent={true}
+        />
         
         {/* Header with Gradient */}
         <LinearGradient
           colors={['#00A67E', '#00A67E']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.header}
+          style={styles.headerGradient}
         >
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <MaterialIcons name="arrow-back" size={24} color="#FFF" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Thành viên trong phòng</Text>
-          <View style={styles.headerPlaceholder} />
-        </LinearGradient>
-
-        {/* Empty State */}
-        <View style={styles.emptyStateContainer}>
-          <LinearGradient
-            colors={['rgba(255,255,255,0.9)', 'rgba(255,255,255,0.95)']}
-            style={styles.emptyStateCard}
-          >
-            <View style={styles.emptyStateIconContainer}>
-              <MaterialIcons name="home" size={64} color="#00A67E" />
-            </View>
-            <Text style={styles.emptyStateTitle}>Bạn chưa ở trong phòng nào</Text>
-            <Text style={styles.emptyStateDescription}>
-              Hãy tìm kiếm và đăng ký một phòng để bắt đầu trải nghiệm
-            </Text>
-            <TouchableOpacity 
-              style={styles.findRoomButton}
-              onPress={() => navigation.reset({
-                index: 0,
-                routes: [{ name: 'MainTabs' }],
-              })}
-            >
-              <LinearGradient
-                colors={['#00A67E', '#00A67E']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.findRoomButtonGradient}
+          <SafeAreaView style={styles.safeHeader}>
+            <View style={styles.header}>
+              <TouchableOpacity 
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
               >
-                <Text style={styles.findRoomButtonText}>Tìm phòng ngay</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </LinearGradient>
-        </View>
-      </SafeAreaView>
+                <MaterialIcons name="arrow-back" size={24} color="#FFF" />
+              </TouchableOpacity>
+              <Text style={styles.headerTitle}>Thành viên trong phòng</Text>
+              <View style={styles.headerPlaceholder} />
+            </View>
+          </SafeAreaView>
+        </LinearGradient>
+        
+        <SafeAreaView style={styles.contentContainer}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#00A67E" />
+            <Text style={styles.loadingText}>Đang tải danh sách thành viên...</Text>
+          </View>
+        </SafeAreaView>
+      </View>
     );
   }
 
+  // Empty state with fixed header
+  if (!roomData) {
+    return (
+      <View style={styles.container}>
+        <StatusBar 
+          barStyle="light-content" 
+          backgroundColor="#00A67E"
+          translucent={true} 
+        />
+        
+        {/* Header with Gradient */}
+        <LinearGradient
+          colors={['#00A67E', '#00A67E']}
+          style={styles.headerGradient}
+        >
+          <SafeAreaView style={styles.safeHeader}>
+            <View style={styles.header}>
+              <TouchableOpacity 
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+              >
+                <MaterialIcons name="arrow-back" size={24} color="#FFF" />
+              </TouchableOpacity>
+              <Text style={styles.headerTitle}>Thành viên trong phòng</Text>
+              <View style={styles.headerPlaceholder} />
+            </View>
+          </SafeAreaView>
+        </LinearGradient>
+
+        {/* Empty State */}
+        <SafeAreaView style={styles.contentContainer}>
+          <View style={styles.emptyStateContainer}>
+            <LinearGradient
+              colors={['rgba(255,255,255,0.9)', 'rgba(255,255,255,0.95)']}
+              style={styles.emptyStateCard}
+            >
+              <View style={styles.emptyStateIconContainer}>
+                <MaterialIcons name="home" size={64} color="#00A67E" />
+              </View>
+              <Text style={styles.emptyStateTitle}>Bạn chưa ở trong phòng nào</Text>
+              <Text style={styles.emptyStateDescription}>
+                Hãy tìm kiếm và đăng ký một phòng để bắt đầu trải nghiệm
+              </Text>
+              <TouchableOpacity 
+                style={styles.findRoomButton}
+                onPress={() => navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'MainTabs' }],
+                })}
+              >
+                <LinearGradient
+                  colors={['#00A67E', '#00A67E']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.findRoomButtonGradient}
+                >
+                  <Text style={styles.findRoomButtonText}>Tìm phòng ngay</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </LinearGradient>
+          </View>
+        </SafeAreaView>
+      </View>
+    );
+  }
+
+  // Main UI with fixed header
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#00A67E" />
+    <View style={styles.container}>
+      <StatusBar 
+        barStyle="light-content" 
+        backgroundColor="#00A67E"
+        translucent={true}
+      />
       
       {/* Header with Gradient */}
       <LinearGradient
         colors={['#00A67E', '#00A67E']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.header}
+        style={styles.headerGradient}
       >
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <MaterialIcons name="arrow-back" size={24} color="#FFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Thành viên trong phòng</Text>
-        <View style={styles.headerPlaceholder} />
+        <SafeAreaView style={styles.safeHeader}>
+          <View style={styles.header}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <MaterialIcons name="arrow-back" size={24} color="#FFF" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Thành viên trong phòng</Text>
+            <View style={styles.headerPlaceholder} />
+          </View>
+        </SafeAreaView>
       </LinearGradient>
 
-      {/* Room Info Card with Blur Effect */}
-      <View style={styles.roomInfoContainer}>
-        <BlurView intensity={20} style={styles.roomInfoBlur}>
-          <LinearGradient
-            colors={['rgba(255,255,255,0.9)', 'rgba(255,255,255,0.95)']}
-            style={styles.roomInfoGradient}
-          >
-            <View style={styles.roomInfoContent}>
-              <Text style={styles.roomInfoTitle}>Thông tin phòng</Text>
-              <View style={styles.roomInfoRow}>
-                <MaterialIcons name="calendar-today" size={18} color="#00A67E" />
-                <Text style={styles.roomInfoText}>
-                  Từ {formatDate(roomData.roomStay.startDate)} đến {formatDate(roomData.roomStay.endDate)}
-                </Text>
-              </View>
-              <View style={styles.roomInfoRow}>
-                <MaterialIcons name="people" size={18} color="#00A67E" />
-                <Text style={styles.roomInfoText}>Tổng số thành viên: {roomData.totalRoomer}</Text>
-              </View>
-            </View>
-          </LinearGradient>
-        </BlurView>
-      </View>
-
-      {/* Members List */}
-      <ScrollView 
-        style={styles.membersList}
-        showsVerticalScrollIndicator={false}
-      >
-        {roomData.roommateList.map((member, index) => (
-          <View 
-            key={member.customerId}
-            style={styles.memberCard}
-          >
+      {/* Content */}
+      <SafeAreaView style={styles.contentContainer}>
+        {/* Room Info Card with Blur Effect */}
+        <View style={styles.roomInfoContainer}>
+          <BlurView intensity={20} style={styles.roomInfoBlur}>
             <LinearGradient
               colors={['rgba(255,255,255,0.9)', 'rgba(255,255,255,0.95)']}
-              style={styles.memberCardGradient}
+              style={styles.roomInfoGradient}
             >
-              <View style={styles.memberHeader}>
-                <View style={styles.avatarContainer}>
-                  {member.avatar ? (
-                    <Image 
-                      source={{ uri: member.avatar }} 
-                      style={styles.avatar}
-                    />
-                  ) : (
-                    <LinearGradient
-                      colors={['#00A67E', '#00A67E']}
-                      style={[styles.avatar, styles.avatarPlaceholder]}
-                    >
-                      <Text style={styles.avatarText}>
-                        {member.fullName.charAt(0)}
-                      </Text>
-                    </LinearGradient>
-                  )}
-                  {member.isCurrentUser && (
-                    <View style={styles.currentUserBadge}>
-                      <Text style={styles.currentUserText}>Bạn</Text>
-                    </View>
-                  )}
+              <View style={styles.roomInfoContent}>
+                <Text style={styles.roomInfoTitle}>Thông tin phòng</Text>
+                <View style={styles.roomInfoRow}>
+                  <MaterialIcons name="calendar-today" size={18} color="#00A67E" />
+                  <Text style={styles.roomInfoText}>
+                    Từ {formatDate(roomData.roomStay.startDate)} đến {formatDate(roomData.roomStay.endDate)}
+                  </Text>
                 </View>
-                
-                <View style={styles.memberInfo}>
-                  <View style={styles.nameContainer}>
-                    <Text style={styles.memberName}>{member.fullName}</Text>
-                    <View style={[
-                      styles.roleBadge,
-                      { backgroundColor: member.roomerType === 'Tenant' ? '#00A67E20' : '#6D5BA320' }
-                    ]}>
-                      <Text style={[
-                        styles.roleText,
-                        { color: member.roomerType === 'Tenant' ? '#00A67E' : '#6D5BA3' }
-                      ]}>
-                        {member.roomerType === 'Tenant' ? 'Người thuê chính' : 'Người ở ghép'}
-                      </Text>
-                    </View>
-                  </View>
-                  <Text style={styles.memberType}>{member.customerType}</Text>
+                <View style={styles.roomInfoRow}>
+                  <MaterialIcons name="people" size={18} color="#00A67E" />
+                  <Text style={styles.roomInfoText}>Tổng số thành viên: {roomData.totalRoomer}</Text>
                 </View>
-                
-                <TouchableOpacity 
-                  style={styles.menuButton}
-                  onPress={() => handleMenuPress(member)}
-                >
-                  <MaterialIcons name="more-vert" size={24} color="#666" />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.memberDetails}>
-                <View style={styles.detailRow}>
-                  <MaterialIcons name="phone" size={16} color="#00A67E" />
-                  <Text style={styles.detailText}>{member.phoneNumber}</Text>
-                </View>
-                <View style={styles.detailRow}>
-                  <MaterialIcons name="email" size={16} color="#00A67E" />
-                  <Text style={styles.detailText}>{member.email}</Text>
-                </View>
-                <View style={styles.detailRow}>
-                  <MaterialIcons name="person" size={16} color="#00A67E" />
-                  <Text style={styles.detailText}>{member.gender}</Text>
-                </View>
-              </View>
-
-              <View style={styles.preferencesContainer}>
-                <Text style={styles.preferencesTitle}>Sở thích & Lối sống</Text>
-                <Text style={styles.preferencesText} numberOfLines={2}>
-                  {member.preferences} • {member.lifeStyle}
-                </Text>
               </View>
             </LinearGradient>
-          </View>
-        ))}
-      </ScrollView>
+          </BlurView>
+        </View>
 
+        {/* Members List */}
+        <ScrollView 
+          style={styles.membersList}
+          showsVerticalScrollIndicator={false}
+        >
+          {roomData.roommateList.map((member, index) => (
+            <View 
+              key={member.customerId}
+              style={styles.memberCard}
+            >
+              <LinearGradient
+                colors={['rgba(255,255,255,0.9)', 'rgba(255,255,255,0.95)']}
+                style={styles.memberCardGradient}
+              >
+                <View style={styles.memberHeader}>
+                  <View style={styles.avatarContainer}>
+                    {member.avatar ? (
+                      <Image 
+                        source={{ uri: member.avatar }} 
+                        style={styles.avatar}
+                      />
+                    ) : (
+                      <LinearGradient
+                        colors={['#00A67E', '#00A67E']}
+                        style={[styles.avatar, styles.avatarPlaceholder]}
+                      >
+                        <Text style={styles.avatarText}>
+                          {member.fullName.charAt(0)}
+                        </Text>
+                      </LinearGradient>
+                    )}
+                    {member.isCurrentUser && (
+                      <View style={styles.currentUserBadge}>
+                        <Text style={styles.currentUserText}>Bạn</Text>
+                      </View>
+                    )}
+                  </View>
+                  
+                  <View style={styles.memberInfo}>
+                    <View style={styles.nameContainer}>
+                      <Text style={styles.memberName}>{member.fullName}</Text>
+                      <View style={[
+                        styles.roleBadge,
+                        { backgroundColor: member.roomerType === 'Tenant' ? '#00A67E20' : '#6D5BA320' }
+                      ]}>
+                        <Text style={[
+                          styles.roleText,
+                          { color: member.roomerType === 'Tenant' ? '#00A67E' : '#6D5BA3' }
+                        ]}>
+                          {member.roomerType === 'Tenant' ? 'Người thuê chính' : 'Người ở ghép'}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={styles.memberType}>{member.customerType}</Text>
+                  </View>
+                  
+                  <TouchableOpacity 
+                    style={styles.menuButton}
+                    onPress={() => handleMenuPress(member)}
+                  >
+                    <MaterialIcons name="more-vert" size={24} color="#666" />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.memberDetails}>
+                  <View style={styles.detailRow}>
+                    <MaterialIcons name="phone" size={16} color="#00A67E" />
+                    <Text style={styles.detailText}>{member.phoneNumber}</Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <MaterialIcons name="email" size={16} color="#00A67E" />
+                    <Text style={styles.detailText}>{member.email}</Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <MaterialIcons name="person" size={16} color="#00A67E" />
+                    <Text style={styles.detailText}>{member.gender}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.preferencesContainer}>
+                  <Text style={styles.preferencesTitle}>Sở thích & Lối sống</Text>
+                  <Text style={styles.preferencesText} numberOfLines={2}>
+                    {member.preferences} • {member.lifeStyle}
+                  </Text>
+                </View>
+              </LinearGradient>
+            </View>
+          ))}
+        </ScrollView>
+      </SafeAreaView>
+      
       {/* Custom Menu Modal */}
       <Modal
         visible={showMenu}
@@ -586,7 +635,7 @@ const RoomMembersScreen = ({ navigation }) => {
           </BlurView>
         </Pressable>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -595,11 +644,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
+  headerGradient: {
+    paddingTop: Platform.OS === 'ios' ? StatusBar.currentHeight || 12 : 12,
+  },
+  safeHeader: {
+    backgroundColor: 'transparent',
+  },
+  contentContainer: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F8F9FA',
   },
   loadingText: {
     marginTop: 12,
@@ -611,11 +669,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
   backButton: {
     padding: 8,

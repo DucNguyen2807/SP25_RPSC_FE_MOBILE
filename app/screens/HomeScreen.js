@@ -511,7 +511,7 @@ const HomeScreen = () => {
     <View style={styles.container}>
       {/* Header */}
       <LinearGradient
-        colors={['#6D5BA3', '#8873BE']}
+        colors={['#ACDCD0', '#ACDCD0']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.header}

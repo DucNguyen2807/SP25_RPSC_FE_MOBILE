@@ -13,7 +13,8 @@ import {
   Linking,
   Modal,
   TextInput,
-  Alert
+  Alert,
+  Platform
 } from 'react-native';
 import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -149,20 +150,87 @@ const RoomStayDetail = () => {
     }
   };
 
+  // Render loading state
   if (loading) {
     return (
-      <SafeAreaView style={styles.loadingContainer}>
+      <View style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor="#6D5BA3" />
-        <ActivityIndicator size="large" color="#6D5BA3" />
-        <Text style={styles.loadingText}>Đang tải thông tin phòng...</Text>
-      </SafeAreaView>
+        <SafeAreaView style={{ flex: 0, backgroundColor: '#6D5BA3' }} />
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#F5F6FA' }}>
+          <LinearGradient
+            colors={['#6D5BA3', '#8B75C5']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.header}
+          >
+            <TouchableOpacity 
+              style={styles.backButton} 
+              onPress={() => navigation.goBack()}
+            >
+              <MaterialIcons name="arrow-back" size={24} color="#FFF" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Chi tiết phòng</Text>
+            <View style={styles.placeholder} />
+          </LinearGradient>
+          
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#6D5BA3" />
+            <Text style={styles.loadingText}>Đang tải thông tin phòng...</Text>
+          </View>
+        </SafeAreaView>
+      </View>
     );
   }
 
+  // Render empty state
   if (!roomStay) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor="#6D5BA3" />
+        <SafeAreaView style={{ flex: 0, backgroundColor: '#6D5BA3' }} />
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#F5F6FA' }}>
+          <LinearGradient
+            colors={['#6D5BA3', '#8B75C5']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.header}
+          >
+            <TouchableOpacity 
+              style={styles.backButton} 
+              onPress={() => navigation.goBack()}
+            >
+              <MaterialIcons name="arrow-back" size={24} color="#FFF" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Chi tiết phòng</Text>
+            <View style={styles.placeholder} />
+          </LinearGradient>
+          
+          <View style={styles.emptyStateContainer}>
+            <Ionicons name="alert-circle-outline" size={80} color="#6D5BA3" />
+            <Text style={styles.emptyStateText}>Không tìm thấy thông tin phòng</Text>
+            <TouchableOpacity
+              style={styles.backToRentedButton}
+              onPress={() => navigation.goBack()}
+            >
+              <Text style={styles.backToRentedText}>Quay lại</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </View>
+    );
+  }
+
+  const { roomStay: roomStayData, customerContract } = roomStay;
+  const { room } = roomStayData;
+  const showExtendButton = isWithinTwoMonthsOfEndDate(customerContract.endDate);
+  
+  // Main render with data
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#6D5BA3" />
+      <SafeAreaView style={{ flex: 0, backgroundColor: '#6D5BA3' }} />
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#F5F6FA' }}>
+        {/* Header */}
         <LinearGradient
           colors={['#6D5BA3', '#8B75C5']}
           start={{ x: 0, y: 0 }}
@@ -178,243 +246,205 @@ const RoomStayDetail = () => {
           <Text style={styles.headerTitle}>Chi tiết phòng</Text>
           <View style={styles.placeholder} />
         </LinearGradient>
-        
-        <View style={styles.emptyStateContainer}>
-          <Ionicons name="alert-circle-outline" size={80} color="#6D5BA3" />
-          <Text style={styles.emptyStateText}>Không tìm thấy thông tin phòng</Text>
-          <TouchableOpacity
-            style={styles.backToRentedButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.backToRentedText}>Quay lại</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
-  const { roomStay: roomStayData, customerContract } = roomStay;
-  const { room } = roomStayData;
-  const showExtendButton = isWithinTwoMonthsOfEndDate(customerContract.endDate);
-  
-  return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#6D5BA3" />
-      
-      {/* Header */}
-      <LinearGradient
-        colors={['#6D5BA3', '#8B75C5']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.header}
-      >
-        <TouchableOpacity 
-          style={styles.backButton} 
-          onPress={() => navigation.goBack()}
-        >
-          <MaterialIcons name="arrow-back" size={24} color="#FFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Chi tiết phòng</Text>
-        <View style={styles.placeholder} />
-      </LinearGradient>
-
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Room Images Carousel */}
-        <View style={styles.imageCarouselContainer}>
-          {room.roomCusImages && room.roomCusImages.length > 0 ? (
-            <>
-              <ScrollView
-                horizontal
-                pagingEnabled
-                showsHorizontalScrollIndicator={false}
-                onScroll={(event) => {
-                  const contentOffset = event.nativeEvent.contentOffset.x;
-                  const index = Math.round(contentOffset / width);
-                  setCurrentImageIndex(index);
-                }}
-                scrollEventThrottle={16}
-              >
-                {room.roomCusImages.map((image, index) => (
-                  <Image
-                    key={index}
-                    source={{ uri: image.imageUrl }}
-                    style={styles.carouselImage}
-                    resizeMode="cover"
-                  />
-                ))}
-              </ScrollView>
-              
-              {room.roomCusImages.length > 1 && (
-                <View style={styles.paginationDots}>
-                  {room.roomCusImages.map((_, index) => (
-                    <View
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Room Images Carousel */}
+          <View style={styles.imageCarouselContainer}>
+            {room.roomCusImages && room.roomCusImages.length > 0 ? (
+              <>
+                <ScrollView
+                  horizontal
+                  pagingEnabled
+                  showsHorizontalScrollIndicator={false}
+                  onScroll={(event) => {
+                    const contentOffset = event.nativeEvent.contentOffset.x;
+                    const index = Math.round(contentOffset / width);
+                    setCurrentImageIndex(index);
+                  }}
+                  scrollEventThrottle={16}
+                >
+                  {room.roomCusImages.map((image, index) => (
+                    <Image
                       key={index}
-                      style={[
-                        styles.paginationDot,
-                        currentImageIndex === index ? styles.activeDot : {},
-                      ]}
+                      source={{ uri: image.imageUrl }}
+                      style={styles.carouselImage}
+                      resizeMode="cover"
                     />
                   ))}
-                </View>
-              )}
-            </>
-          ) : (
-            <View style={[styles.carouselImage, styles.placeholderImage]}>
-              <Ionicons name="image-outline" size={50} color="#DDD" />
+                </ScrollView>
+                
+                {room.roomCusImages.length > 1 && (
+                  <View style={styles.paginationDots}>
+                    {room.roomCusImages.map((_, index) => (
+                      <View
+                        key={index}
+                        style={[
+                          styles.paginationDot,
+                          currentImageIndex === index ? styles.activeDot : {},
+                        ]}
+                      />
+                    ))}
+                  </View>
+                )}
+              </>
+            ) : (
+              <View style={[styles.carouselImage, styles.placeholderImage]}>
+                <Ionicons name="image-outline" size={50} color="#DDD" />
+              </View>
+            )}
+          </View>
+
+          {/* Room Status Banner */}
+          <View style={[styles.statusBanner, { backgroundColor: getStatusColor(room.status) + '20' }]}>
+            <View style={[styles.statusIndicator, { backgroundColor: getStatusColor(room.status) }]} />
+            <Text style={styles.statusBannerText}>
+              Trạng thái phòng: <Text style={[styles.statusBannerValue, { color: getStatusColor(room.status) }]}>{getStatusText(room.status)}</Text>
+            </Text>
+          </View>
+            
+          {/* Room Basic Info */}
+          <View style={styles.infoCard}>
+            <Text style={styles.roomTitle}>{room.title}</Text>
+            <View style={styles.priceRow}>
+              <Text style={styles.priceLabel}>Giá thuê:</Text>
+              <Text style={styles.priceValue}>{formatCurrency(room.price)}/tháng</Text>
             </View>
-          )}
-        </View>
+            <View style={styles.addressRow}>
+              <MaterialIcons name="location-on" size={18} color="#6D5BA3" />
+              <Text style={styles.address}>{room.location}</Text>
+            </View>
+            <Text style={styles.description}>{room.description}</Text>
+          </View>
 
-        {/* Room Status Banner */}
-        <View style={[styles.statusBanner, { backgroundColor: getStatusColor(room.status) + '20' }]}>
-          <View style={[styles.statusIndicator, { backgroundColor: getStatusColor(room.status) }]} />
-          <Text style={styles.statusBannerText}>
-            Trạng thái phòng: <Text style={[styles.statusBannerValue, { color: getStatusColor(room.status) }]}>{getStatusText(room.status)}</Text>
-          </Text>
-        </View>
-          
-        {/* Room Basic Info */}
-        <View style={styles.infoCard}>
-          <Text style={styles.roomTitle}>{room.title}</Text>
-          <View style={styles.priceRow}>
-            <Text style={styles.priceLabel}>Giá thuê:</Text>
-            <Text style={styles.priceValue}>{formatCurrency(room.price)}/tháng</Text>
+          {/* Room Details */}
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Thông tin chi tiết</Text>
+            
+            <View style={styles.detailItem}>
+              <Ionicons name="key-outline" size={20} color="#6D5BA3" />
+              <Text style={styles.detailLabel}>Mã phòng:</Text>
+              <Text style={styles.detailValue}>{room.roomNumber}</Text>
+            </View>
+            
+            <View style={styles.detailItem}>
+              <MaterialIcons name="category" size={20} color="#6D5BA3" />
+              <Text style={styles.detailLabel}>Loại phòng:</Text>
+              <Text style={styles.detailValue}>{room.roomTypeName}</Text>
+            </View>
+            
+            <View style={styles.detailItem}>
+              <FontAwesome5 name="coins" size={18} color="#6D5BA3" />
+              <Text style={styles.detailLabel}>Tiền đặt cọc:</Text>
+              <Text style={styles.detailValue}>{formatCurrency(room.deposite)}</Text>
+            </View>
+            
+            <View style={styles.detailItem}>
+              <MaterialIcons name="people" size={20} color="#6D5BA3" />
+              <Text style={styles.detailLabel}>Người tối đa:</Text>
+              <Text style={styles.detailValue}>{room.maxOccupancy} người</Text>
+            </View>
+            
+            <View style={styles.detailItem}>
+              <MaterialIcons name="square-foot" size={20} color="#6D5BA3" />
+              <Text style={styles.detailLabel}>Diện tích:</Text>
+              <Text style={styles.detailValue}>{room.square} m²</Text>
+            </View>
           </View>
-          <View style={styles.addressRow}>
-            <MaterialIcons name="location-on" size={18} color="#6D5BA3" />
-            <Text style={styles.address}>{room.location}</Text>
-          </View>
-          <Text style={styles.description}>{room.description}</Text>
-        </View>
 
-        {/* Room Details */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Thông tin chi tiết</Text>
-          
-          <View style={styles.detailItem}>
-            <Ionicons name="key-outline" size={20} color="#6D5BA3" />
-            <Text style={styles.detailLabel}>Mã phòng:</Text>
-            <Text style={styles.detailValue}>{room.roomNumber}</Text>
-          </View>
-          
-          <View style={styles.detailItem}>
-            <MaterialIcons name="category" size={20} color="#6D5BA3" />
-            <Text style={styles.detailLabel}>Loại phòng:</Text>
-            <Text style={styles.detailValue}>{room.roomTypeName}</Text>
-          </View>
-          
-          <View style={styles.detailItem}>
-            <FontAwesome5 name="coins" size={18} color="#6D5BA3" />
-            <Text style={styles.detailLabel}>Tiền đặt cọc:</Text>
-            <Text style={styles.detailValue}>{formatCurrency(room.deposite)}</Text>
-          </View>
-          
-          <View style={styles.detailItem}>
-            <MaterialIcons name="people" size={20} color="#6D5BA3" />
-            <Text style={styles.detailLabel}>Người tối đa:</Text>
-            <Text style={styles.detailValue}>{room.maxOccupancy} người</Text>
-          </View>
-          
-          <View style={styles.detailItem}>
-            <MaterialIcons name="square-foot" size={20} color="#6D5BA3" />
-            <Text style={styles.detailLabel}>Diện tích:</Text>
-            <Text style={styles.detailValue}>{room.square} m²</Text>
-          </View>
-        </View>
-
-        {/* Room Amenities */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Tiện nghi phòng</Text>
-          <View style={styles.amenitiesContainer}>
-            {room.roomCusAmentiesLists.map((amenity, index) => (
-              <View key={index} style={styles.amenityItem}>
-                <View style={styles.amenityIconContainer}>
-                  <Ionicons name="checkmark-circle" size={18} color="#4CAF50" />
+          {/* Room Amenities */}
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Tiện nghi phòng</Text>
+            <View style={styles.amenitiesContainer}>
+              {room.roomCusAmentiesLists.map((amenity, index) => (
+                <View key={index} style={styles.amenityItem}>
+                  <View style={styles.amenityIconContainer}>
+                    <Ionicons name="checkmark-circle" size={18} color="#4CAF50" />
+                  </View>
+                  <Text style={styles.amenityName}>{amenity.name}</Text>
                 </View>
-                <Text style={styles.amenityName}>{amenity.name}</Text>
+              ))}
+            </View>
+          </View>
+
+          {/* Room Services */}
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Dịch vụ phòng</Text>
+            {room.roomCusServices.map((service, index) => (
+              <View key={index} style={styles.serviceItem}>
+                <Text style={styles.serviceName}>{service.serviceName}</Text>
+                <Text style={styles.serviceCost}>{formatCurrency(service.cost)}</Text>
               </View>
             ))}
           </View>
-        </View>
 
-        {/* Room Services */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Dịch vụ phòng</Text>
-          {room.roomCusServices.map((service, index) => (
-            <View key={index} style={styles.serviceItem}>
-              <Text style={styles.serviceName}>{service.serviceName}</Text>
-              <Text style={styles.serviceCost}>{formatCurrency(service.cost)}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Landlord Info */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Thông tin chủ trọ</Text>
-          <View style={styles.landlordContainer}>
-            <View style={styles.landlordAvatarContainer}>
-              <Text style={styles.landlordAvatar}>{roomStayData.landlordName.charAt(0)}</Text>
-            </View>
-            <View style={styles.landlordDetails}>
-              <Text style={styles.landlordName}>{roomStayData.landlordName}</Text>
-              <Text style={styles.landlordTitle}>Chủ trọ</Text>
-            </View>
-            <TouchableOpacity style={styles.contactButton}>
-              <Ionicons name="chatbubble-ellipses" size={20} color="#FFF" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Contract Info */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Thông tin hợp đồng</Text>
-          <View style={styles.contractInfo}>
-            <View style={styles.contractRow}>
-              <Text style={styles.contractLabel}>Mã hợp đồng:</Text>
-              <Text style={styles.contractValue}>{customerContract.contractId.substring(0, 8)}...</Text>
-            </View>
-            <View style={styles.contractRow}>
-              <Text style={styles.contractLabel}>Ngày bắt đầu:</Text>
-              <Text style={styles.contractValue}>{formatDate(customerContract.startDate)}</Text>
-            </View>
-            <View style={styles.contractRow}>
-              <Text style={styles.contractLabel}>Ngày kết thúc:</Text>
-              <Text style={styles.contractValue}>{formatDate(customerContract.endDate)}</Text>
-            </View>
-            <View style={styles.contractRow}>
-              <Text style={styles.contractLabel}>Trạng thái:</Text>
-              <Text style={[styles.contractStatus, { color: getStatusColor(customerContract.status) }]}>
-                {getStatusText(customerContract.status)}
-              </Text>
-            </View>
-            {/* Warning Message */}
-            <View style={styles.warningContainer}>
-              <MaterialIcons name="warning" size={18} color="#FF9800" />
-              <Text style={styles.warningText}>
-                Bạn cần phải gia hạn hợp đồng trước 2 tháng
-              </Text>
-            </View>
-            {/* Contract Extension Button */}
-            {showExtendButton && (
-              <TouchableOpacity 
-                style={styles.extendContractButton}
-                onPress={() => setShowExtendModal(true)}
-              >
-                <MaterialIcons name="autorenew" size={20} color="#FFF" />
-                <Text style={styles.extendContractText}>Gia hạn hợp đồng</Text>
+          {/* Landlord Info */}
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Thông tin chủ trọ</Text>
+            <View style={styles.landlordContainer}>
+              <View style={styles.landlordAvatarContainer}>
+                <Text style={styles.landlordAvatar}>{roomStayData.landlordName.charAt(0)}</Text>
+              </View>
+              <View style={styles.landlordDetails}>
+                <Text style={styles.landlordName}>{roomStayData.landlordName}</Text>
+                <Text style={styles.landlordTitle}>Chủ trọ</Text>
+              </View>
+              <TouchableOpacity style={styles.contactButton}>
+                <Ionicons name="chatbubble-ellipses" size={20} color="#FFF" />
               </TouchableOpacity>
-            )}
-            
-            <TouchableOpacity 
-              style={styles.viewContractButton}
-              onPress={() => openContractPDF(customerContract.term)}
-            >
-              <MaterialIcons name="description" size={20} color="#FFF" />
-              <Text style={styles.viewContractText}>Xem hợp đồng</Text>
-            </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </ScrollView>
+
+          {/* Contract Info */}
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Thông tin hợp đồng</Text>
+            <View style={styles.contractInfo}>
+              <View style={styles.contractRow}>
+                <Text style={styles.contractLabel}>Mã hợp đồng:</Text>
+                <Text style={styles.contractValue}>{customerContract.contractId.substring(0, 8)}...</Text>
+              </View>
+              <View style={styles.contractRow}>
+                <Text style={styles.contractLabel}>Ngày bắt đầu:</Text>
+                <Text style={styles.contractValue}>{formatDate(customerContract.startDate)}</Text>
+              </View>
+              <View style={styles.contractRow}>
+                <Text style={styles.contractLabel}>Ngày kết thúc:</Text>
+                <Text style={styles.contractValue}>{formatDate(customerContract.endDate)}</Text>
+              </View>
+              <View style={styles.contractRow}>
+                <Text style={styles.contractLabel}>Trạng thái:</Text>
+                <Text style={[styles.contractStatus, { color: getStatusColor(customerContract.status) }]}>
+                  {getStatusText(customerContract.status)}
+                </Text>
+              </View>
+              {/* Warning Message */}
+              <View style={styles.warningContainer}>
+                <MaterialIcons name="warning" size={18} color="#FF9800" />
+                <Text style={styles.warningText}>
+                  Bạn cần phải gia hạn hợp đồng trước 2 tháng
+                </Text>
+              </View>
+              {/* Contract Extension Button */}
+              {showExtendButton && (
+                <TouchableOpacity 
+                  style={styles.extendContractButton}
+                  onPress={() => setShowExtendModal(true)}
+                >
+                  <MaterialIcons name="autorenew" size={20} color="#FFF" />
+                  <Text style={styles.extendContractText}>Gia hạn hợp đồng</Text>
+                </TouchableOpacity>
+              )}
+              
+              <TouchableOpacity 
+                style={styles.viewContractButton}
+                onPress={() => openContractPDF(customerContract.term)}
+              >
+                <MaterialIcons name="description" size={20} color="#FFF" />
+                <Text style={styles.viewContractText}>Xem hợp đồng</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
       
       {/* Contract Extension Modal */}
       <Modal
@@ -480,7 +510,7 @@ const RoomStayDetail = () => {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -506,6 +536,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 16,
     paddingHorizontal: 16,
+    // We don't need extra padding here since it's handled by SafeAreaView
   },
   backButton: {
     padding: 4,

@@ -9,6 +9,8 @@ import {
   Alert,
   RefreshControl,
   ScrollView,
+  StatusBar,
+  Platform,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -115,131 +117,141 @@ const MenuScreen = ({ navigation, route }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#00A67E" />
+      
       {/* Header */}
-      <LinearGradient
-        colors={['#00A67E', '#00A67E']}
-        style={styles.header}
-      >
-        <TouchableOpacity style={styles.backButton} onPress={goBack}>
-          <MaterialIcons name="arrow-back" size={24} color="#FFF" />
-        </TouchableOpacity>
-        <View style={styles.headerTitle}>
-          <Text style={styles.headerText}>My Profile</Text>
+      <SafeAreaView style={styles.safeAreaTop}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={goBack}>
+            <MaterialIcons name="arrow-back" size={24} color="#FFF" />
+          </TouchableOpacity>
+          <View style={styles.headerTitle}>
+            <Text style={styles.headerText}>My Profile</Text>
+          </View>
+          <TouchableOpacity style={styles.notificationButton}>
+            <MaterialIcons name="notifications-none" size={24} color="#FFF" />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.notificationButton}>
-          <MaterialIcons name="notifications-none" size={24} color="#FFF" />
-        </TouchableOpacity>
-      </LinearGradient>
+      </SafeAreaView>
 
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={['#00A67E']}
-            tintColor={'#00A67E'}
-          />
-        }
-      >
-        {/* Profile Section */}
-        <View style={styles.profileSection}>
-          {userData.avatar ? (
-            <Image
-              source={{ uri: userData.avatar }}
-              style={styles.avatar}
+      <SafeAreaView style={styles.safeAreaContent}>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#00A67E']}
+              tintColor={'#00A67E'}
             />
-          ) : (
-            <Image
-              source={require('../assets/logoEasyRommie.png')}
-              style={styles.avatar}
-            />
-          )}
-          <Text style={styles.userName}>{userData.fullName}</Text>
-          <TouchableOpacity 
-              style={styles.editButton}
-              onPress={() => navigation.navigate('EditProfile')}
-            >
-              <Text style={styles.editButtonText}>Edit Profile</Text>
-            </TouchableOpacity>
-        </View>
-
-        {/* Menu Options */}
-        <View style={styles.menuSection}>
-          <TouchableOpacity style={styles.menuItem}>
-            <MaterialIcons name="favorite-border" size={24} color="#666" />
-            <Text style={styles.menuItemText}>Phòng đã thích</Text>
-            <MaterialIcons name="chevron-right" size={24} color="#666" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
-            <MaterialIcons name="star-border" size={24} color="#666" />
-            <Text style={styles.menuItemText}>Đánh giá của tôi</Text>
-            <MaterialIcons name="chevron-right" size={24} color="#666" />
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={handleCustomerRequestsPress}
-          >
-            <MaterialIcons name="assignment" size={24} color="#666" />
-            <Text style={styles.menuItemText}>Yêu cầu thuê phòng</Text>
-            <MaterialIcons name="chevron-right" size={24} color="#666" />
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={handleSentRequestsPress}
-          >
-            <MaterialIcons name="send" size={24} color="#666" />
-            <Text style={styles.menuItemText}>Yêu cầu ở ghép đã gửi</Text>
-            <View style={styles.badgeContainer}>
-              <Text style={styles.badgeText}>{requestCount}</Text>
-            </View>
-            <MaterialIcons name="chevron-right" size={24} color="#666" />
-          </TouchableOpacity>
-
-          {/* New Button for Extend Contract Requests */}
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={handleExtendContractRequestsPress}
-          >
-            <MaterialIcons name="history" size={24} color="#666" />
-            <Text style={styles.menuItemText}>Yêu cầu gia hạn hợp đồng</Text>
-            <MaterialIcons name="chevron-right" size={24} color="#666" />
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={() => navigation.navigate('RoomMembers')}
-          >
-            <MaterialIcons name="people" size={24} color="#666" />
-            <Text style={styles.menuItemText}>Danh sách người trong phòng</Text>
-            <MaterialIcons name="chevron-right" size={24} color="#666" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.menuItem}>
-            <MaterialIcons name="help-outline" size={24} color="#666" />
-            <Text style={styles.menuItemText}>Trợ giúp & Phản hồi</Text>
-            <MaterialIcons name="chevron-right" size={24} color="#666" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Logout Button */}
-        <TouchableOpacity 
-          style={styles.logoutButton}
-          onPress={handleLogout}
+          }
         >
-          <MaterialIcons name="logout" size={24} color="#FF5252" />
-          <Text style={styles.logoutText}>Đăng xuất</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+          {/* Profile Section */}
+          <View style={styles.profileSection}>
+            {userData.avatar ? (
+              <Image
+                source={{ uri: userData.avatar }}
+                style={styles.avatar}
+              />
+            ) : (
+              <Image
+                source={require('../assets/logoEasyRommie.png')}
+                style={styles.avatar}
+              />
+            )}
+            <Text style={styles.userName}>{userData.fullName}</Text>
+            <TouchableOpacity 
+                style={styles.editButton}
+                onPress={() => navigation.navigate('EditProfile')}
+              >
+                <Text style={styles.editButtonText}>Edit Profile</Text>
+              </TouchableOpacity>
+          </View>
+
+          {/* Menu Options */}
+          <View style={styles.menuSection}>
+            <TouchableOpacity style={styles.menuItem}>
+              <MaterialIcons name="favorite-border" size={24} color="#666" />
+              <Text style={styles.menuItemText}>Phòng đã thích</Text>
+              <MaterialIcons name="chevron-right" size={24} color="#666" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.menuItem}>
+              <MaterialIcons name="star-border" size={24} color="#666" />
+              <Text style={styles.menuItemText}>Đánh giá của tôi</Text>
+              <MaterialIcons name="chevron-right" size={24} color="#666" />
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={handleCustomerRequestsPress}
+            >
+              <MaterialIcons name="assignment" size={24} color="#666" />
+              <Text style={styles.menuItemText}>Yêu cầu thuê phòng</Text>
+              <MaterialIcons name="chevron-right" size={24} color="#666" />
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={handleSentRequestsPress}
+            >
+              <MaterialIcons name="send" size={24} color="#666" />
+              <Text style={styles.menuItemText}>Yêu cầu ở ghép đã gửi</Text>
+              <View style={styles.badgeContainer}>
+                <Text style={styles.badgeText}>{requestCount}</Text>
+              </View>
+              <MaterialIcons name="chevron-right" size={24} color="#666" />
+            </TouchableOpacity>
+
+            {/* New Button for Extend Contract Requests */}
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={handleExtendContractRequestsPress}
+            >
+              <MaterialIcons name="history" size={24} color="#666" />
+              <Text style={styles.menuItemText}>Yêu cầu gia hạn hợp đồng</Text>
+              <MaterialIcons name="chevron-right" size={24} color="#666" />
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={() => navigation.navigate('RoomMembers')}
+            >
+              <MaterialIcons name="people" size={24} color="#666" />
+              <Text style={styles.menuItemText}>Danh sách người trong phòng</Text>
+              <MaterialIcons name="chevron-right" size={24} color="#666" />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.menuItem}>
+              <MaterialIcons name="help-outline" size={24} color="#666" />
+              <Text style={styles.menuItemText}>Trợ giúp & Phản hồi</Text>
+              <MaterialIcons name="chevron-right" size={24} color="#666" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Logout Button */}
+          <TouchableOpacity 
+            style={styles.logoutButton}
+            onPress={handleLogout}
+          >
+            <MaterialIcons name="logout" size={24} color="#FF5252" />
+            <Text style={styles.logoutText}>Đăng xuất</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+  },
+  safeAreaTop: {
+    backgroundColor: '#00A67E',
+  },
+  safeAreaContent: {
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
@@ -249,6 +261,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 16,
+    backgroundColor: '#00A67E',
   },
   backButton: {
     padding: 8,

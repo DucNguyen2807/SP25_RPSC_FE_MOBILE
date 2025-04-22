@@ -10,6 +10,8 @@ import {
   ActivityIndicator,
   Alert,
   RefreshControl,
+  StatusBar,
+  Platform,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -175,50 +177,64 @@ const ViewAllRequestExtendContract = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
+    <View style={styles.container}>
+      {/* Set StatusBar */}
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="#00A67E"
+        translucent={true}
+      />
+      
+      {/* Header with gradient that extends to status bar */}
       <LinearGradient
         colors={['#00A67E', '#00A67E']}
-        style={styles.header}
+        style={styles.headerGradient}
       >
-        <TouchableOpacity 
-          style={styles.backButton} 
-          onPress={() => navigation.goBack()}
-        >
-          <MaterialIcons name="arrow-back" size={24} color="#FFF" />
-        </TouchableOpacity>
-        <View style={styles.headerTitle}>
-          <Text style={styles.headerText}>Yêu cầu gia hạn hợp đồng</Text>
-        </View>
-        <View style={styles.placeholderButton} />
+        <SafeAreaView style={styles.safeHeader}>
+          <View style={styles.header}>
+            <TouchableOpacity 
+              style={styles.backButton} 
+              onPress={() => navigation.goBack()}
+            >
+              <MaterialIcons name="arrow-back" size={24} color="#FFF" />
+            </TouchableOpacity>
+            <View style={styles.headerTitle}>
+              <Text style={styles.headerText}>Yêu cầu gia hạn hợp đồng</Text>
+            </View>
+            <View style={styles.placeholderButton} />
+          </View>
+        </SafeAreaView>
       </LinearGradient>
 
-      {loading && !refreshing ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#00A67E" />
-          <Text style={styles.loadingText}>Đang tải yêu cầu...</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={requests}
-          renderItem={renderRequestItem}
-          keyExtractor={(item) => item.requestId.toString()}
-          contentContainerStyle={styles.listContainer}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={['#00A67E']}
-              tintColor={'#00A67E'}
-            />
-          }
-          onEndReached={loadMoreRequests}
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={renderFooter}
-          ListEmptyComponent={renderEmptyList}
-        />
-      )}
-    </SafeAreaView>
+      {/* Content Area */}
+      <SafeAreaView style={styles.contentContainer}>
+        {loading && !refreshing ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#00A67E" />
+            <Text style={styles.loadingText}>Đang tải yêu cầu...</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={requests}
+            renderItem={renderRequestItem}
+            keyExtractor={(item) => item.requestId.toString()}
+            contentContainerStyle={styles.listContainer}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={['#00A67E']}
+                tintColor={'#00A67E'}
+              />
+            }
+            onEndReached={loadMoreRequests}
+            onEndReachedThreshold={0.5}
+            ListFooterComponent={renderFooter}
+            ListEmptyComponent={renderEmptyList}
+          />
+        )}
+      </SafeAreaView>
+    </View>
   );
 };
 
@@ -227,12 +243,22 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
+  headerGradient: {
+    paddingTop: Platform.OS === 'ios' ? StatusBar.currentHeight || 12 : 12,
+  },
+  safeHeader: {
+    backgroundColor: 'transparent', // Make sure SafeAreaView is transparent
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 16,
+  },
+  contentContainer: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
   },
   backButton: {
     padding: 8,
@@ -369,5 +395,3 @@ const styles = StyleSheet.create({
 });
 
 export default ViewAllRequestExtendContract;
-
-

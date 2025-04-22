@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, FlatList, TouchableOpacity, TextInput, Dimensions, ScrollView, Modal, ActivityIndicator } from 'react-native';
 import { FontAwesome5, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';  // Import useFocusEffect
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import postService from '../services/postService';
 import { BlurView } from 'expo-blur';
@@ -22,9 +22,9 @@ const RoommateScreen = () => {
 
   const lifeStyleOptions = ['Yên tĩnh', 'Năng động', 'Sạch sẽ', 'Chăm chỉ', 'Thân thiện'];
   const themeColors = {
-    primary: '#6D5BA3',
+    primary: '#ACDCD0',
     secondary: '#6D5BA3',
-    accent: '#6D5BA3',
+    accent: '#ACDCD0',
     background: '#6D5BA3',
     cardBg: '#FFFFFF',
     text: '#1F2937',
@@ -144,7 +144,11 @@ const RoommateScreen = () => {
         );
       
       default:
-        return null;
+        return (
+          <View>
+            <Text>Select a filter option</Text>
+          </View>
+        );
     }
   };
   
@@ -374,57 +378,58 @@ const RoommateScreen = () => {
 
       {/* Filter Modal */}
       <Modal
-  visible={filterModalVisible}
-  transparent={true}
-  animationType="slide"
-  onRequestClose={() => setFilterModalVisible(false)}
->
-  <TouchableOpacity 
-    style={styles.modalOverlay} 
-    activeOpacity={1}
-    onPress={() => setFilterModalVisible(false)}
-  >
-    <View 
-      style={styles.modalContainer}
-      onStartShouldSetResponder={() => true}
-      onTouchEnd={e => e.stopPropagation()}
-    >
-      {renderFilterContent()} {/* Gọi hàm renderFilterContent */}
-      
-      <View style={styles.modalActions}>
+        visible={filterModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setFilterModalVisible(false)}
+      >
         <TouchableOpacity 
-          style={styles.resetButton} 
-          onPress={() => {
-            setFilters({
-              minBudget: null, maxBudget: null, gender: null, 
-              minAge: null, maxAge: null, lifeStyles: [],
-            });
-            setFilterModalVisible(false);
-            fetchRoommatePosts();
-          }}
+          style={styles.modalOverlay} 
+          activeOpacity={1}
+          onPress={() => setFilterModalVisible(false)}
         >
-          <Text style={styles.resetButtonText}>Reset</Text>
+          <View 
+            style={styles.modalContainer}
+            onStartShouldSetResponder={() => true}
+            onTouchEnd={(e) => {
+              // Fix: Ensure we have a proper handler function
+              e.stopPropagation();
+            }}
+          >
+            {/* This is where we render the filter content correctly */}
+            {renderFilterContent()}
+            
+            <View style={styles.modalActions}>
+              <TouchableOpacity 
+                style={styles.resetButton} 
+                onPress={() => {
+                  setFilters({
+                    minBudget: null, maxBudget: null, gender: null, 
+                    minAge: null, maxAge: null, lifeStyles: [],
+                  });
+                  setFilterModalVisible(false);
+                  fetchRoommatePosts();
+                }}
+              >
+                <Text style={styles.resetButtonText}>Reset</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.applyButton}
+                onPress={() => {
+                  setFilterModalVisible(false);
+                  fetchRoommatePosts();
+                }}
+              >
+                <Text style={styles.applyButtonText}>Apply</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.applyButton}
-          onPress={() => {
-            setFilterModalVisible(false);
-            fetchRoommatePosts();
-          }}
-        >
-          <Text style={styles.applyButtonText}>Apply</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  </TouchableOpacity>
-</Modal>
-
+      </Modal>
     </View>
   );
 };
-
-
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8F9FA', },

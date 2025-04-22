@@ -10,6 +10,7 @@ import {
   StatusBar,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,11 +19,13 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import roomStayService from '../services/roomStayService';
 import { useAuth } from '../context/AuthContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const LeaveRequestsScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [requests, setRequests] = useState([]);
   const { token } = useAuth();
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     const fetchRequests = async () => {
@@ -104,37 +107,18 @@ const LeaveRequestsScreen = ({ navigation }) => {
     Alert.alert('Thông báo', 'Chức năng từ chối yêu cầu sẽ được cập nhật sau');
   };
 
-  if (loading) {
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#00A67E" />
+          <Text style={styles.loadingText}>Đang tải danh sách yêu cầu...</Text>
+        </View>
+      );
+    }
+
     return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <StatusBar barStyle="light-content" backgroundColor="#00A67E" />
-        <ActivityIndicator size="large" color="#00A67E" />
-        <Text style={styles.loadingText}>Đang tải danh sách yêu cầu...</Text>
-      </SafeAreaView>
-    );
-  }
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#00A67E" />
-      
-      {/* Header */}
-      <LinearGradient
-        colors={['#00A67E', '#00A67E']}
-        style={styles.header}
-      >
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <MaterialIcons name="arrow-back" size={24} color="#FFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Yêu cầu rời phòng</Text>
-        <View style={styles.headerPlaceholder} />
-      </LinearGradient>
-
-      {/* Requests List */}
-      <ScrollView style={styles.listContainer}>
+      <ScrollView style={styles.listContainer} contentContainerStyle={{ paddingBottom: insets.bottom }}>
         {requests.length === 0 ? (
           <View style={styles.emptyState}>
             <MaterialIcons name="assignment" size={64} color="#00A67E" />
@@ -199,7 +183,36 @@ const LeaveRequestsScreen = ({ navigation }) => {
           ))
         )}
       </ScrollView>
-    </SafeAreaView>
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#00A67E" translucent />
+      
+      {/* Header */}
+      <LinearGradient
+        colors={['#00A67E', '#00A67E']}
+        style={[
+          styles.header,
+          { 
+            paddingTop: Platform.OS === 'ios' ? insets.top : StatusBar.currentHeight || 16,
+          }
+        ]}
+      >
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <MaterialIcons name="arrow-back" size={24} color="#FFF" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Yêu cầu rời phòng</Text>
+        <View style={styles.headerPlaceholder} />
+      </LinearGradient>
+
+      {/* Content */}
+      {renderContent()}
+    </View>
   );
 };
 
@@ -222,8 +235,9 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 12,
   },
   backButton: {
     padding: 8,
@@ -234,7 +248,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     color: '#FFF',
-    marginLeft: 8,
+    flex: 1,
+    textAlign: 'center',
   },
   headerPlaceholder: {
     width: 40,
@@ -248,6 +263,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
+    minHeight: 300,
   },
   emptyStateText: {
     marginTop: 16,
@@ -337,4 +353,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LeaveRequestsScreen; 
+export default LeaveRequestsScreen;
