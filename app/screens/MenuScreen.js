@@ -106,6 +106,10 @@ const MenuScreen = ({ navigation, route }) => {
     navigation.navigate('History-Request-Extend-Contract');
   };
 
+  const handlePastRoomsPress = () => {
+    navigation.navigate('PastRooms');
+  };
+
   const goBack = () => {
     navigation.goBack();
   };
@@ -176,7 +180,10 @@ const MenuScreen = ({ navigation, route }) => {
               <Text style={styles.menuItemText}>Phòng đã thích</Text>
               <MaterialIcons name="chevron-right" size={24} color="#666" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={handlePastRoomsPress}
+            >
               <MaterialIcons name="star-border" size={24} color="#666" />
               <Text style={styles.menuItemText}>Đánh giá của tôi</Text>
               <MaterialIcons name="chevron-right" size={24} color="#666" />
