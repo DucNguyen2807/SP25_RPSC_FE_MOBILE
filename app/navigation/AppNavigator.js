@@ -22,6 +22,7 @@ import EditProfile from '../screens/EditProfile';
 import ViewAllRequestExtendContract from '../screens/ViewAllRequestExtendContract';
 import PastRoomsScreen from '../screens/PastRoomsScreen';
 import PastRoomDetailScreen from '../screens/PastRoomDetailScreen';
+import MyFeedbacksScreen from '../screens/MyFeedbacksScreen';
 
 const Stack = createStackNavigator();
 
@@ -174,6 +175,13 @@ const AppNavigator = () => {
       <Stack.Screen 
         name="PastRoomDetail" 
         component={PastRoomDetailScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="MyFeedbacks" 
+        component={MyFeedbacksScreen}
         options={{
           headerShown: false,
         }}

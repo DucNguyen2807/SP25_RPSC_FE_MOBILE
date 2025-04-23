@@ -180,9 +180,19 @@ const MenuScreen = ({ navigation, route }) => {
               <Text style={styles.menuItemText}>Phòng đã thích</Text>
               <MaterialIcons name="chevron-right" size={24} color="#666" />
             </TouchableOpacity>
+            
             <TouchableOpacity 
               style={styles.menuItem}
               onPress={handlePastRoomsPress}
+            >
+              <MaterialIcons name="history" size={24} color="#666" />
+              <Text style={styles.menuItemText}>Lịch sử ở ghép</Text>
+              <MaterialIcons name="chevron-right" size={24} color="#666" />
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={() => navigation.navigate('MyFeedbacks')}
             >
               <MaterialIcons name="star-border" size={24} color="#666" />
               <Text style={styles.menuItemText}>Đánh giá của tôi</Text>
@@ -226,12 +236,6 @@ const MenuScreen = ({ navigation, route }) => {
             >
               <MaterialIcons name="people" size={24} color="#666" />
               <Text style={styles.menuItemText}>Danh sách người trong phòng</Text>
-              <MaterialIcons name="chevron-right" size={24} color="#666" />
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.menuItem}>
-              <MaterialIcons name="help-outline" size={24} color="#666" />
-              <Text style={styles.menuItemText}>Trợ giúp & Phản hồi</Text>
               <MaterialIcons name="chevron-right" size={24} color="#666" />
             </TouchableOpacity>
           </View>
