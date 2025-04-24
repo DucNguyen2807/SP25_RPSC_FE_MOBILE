@@ -154,11 +154,11 @@ const RoomStayDetail = () => {
   if (loading) {
     return (
       <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#6D5BA3" />
-        <SafeAreaView style={{ flex: 0, backgroundColor: '#6D5BA3' }} />
+        <StatusBar barStyle="light-content" backgroundColor="#ACDCD0" />
+        <SafeAreaView style={{ flex: 0, backgroundColor: '#ACDCD0' }} />
         <SafeAreaView style={{ flex: 1, backgroundColor: '#F5F6FA' }}>
           <LinearGradient
-            colors={['#6D5BA3', '#8B75C5']}
+            colors={['#ACDCD0', '#ACDCD0']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.header}
@@ -174,7 +174,7 @@ const RoomStayDetail = () => {
           </LinearGradient>
           
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#6D5BA3" />
+            <ActivityIndicator size="large" color="#ACDCD0" />
             <Text style={styles.loadingText}>Đang tải thông tin phòng...</Text>
           </View>
         </SafeAreaView>
@@ -186,11 +186,11 @@ const RoomStayDetail = () => {
   if (!roomStay) {
     return (
       <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#6D5BA3" />
-        <SafeAreaView style={{ flex: 0, backgroundColor: '#6D5BA3' }} />
+        <StatusBar barStyle="light-content" backgroundColor="#ACDCD0" />
+        <SafeAreaView style={{ flex: 0, backgroundColor: '#ACDCD0' }} />
         <SafeAreaView style={{ flex: 1, backgroundColor: '#F5F6FA' }}>
           <LinearGradient
-            colors={['#6D5BA3', '#8B75C5']}
+            colors={['#ACDCD0', '#ACDCD0']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.header}
@@ -206,7 +206,7 @@ const RoomStayDetail = () => {
           </LinearGradient>
           
           <View style={styles.emptyStateContainer}>
-            <Ionicons name="alert-circle-outline" size={80} color="#6D5BA3" />
+            <Ionicons name="alert-circle-outline" size={80} color="#ACDCD0" />
             <Text style={styles.emptyStateText}>Không tìm thấy thông tin phòng</Text>
             <TouchableOpacity
               style={styles.backToRentedButton}
@@ -227,12 +227,12 @@ const RoomStayDetail = () => {
   // Main render with data
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#6D5BA3" />
-      <SafeAreaView style={{ flex: 0, backgroundColor: '#6D5BA3' }} />
+      <StatusBar barStyle="light-content" backgroundColor="#ACDCD0" />
+      <SafeAreaView style={{ flex: 0, backgroundColor: '#ACDCD0' }} />
       <SafeAreaView style={{ flex: 1, backgroundColor: '#F5F6FA' }}>
         {/* Header */}
         <LinearGradient
-          colors={['#6D5BA3', '#8B75C5']}
+          colors={['#ACDCD0', '#ACDCD0']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.header}
@@ -310,7 +310,7 @@ const RoomStayDetail = () => {
               <Text style={styles.priceValue}>{formatCurrency(room.price)}/tháng</Text>
             </View>
             <View style={styles.addressRow}>
-              <MaterialIcons name="location-on" size={18} color="#6D5BA3" />
+              <MaterialIcons name="location-on" size={18} color="#ACDCD0" />
               <Text style={styles.address}>{room.location}</Text>
             </View>
             <Text style={styles.description}>{room.description}</Text>
@@ -321,31 +321,31 @@ const RoomStayDetail = () => {
             <Text style={styles.sectionTitle}>Thông tin chi tiết</Text>
             
             <View style={styles.detailItem}>
-              <Ionicons name="key-outline" size={20} color="#6D5BA3" />
+              <Ionicons name="key-outline" size={20} color="#ACDCD0" />
               <Text style={styles.detailLabel}>Mã phòng:</Text>
               <Text style={styles.detailValue}>{room.roomNumber}</Text>
             </View>
             
             <View style={styles.detailItem}>
-              <MaterialIcons name="category" size={20} color="#6D5BA3" />
+              <MaterialIcons name="category" size={20} color="#ACDCD0" />
               <Text style={styles.detailLabel}>Loại phòng:</Text>
               <Text style={styles.detailValue}>{room.roomTypeName}</Text>
             </View>
             
             <View style={styles.detailItem}>
-              <FontAwesome5 name="coins" size={18} color="#6D5BA3" />
+              <FontAwesome5 name="coins" size={18} color="#ACDCD0" />
               <Text style={styles.detailLabel}>Tiền đặt cọc:</Text>
               <Text style={styles.detailValue}>{formatCurrency(room.deposite)}</Text>
             </View>
             
             <View style={styles.detailItem}>
-              <MaterialIcons name="people" size={20} color="#6D5BA3" />
+              <MaterialIcons name="people" size={20} color="#ACDCD0" />
               <Text style={styles.detailLabel}>Người tối đa:</Text>
               <Text style={styles.detailValue}>{room.maxOccupancy} người</Text>
             </View>
             
             <View style={styles.detailItem}>
-              <MaterialIcons name="square-foot" size={20} color="#6D5BA3" />
+              <MaterialIcons name="square-foot" size={20} color="#ACDCD0" />
               <Text style={styles.detailLabel}>Diện tích:</Text>
               <Text style={styles.detailValue}>{room.square} m²</Text>
             </View>
@@ -528,7 +528,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#6D5BA3',
+    color: '#ACDCD0',
   },
   header: {
     flexDirection: 'row',
@@ -560,12 +560,12 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     fontSize: 18,
-    color: '#6D5BA3',
+    color: '#ACDCD0',
     marginTop: 16,
     marginBottom: 24,
   },
   backToRentedButton: {
-    backgroundColor: '#6D5BA3',
+    backgroundColor: '#ACDCD0',
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
@@ -659,7 +659,7 @@ const styles = StyleSheet.create({
   priceValue: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#6D5BA3',
+    color: '#ACDCD0',
   },
   addressRow: {
     flexDirection: 'row',
@@ -750,7 +750,7 @@ const styles = StyleSheet.create({
   serviceCost: {
     fontSize: 15,
     fontWeight: 'bold',
-    color: '#6D5BA3',
+    color: '#ACDCD0',
   },
   landlordContainer: {
     flexDirection: 'row',
@@ -760,7 +760,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#6D5BA3',
+    backgroundColor: '#ACDCD0',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -784,7 +784,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   contactButton: {
-    backgroundColor: '#6D5BA3',
+    backgroundColor: '#ACDCD0',
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -815,7 +815,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   viewContractButton: {
-    backgroundColor: '#6D5BA3',
+    backgroundColor: '#ACDCD0',
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
@@ -924,7 +924,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   submitButton: {
-    backgroundColor: '#6D5BA3',
+    backgroundColor: '#ACDCD0',
     marginLeft: 8,
   },
   submitButtonText: {

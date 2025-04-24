@@ -364,6 +364,8 @@ const renderLifestyleDropdown = () => {
     "Thích làm việc tại nhà",
     "Thường xuyên đi công tác",
     "Gia đình có trẻ nhỏ",
+    "Thích nuôi thú cưng",
+    "Thích nấu ăn",
     "Khác"
   ];
 

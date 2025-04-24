@@ -52,7 +52,7 @@ const ViewAllRequestExtendContract = ({ navigation }) => {
       }
     } catch (error) {
       console.error('Error fetching extend contract requests:', error);
-      Alert.alert('Error', 'Something went wrong while loading requests');
+      //Alert.alert('Error', 'Something went wrong while loading requests');
     } finally {
       setLoading(false);
       setRefreshing(false);

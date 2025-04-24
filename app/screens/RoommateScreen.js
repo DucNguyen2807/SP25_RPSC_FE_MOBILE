@@ -16,11 +16,13 @@ const RoommateScreen = () => {
   const [searchText, setSearchText] = useState('');
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [activeFilter, setActiveFilter] = useState(null);
+  const [activeTab, setActiveTab] = useState('all'); // 'all' or 'recommended'
   const [filters, setFilters] = useState({
     minBudget: null, maxBudget: null, gender: null, minAge: null, maxAge: null, lifeStyles: [],
   });
 
-  const lifeStyleOptions = ['Yên tĩnh', 'Năng động', 'Sạch sẽ', 'Chăm chỉ', 'Thân thiện'];
+  const lifeStyleOptions = ['Năng động', 'Thích hoạt động cộng đồng', 'Thích sự yên tĩnh', 'Thích làm việc tại nhà'
+    , 'Thường xuyên đi công tác', 'Gia đình có trẻ nhỏ', 'Thích nuôi thú cưng', 'Thích nấu ăn'];
   const themeColors = {
     primary: '#ACDCD0',
     secondary: '#6D5BA3',
@@ -34,31 +36,45 @@ const RoommateScreen = () => {
     warning: '#F59E0B',
   };
   
-  // Fetch roommate posts initially
+  // Fetch roommate posts
   const fetchRoommatePosts = async () => {
     setLoading(true);
     setError('');
     
     try {
-      const searchRequest = {
-        pageNumber: 1,
-        pageSize: 10,
-        address: searchText || undefined,
-        minBudget: filters.minBudget,
-        maxBudget: filters.maxBudget,
-        minAge: filters.minAge,
-        maxAge: filters.maxAge,
-        gender: filters.gender,
-        lifeStyles: filters.lifeStyles.length > 0 ? filters.lifeStyles : undefined,
-      };
-  
-      const result = await postService.getAllRoommatePosts(searchRequest);
-      if (result.isSuccess && Array.isArray(result.posts.items)) {
-        setRoommates(result.posts.items);
+      let result;
+      
+      if (activeTab === 'recommended') {
+        // Call the recommended posts API
+        result = await postService.getRecommendedRoommatePosts(1, 10);
+        if (result.isSuccess && result.data && Array.isArray(result.data.items)) {
+          setRoommates(result.data.items);
+        } else {
+          setError(result.message || 'No recommended posts available');
+        }
       } else {
-        setError(result.message || 'No posts available');
+        // Call the original search API with filters
+        const searchRequest = {
+          pageNumber: 1,
+          pageSize: 10,
+          address: searchText || undefined,
+          minBudget: filters.minBudget,
+          maxBudget: filters.maxBudget,
+          minAge: filters.minAge,
+          maxAge: filters.maxAge,
+          gender: filters.gender,
+          lifeStyles: filters.lifeStyles.length > 0 ? filters.lifeStyles : undefined,
+        };
+    
+        result = await postService.getAllRoommatePosts(searchRequest);
+        if (result.isSuccess && Array.isArray(result.posts.items)) {
+          setRoommates(result.posts.items);
+        } else {
+          setError(result.message || 'No posts available');
+        }
       }
     } catch (err) {
+      console.error('Error fetching data:', err);
       setError('Error fetching data');
     } finally {
       setLoading(false);
@@ -152,12 +168,11 @@ const RoommateScreen = () => {
     }
   };
   
-
   // Use focus effect to reload data when tab is focused
   useFocusEffect(
     React.useCallback(() => {
       fetchRoommatePosts();
-    }, [filters, searchText])  // Dependencies are filters and searchText to trigger a reload
+    }, [filters, searchText, activeTab])  // Add activeTab as dependency
   );
 
   const handleFilterChange = (type, value) => setFilters(prev => ({ ...prev, [type]: value }));
@@ -309,11 +324,12 @@ const RoommateScreen = () => {
             <MaterialCommunityIcons name="magnify" size={20} color={themeColors.accent} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search by location..."
+              placeholder={activeTab === 'recommended' ? "Showing recommended roommates..." : "Search by location..."}
               placeholderTextColor="#9CA3AF"
               value={searchText}
               onChangeText={setSearchText}
               onSubmitEditing={fetchRoommatePosts}
+              editable={activeTab !== 'recommended'}
             />
           </View>
           <TouchableOpacity style={styles.notificationButton}>
@@ -325,30 +341,66 @@ const RoommateScreen = () => {
         </View>
       </LinearGradient>
 
-      {/* Filters */}
-      <View style={styles.filtersBar}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {filterOptions.map(filter => (
-            <TouchableOpacity 
-              key={filter.id}
-              style={[styles.filterChip, filter.active && styles.filterChipActive]}
-              onPress={() => {
-                setActiveFilter(filter.id);
-                setFilterModalVisible(true);
-              }}
-            >
-              <MaterialCommunityIcons 
-                name={filter.icon} 
-                size={16} 
-                color={filter.active ? "#FFF" : themeColors.accent} 
-              />
-              <Text style={[styles.filterChipText, filter.active && styles.filterChipTextActive]}>
-                {filter.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+      {/* Tab Navigation - Replace the Switch with Tabs */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity 
+          style={[styles.tab, activeTab === 'all' && styles.activeTab]}
+          onPress={() => {
+            setActiveTab('all');
+            // The fetching will be triggered by useFocusEffect when activeTab changes
+          }}
+        >
+          <Text style={[styles.tabText, activeTab === 'all' && styles.activeTabText]}>
+            All Posts
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.tab, activeTab === 'recommended' && styles.activeTab]}
+          onPress={() => {
+            setActiveTab('recommended');
+            // Clear filters when switching to recommended mode
+            if (activeTab !== 'recommended') {
+              setSearchText('');
+              setFilters({
+                minBudget: null, maxBudget: null, gender: null, 
+                minAge: null, maxAge: null, lifeStyles: [],
+              });
+            }
+          }}
+        >
+          <Text style={[styles.tabText, activeTab === 'recommended' && styles.activeTabText]}>
+            Recommended
+          </Text>
+        </TouchableOpacity>
       </View>
+
+      {/* Filters - Only show when not in recommended mode */}
+      {activeTab !== 'recommended' && (
+        <View style={styles.filtersBar}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {filterOptions.map(filter => (
+              <TouchableOpacity 
+                key={filter.id}
+                style={[styles.filterChip, filter.active && styles.filterChipActive]}
+                onPress={() => {
+                  setActiveFilter(filter.id);
+                  setFilterModalVisible(true);
+                }}
+              >
+                <MaterialCommunityIcons 
+                  name={filter.icon} 
+                  size={16} 
+                  color={filter.active ? "#FFF" : themeColors.accent} 
+                />
+                <Text style={[styles.filterChipText, filter.active && styles.filterChipTextActive]}>
+                  {filter.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
 
       {/* Content */}
       {loading ? (
@@ -369,8 +421,12 @@ const RoommateScreen = () => {
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <MaterialCommunityIcons name="account-group" size={80} color={themeColors.secondary} />
-              <Text style={styles.emptyStateText}>No roommates found</Text>
-              <Text style={styles.emptyStateSubtext}>Try adjusting your filters</Text>
+              <Text style={styles.emptyStateText}>
+                {activeTab === 'recommended' ? "No recommended roommates found" : "No roommates found"}
+              </Text>
+              <Text style={styles.emptyStateSubtext}>
+                {activeTab === 'recommended' ? "Try checking back later" : "Try adjusting your filters"}
+              </Text>
             </View>
           }
         />
@@ -392,11 +448,9 @@ const RoommateScreen = () => {
             style={styles.modalContainer}
             onStartShouldSetResponder={() => true}
             onTouchEnd={(e) => {
-              // Fix: Ensure we have a proper handler function
               e.stopPropagation();
             }}
           >
-            {/* This is where we render the filter content correctly */}
             {renderFilterContent()}
             
             <View style={styles.modalActions}>
@@ -440,6 +494,39 @@ const styles = StyleSheet.create({
   notificationButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center', },
   notificationBadge: { position: 'absolute', top: 0, right: 0, width: 18, height: 18, borderRadius: 9, backgroundColor: '#EF4444', justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: '#FFF', },
   notificationBadgeText: { color: '#FFF', fontSize: 10, fontWeight: 'bold', },
+  
+  // New Tab Styles - Replacing the Switch
+  tabContainer: { 
+    flexDirection: 'row', 
+    backgroundColor: '#FFF',
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 1 }, 
+    shadowOpacity: 0.04, 
+    shadowRadius: 2, 
+    elevation: 2,
+  },
+  tab: { 
+    flex: 1, 
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  activeTab: {
+    borderBottomColor: '#6D5BA3',
+  },
+  tabText: { 
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#6B7280',
+    fontFamily: 'System',
+  },
+  activeTabText: { 
+    color: '#6D5BA3',
+    fontWeight: '600',
+  },
+  
   filtersBar: { padding: 14, backgroundColor: '#FFF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 5, elevation: 3, },
   filterChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EEF2FF', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12, marginHorizontal: 6, },
   filterChipActive: { backgroundColor: '#6366F1', },

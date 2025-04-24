@@ -184,6 +184,98 @@ createRoommatePost: async (title, description, price, rentalRoomId) => {
     return { isSuccess: false, message: 'Something went wrong while creating roommate post' };
   }
 },
+updateRoommatePost: async (postId, { title, description, price }) => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+
+    const requestData = {
+      Title: title,
+      Description: description,
+      Price: price,
+    };
+
+    const url = `${API_BASE_URL}/post/update-roommate-post/${postId}`;
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(requestData),
+    });
+
+    const data = await response.json();
+
+    if (data?.isSuccess) {
+      return { isSuccess: true, message: data.message, data: data.data };
+    } else {
+      return { 
+        isSuccess: false, 
+        message: data.message || 'Failed to update roommate post' 
+      };
+    }
+  } catch (error) {
+    console.error('Error updating roommate post:', error);
+    return { isSuccess: false, message: 'Something went wrong while updating the post' };
+  }
+},
+inactivateRoommatePost: async (postId) => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+
+    const url = `${API_BASE_URL}/post/inactivate-roommate-post/${postId}`;
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (data?.isSuccess) {
+      return { isSuccess: true, message: data.message };
+    } else {
+      return { 
+        isSuccess: false, 
+        message: data.message || 'Failed to inactivate roommate post' 
+      };
+    }
+  } catch (error) {
+    console.error('Error inactivating roommate post:', error);
+    return { isSuccess: false, message: 'Something went wrong while inactivating the post' };
+  }
+},
+getRecommendedRoommatePosts: async (pageNumber = 1, pageSize = 10) => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+
+    const url = `${API_BASE_URL}/post/recommended-roommate-posts?pageNumber=${pageNumber}&pageSize=${pageSize}`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (data?.isSuccess) {
+      return { isSuccess: true, message: data.message, data: data.data };
+    } else {
+      return { isSuccess: false, message: data.message || 'Failed to get recommended roommate posts' };
+    }
+  } catch (error) {
+    console.error('Error fetching recommended roommate posts:', error);
+    return { isSuccess: false, message: 'Something went wrong while fetching recommended roommate posts' };
+  }
+},
 
 };
 

@@ -237,19 +237,23 @@ const RoommateDetailScreen = ({ route }) => {
             </View>
 
             <View style={styles.profileDetails}>
-              <View style={styles.profileDetail}>
-                <FontAwesome5 name="birthday-cake" size={14} color="#6366F1" />
-                <Text style={styles.profileDetailText}>{postOwnerInfo?.age || '-'} years</Text>
-              </View>
-              <View style={styles.profileDetail}>
-                <FontAwesome5 name="venus-mars" size={14} color="#6366F1" />
-                <Text style={styles.profileDetailText}>{postOwnerInfo?.gender || '-'}</Text>
-              </View>
-              <View style={styles.profileDetail}>
-                <FontAwesome5 name="heart" size={14} color="#6366F1" />
-                <Text style={styles.profileDetailText}>{postOwnerInfo?.lifeStyle || '-'}</Text>
-              </View>
-            </View>
+            <View style={styles.profileDetail}>
+  <FontAwesome5 name="birthday-cake" size={14} color="#6366F1" />
+  <Text style={styles.profileDetailText}>{postOwnerInfo?.age || '-'} years</Text>
+</View>
+<View style={styles.profileDetail}>
+  <FontAwesome5 name="venus-mars" size={14} color="#6366F1" />
+  <Text style={styles.profileDetailText}>{postOwnerInfo?.gender || '-'}</Text>
+</View>
+</View>
+<View style={[styles.profileDetail, { marginTop: 10 }]}>
+  <FontAwesome5 name="heart" size={14} color="#6366F1" />
+  <Text style={styles.profileDetailText}>{postOwnerInfo?.lifeStyle || '-'}</Text>
+</View>
+<View style={[styles.profileDetail, { marginTop: 10 }]}>
+  <FontAwesome5 name="clipboard-list" size={14} color="#6366F1" />
+  <Text style={styles.profileDetailText}>{postOwnerInfo?.requirement || '-'}</Text>
+</View>
           </View>
 
           {/* Title and Description */}

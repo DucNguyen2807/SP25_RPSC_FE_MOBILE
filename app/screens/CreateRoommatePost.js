@@ -9,6 +9,9 @@ import {
   SafeAreaView,
   StatusBar,
   Alert,
+  Platform,
+  ActivityIndicator,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,16 +24,22 @@ const CreateRoommatePost = ({ route, navigation }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: 'Xin chào mọi người! Mình đang tìm người ở ghép, mình là người gọn gàng, sạch sẽ và tôn trọng không gian riêng tư của người khác.',
-    price: suggestedPrice ? suggestedPrice.toString() : '', // Set suggested price if available
+    price: suggestedPrice ? suggestedPrice.toString() : '',
   });
+  
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formattedPrice, setFormattedPrice] = useState('');
 
   // Update price if suggestedPrice changes
   useEffect(() => {
     if (suggestedPrice) {
+      const priceString = suggestedPrice.toString();
       setFormData(prevData => ({
         ...prevData,
-        price: suggestedPrice.toString()
+        price: priceString
       }));
+      setFormattedPrice(formatCurrency(priceString));
     }
   }, [suggestedPrice]);
 
@@ -40,58 +49,120 @@ const CreateRoommatePost = ({ route, navigation }) => {
     console.log('Suggested price received:', suggestedPrice);
   }, [roomId, suggestedPrice]);
 
-  const handleSubmit = async () => {
-    try {
-        const { title, description, price } = formData;
-        if (!roomId) {
-            Alert.alert('Error', 'No room ID provided. Please try again.');
-            return;
-        }
-        
-        const result = await postService.createRoommatePost(title, description, parseFloat(price), roomId);
-        console.log('API Response:', result);
-        
-        if (result.isSuccess) {
-            navigation.navigate('RentedMain', {
-                postId: result.data?.postId,
-                postData: formData
-            });
-            Alert.alert('Success', 'Roommate post created successfully!');
-        } else {
-            // Check if there are validation errors in the result
-            if (result.errors && Object.keys(result.errors).length > 0) {
-                // Create error message string from the errors object
-                const errorMessages = Object.entries(result.errors)
-                    .map(([field, messages]) => {
-                        if (Array.isArray(messages)) {
-                            return `${field}: ${messages.join(', ')}`;
-                        } else {
-                            return `${field}: ${messages}`;
-                        }
-                    })
-                    .join('\n');
-                
-                console.log('Validation Errors:', errorMessages);
-                Alert.alert('Validation Error', errorMessages);
-            } else {
-                // If no validation errors, show general error message
-                Alert.alert('Error', result.message || 'Failed to create roommate post');
-            }
-        }
-    } catch (error) {
-        console.error('Error submitting the form:', error);
-        Alert.alert('Error', 'Something went wrong while creating the post');
+  const formatCurrency = (value) => {
+    // Remove non-numeric characters
+    const numericValue = value.replace(/[^0-9]/g, '');
+    
+    // Format with commas for thousands
+    if (numericValue) {
+      return numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     }
-};
+    return '';
+  };
 
+  const handlePriceChange = (text) => {
+    // Store raw numeric value in formData
+    const numericValue = text.replace(/[^0-9]/g, '');
+    setFormData({...formData, price: numericValue});
+    
+    // Display formatted value
+    setFormattedPrice(formatCurrency(numericValue));
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Validate title
+    if (!formData.title.trim()) {
+      newErrors.title = 'Tiêu đề không được để trống';
+    } else if (formData.title.trim().length < 10) {
+      newErrors.title = 'Tiêu đề phải có ít nhất 10 ký tự';
+    }
+
+    // Validate description
+    if (!formData.description.trim()) {
+      newErrors.description = 'Mô tả không được để trống';
+    } else if (formData.description.trim().length < 20) {
+      newErrors.description = 'Mô tả phải có ít nhất 20 ký tự';
+    }
+
+    // Validate price
+    if (!formData.price) {
+      newErrors.price = 'Giá phòng không được để trống';
+    } else if (parseInt(formData.price) <= 0) {
+      newErrors.price = 'Giá phòng phải lớn hơn 0';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) {
+      Alert.alert('Lỗi', 'Vui lòng kiểm tra lại thông tin nhập vào');
+      return;
+    }
+
+    if (!roomId) {
+      Alert.alert('Lỗi', 'Không có ID phòng. Vui lòng thử lại.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const { title, description, price } = formData;
+      
+      const result = await postService.createRoommatePost(title.trim(), description.trim(), parseFloat(price), roomId);
+      console.log('API Response:', result);
+      
+      if (result.isSuccess) {
+        navigation.navigate('RentedMain', {
+          postId: result.data?.postId,
+          postData: formData
+        });
+        Alert.alert('Thành công', 'Bạn đã đăng tin tìm người ở ghép thành công!');
+      } else {
+        // Check if there are validation errors in the result
+        if (result.errors && Object.keys(result.errors).length > 0) {
+          // Create error message string from the errors object
+          const errorMessages = Object.entries(result.errors)
+            .map(([field, messages]) => {
+              if (Array.isArray(messages)) {
+                return `${field}: ${messages.join(', ')}`;
+              } else {
+                return `${field}: ${messages}`;
+              }
+            })
+            .join('\n');
+          
+          console.log('Validation Errors:', errorMessages);
+          Alert.alert('Lỗi xác thực', errorMessages);
+        } else {
+          // If no validation errors, show general error message
+          Alert.alert('Lỗi', result.message || 'Không thể tạo bài đăng');
+        }
+      }
+    } catch (error) {
+      console.error('Error submitting the form:', error);
+      Alert.alert('Lỗi', 'Đã xảy ra lỗi khi tạo bài đăng');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
+    <View style={styles.container}>
+      {/* Status Bar Configuration */}
+      <StatusBar 
+        barStyle="light-content" 
+        backgroundColor="#6366F1" 
+        translucent={true}
+      />
       
       {/* Header */}
       <LinearGradient
-        colors={['#6366F1', '#4F46E5']}
+        colors={['#ACDCD0', '#ACDCD0']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.header}
@@ -105,86 +176,120 @@ const CreateRoommatePost = ({ route, navigation }) => {
         <Text style={styles.headerTitle}>Tạo Bài Đăng Tìm Bạn Ở Ghép</Text>
       </LinearGradient>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Header Illustration */}
-        <View style={styles.illustrationContainer}>
-          <FontAwesome5 name="home" size={64} color="#6366F1" />
-          <Text style={styles.illustrationText}>Tìm Người Ở Ghép</Text>
-        </View>
-        
-        {/* Form Container */}
-        <View style={styles.formContainer}>
-          {/* Title Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Tiêu đề bài đăng</Text>
-            <View style={styles.inputContainer}>
-              <FontAwesome5 name="heading" size={16} color="#6366F1" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                value={formData.title}
-                onChangeText={(text) => setFormData({...formData, title: text})}
-                placeholder="Nhập tiêu đề bài đăng lớn hơn 10 kí tự"
-                placeholderTextColor="#A0A0A0"
-              />
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidView}
+      >
+        <SafeAreaView style={styles.safeAreaContent}>
+          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            {/* Header Illustration */}
+            <View style={styles.illustrationContainer}>
+              <FontAwesome5 name="home" size={64} color="#6366F1" />
+              <Text style={styles.illustrationText}>Tìm Người Ở Ghép</Text>
             </View>
-          </View>
+            
+            {/* Form Container */}
+            <View style={styles.formContainer}>
+              {/* Title Section */}
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Tiêu đề bài đăng</Text>
+                <View style={styles.inputContainer}>
+                  <FontAwesome5 name="heading" size={16} color="#6366F1" style={styles.inputIcon} />
+                  <TextInput
+                    style={[styles.input, errors.title ? styles.inputError : null]}
+                    value={formData.title}
+                    onChangeText={(text) => {
+                      setFormData({...formData, title: text});
+                      if (errors.title) {
+                        setErrors({...errors, title: null});
+                      }
+                    }}
+                    placeholder="Nhập tiêu đề bài đăng lớn hơn 10 kí tự"
+                    placeholderTextColor="#A0A0A0"
+                    maxLength={100}
+                  />
+                </View>
+                {errors.title ? <Text style={styles.errorText}>{errors.title}</Text> : null}
+                <Text style={styles.charCount}>{formData.title.length}/100</Text>
+              </View>
 
-          {/* Description Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Giới thiệu về bản thân</Text>
-            <View style={styles.inputContainer}>
-              <FontAwesome5 name="comment-alt" size={16} color="#6366F1" style={[styles.inputIcon, {marginTop: 12}]} />
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={formData.description}
-                onChangeText={(text) => setFormData({...formData, description: text})}
-                placeholder="Chia sẻ về bản thân, thói quen sinh hoạt..."
-                placeholderTextColor="#A0A0A0"
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-              />
+              {/* Description Section */}
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Giới thiệu về bản thân</Text>
+                <View style={styles.inputContainer}>
+                  <FontAwesome5 name="comment-alt" size={16} color="#6366F1" style={[styles.inputIcon, {marginTop: 12}]} />
+                  <TextInput
+                    style={[styles.input, styles.textArea, errors.description ? styles.inputError : null]}
+                    value={formData.description}
+                    onChangeText={(text) => {
+                      setFormData({...formData, description: text});
+                      if (errors.description) {
+                        setErrors({...errors, description: null});
+                      }
+                    }}
+                    placeholder="Chia sẻ về bản thân, thói quen sinh hoạt..."
+                    placeholderTextColor="#A0A0A0"
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                    maxLength={500}
+                  />
+                </View>
+                {errors.description ? <Text style={styles.errorText}>{errors.description}</Text> : null}
+                <Text style={styles.charCount}>{formData.description.length}/500</Text>
+              </View>
+
+              {/* Price Section */}
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Giá phòng chia sẻ</Text>
+                <View style={styles.inputContainer}>
+                  <FontAwesome5 name="coins" size={16} color="#6366F1" style={styles.inputIcon} />
+                  <TextInput
+                    style={[styles.input, errors.price ? styles.inputError : null]}
+                    value={formattedPrice}
+                    onChangeText={handlePriceChange}
+                    placeholder="Giá phòng (VNĐ)"
+                    placeholderTextColor="#A0A0A0"
+                    keyboardType="numeric"
+                  />
+                  <Text style={styles.priceUnit}>VNĐ/tháng</Text>
+                </View>
+                {errors.price ? <Text style={styles.errorText}>{errors.price}</Text> : null}
+              </View>
             </View>
-          </View>
 
-          {/* Price Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Giá phòng chia sẻ</Text>
-            <View style={styles.inputContainer}>
-              <FontAwesome5 name="coins" size={16} color="#6366F1" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                value={formData.price}
-                onChangeText={(text) => setFormData({...formData, price: text.replace(/[^0-9]/g, '')})}
-                placeholder="Giá phòng (VNĐ)"
-                placeholderTextColor="#A0A0A0"
-                keyboardType="numeric"
-              />
-              <Text style={styles.priceUnit}>VNĐ/tháng</Text>
+            {/* Submit Button */}
+            <TouchableOpacity 
+              onPress={handleSubmit} 
+              activeOpacity={0.8} 
+              disabled={isSubmitting}
+            >
+              <LinearGradient
+                colors={['#ACDCD0', '#ACDCD0']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[styles.submitButton, isSubmitting ? styles.submitButtonDisabled : null]}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator color="#FFF" size="small" />
+                ) : (
+                  <>
+                    <FontAwesome5 name="paper-plane" size={16} color="#FFF" style={styles.submitIcon} />
+                    <Text style={styles.submitButtonText}>Đăng Tin</Text>
+                  </>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+            
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>
+                Bài đăng của bạn sẽ được hiển thị cho những người đang tìm phòng ở ghép
+              </Text>
             </View>
-          </View>
-        </View>
-
-        {/* Submit Button */}
-        <TouchableOpacity onPress={handleSubmit} activeOpacity={0.8}>
-          <LinearGradient
-            colors={['#6366F1', '#4F46E5']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.submitButton}
-          >
-            <FontAwesome5 name="paper-plane" size={16} color="#FFF" style={styles.submitIcon} />
-            <Text style={styles.submitButtonText}>Đăng Tin</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-        
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            Bài đăng của bạn sẽ được hiển thị cho những người đang tìm phòng ở ghép
-          </Text>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          </ScrollView>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
@@ -193,11 +298,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F9FAFB',
   },
+  keyboardAvoidView: {
+    flex: 1,
+  },
+  safeAreaContent: {
+    flex: 1,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight + 16,
+    paddingBottom: 16,
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -244,6 +356,7 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: 20,
+    position: 'relative',
   },
   sectionTitle: {
     fontSize: 16,
@@ -273,6 +386,22 @@ const styles = StyleSheet.create({
     color: '#111827',
     backgroundColor: '#F9FAFB',
   },
+  inputError: {
+    borderColor: '#EF4444',
+  },
+  errorText: {
+    color: '#EF4444',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
+  },
+  charCount: {
+    position: 'absolute',
+    right: 0,
+    bottom: -18,
+    fontSize: 12,
+    color: '#6B7280',
+  },
   textArea: {
     height: 120,
     paddingTop: 12,
@@ -298,6 +427,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
   },
+  submitButtonDisabled: {
+    opacity: 0.7,
+  },
   submitIcon: {
     marginRight: 8,
   },
@@ -319,4 +451,3 @@ const styles = StyleSheet.create({
 });
 
 export default CreateRoommatePost;
-

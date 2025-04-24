@@ -11,6 +11,9 @@ import {
   Pressable,
   Dimensions,
   Alert,
+  StatusBar,
+  Platform,
+  TextInput,
 } from 'react-native';
 import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -29,7 +32,9 @@ const RoommatePostDetail = ({ route, navigation }) => {
   const [roommateRequests, setRoommateRequests] = useState([]);
   const [requestLoading, setRequestLoading] = useState(true);
   const [processingRequest, setProcessingRequest] = useState(null);
-
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editData, setEditData] = useState({ title: '', description: '', price: '' });
+  
   // Fetch post data if only postId is provided
   const fetchPostData = async () => {
     if (postId && !postData) {
@@ -203,7 +208,7 @@ const RoommatePostDetail = ({ route, navigation }) => {
         <Pressable style={styles.modalContent}>
           {/* Profile Header with Gradient */}
           <LinearGradient
-            colors={['#6D5BA3', '#8B75C5', '#A390E4']}
+            colors={['#ACDCD0', '#ACDCD0', '#A390E4']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.profileHeader}
@@ -230,7 +235,7 @@ const RoommatePostDetail = ({ route, navigation }) => {
               <Text style={styles.profileSectionTitle}>Thông tin cơ bản</Text>
               <View style={styles.profileDetailItem}>
                 <View style={styles.iconContainer}>
-                  <FontAwesome5 name="user" size={16} color="#6D5BA3" />
+                  <FontAwesome5 name="user" size={16} color="#ACDCD0" />
                 </View>
                 <Text style={styles.profileDetailText}>
                   {calculateAge(user?.dob)} tuổi • {user?.gender === 'Male' ? 'Nam' : 'Nữ'}
@@ -238,7 +243,7 @@ const RoommatePostDetail = ({ route, navigation }) => {
               </View>
               <View style={styles.profileDetailItem}>
                 <View style={styles.iconContainer}>
-                  <FontAwesome5 name="briefcase" size={16} color="#6D5BA3" />
+                  <FontAwesome5 name="briefcase" size={16} color="#ACDCD0" />
                 </View>
                 <Text style={styles.profileDetailText}>{user?.customerType || 'N/A'}</Text>
               </View>
@@ -250,7 +255,7 @@ const RoommatePostDetail = ({ route, navigation }) => {
               <View style={styles.profileTags}>
                 {user?.preferences && (
                   <LinearGradient
-                    colors={['#6D5BA3', '#8B75C5']}
+                    colors={['#ACDCD0', '#ACDCD0']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={styles.profileTag}
@@ -289,19 +294,19 @@ const RoommatePostDetail = ({ route, navigation }) => {
               <Text style={styles.profileSectionTitle}>Thông tin liên hệ</Text>
               <View style={styles.profileDetailItem}>
                 <View style={styles.iconContainer}>
-                  <FontAwesome5 name="envelope" size={16} color="#6D5BA3" />
+                  <FontAwesome5 name="envelope" size={16} color="#ACDCD0" />
                 </View>
                 <Text style={styles.profileDetailText}>{user?.email || 'N/A'}</Text>
               </View>
               <View style={styles.profileDetailItem}>
                 <View style={styles.iconContainer}>
-                  <FontAwesome5 name="phone" size={16} color="#6D5BA3" />
+                  <FontAwesome5 name="phone" size={16} color="#ACDCD0" />
                 </View>
                 <Text style={styles.profileDetailText}>{user?.phoneNumber || 'N/A'}</Text>
               </View>
               <View style={styles.profileDetailItem}>
                 <View style={styles.iconContainer}>
-                  <FontAwesome5 name="map-marker-alt" size={16} color="#6D5BA3" />
+                  <FontAwesome5 name="map-marker-alt" size={16} color="#ACDCD0" />
                 </View>
                 <Text style={styles.profileDetailText}>{user?.address || 'N/A'}</Text>
               </View>
@@ -312,7 +317,7 @@ const RoommatePostDetail = ({ route, navigation }) => {
               <Text style={styles.profileSectionTitle}>Tài chính & Vị trí</Text>
               <View style={styles.profileDetailItem}>
                 <View style={styles.iconContainer}>
-                  <FontAwesome5 name="money-bill-wave" size={16} color="#6D5BA3" />
+                  <FontAwesome5 name="money-bill-wave" size={16} color="#ACDCD0" />
                 </View>
                 <Text style={styles.profileDetailText}>
                   {user?.budgetRange ? Number(user.budgetRange).toLocaleString('vi-VN') + 'đ/tháng' : 'N/A'}
@@ -320,7 +325,7 @@ const RoommatePostDetail = ({ route, navigation }) => {
               </View>
               <View style={styles.profileDetailItem}>
                 <View style={styles.iconContainer}>
-                  <FontAwesome5 name="location-arrow" size={16} color="#6D5BA3" />
+                  <FontAwesome5 name="location-arrow" size={16} color="#ACDCD0" />
                 </View>
                 <Text style={styles.profileDetailText}>{user?.preferredLocation || 'N/A'}</Text>
               </View>
@@ -344,7 +349,7 @@ const RoommatePostDetail = ({ route, navigation }) => {
                 }}
               >
                 <LinearGradient
-                  colors={['#6D5BA3', '#8B75C5']}
+                  colors={['#ACDCD0', '#ACDCD0']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.actionButtonGradient}
@@ -386,7 +391,7 @@ const RoommatePostDetail = ({ route, navigation }) => {
             style={[styles.actionButton, styles.chatButton]}
             onPress={() => navigation.navigate('Chat', { userId: request.userId })}
           >
-            <FontAwesome5 name="comment" size={16} color="#6D5BA3" />
+            <FontAwesome5 name="comment" size={16} color="#ACDCD0" />
             <Text style={styles.chatText}>Chat</Text>
           </TouchableOpacity>
           <TouchableOpacity 
@@ -464,69 +469,21 @@ const RoommatePostDetail = ({ route, navigation }) => {
     </View>
   );
 
-  // Show loading or placeholder if post data is not available yet
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <LinearGradient
-          colors={['#6D5BA3', '#8B75C5']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.header}
-        >
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <MaterialIcons name="arrow-back" size={24} color="#FFF" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Chi tiết bài đăng</Text>
-        </LinearGradient>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  // Show error message if post data couldn't be loaded
-  if (!post) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <LinearGradient
-          colors={['#6D5BA3', '#8B75C5']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.header}
-        >
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <MaterialIcons name="arrow-back" size={24} color="#FFF" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Chi tiết bài đăng</Text>
-        </LinearGradient>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.errorText}>Không thể tải dữ liệu bài đăng</Text>
-          <TouchableOpacity 
-            style={styles.retryButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.retryText}>Quay lại</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
+  // Main render function with iOS status bar fixes
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.containerMain}>
+      {/* Set the status bar style */}
+      <StatusBar barStyle="light-content" backgroundColor="#ACDCD0" />
+      
+      {/* Header with proper iOS padding */}
       <LinearGradient
-        colors={['#6D5BA3', '#8B75C5']}
+        colors={['#ACDCD0', '#ACDCD0']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
-        style={styles.header}
+        style={[
+          styles.header,
+          { paddingTop: Platform.OS === 'ios' ? 50 : 16 } // Extra padding for iOS status bar
+        ]}
       >
         <TouchableOpacity 
           style={styles.backButton}
@@ -537,87 +494,222 @@ const RoommatePostDetail = ({ route, navigation }) => {
         <Text style={styles.headerTitle}>Chi tiết bài đăng</Text>
       </LinearGradient>
 
-      <ScrollView style={styles.content}>
-        {/* Post Details */}
-        <View style={styles.postCard}>
-          <View style={styles.userInfo}>
-            <Image
-              source={require('../assets/logoEasyRommie.png')}
-              style={styles.userAvatar}
-            />
-            <View style={styles.userDetails}>
-              <Text style={styles.userName}>{post.fullName || 'Không có tên'}</Text>
-              
+      {/* Loading state */}
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
+        </View>
+      ) : !post ? (
+        // Error state
+        <View style={styles.loadingContainer}>
+          <Text style={styles.errorText}>Không thể tải dữ liệu bài đăng</Text>
+          <TouchableOpacity 
+            style={styles.retryButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.retryText}>Quay lại</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        // Content when data is loaded
+        <ScrollView style={styles.content}>
+          {/* Post Details */}
+          {roommateRequests.length === 0 && (
+    <View style={styles.buttonContainer}>
+      <TouchableOpacity
+        style={styles.editButton}
+        onPress={() => {
+          setEditData({
+            title: post.title,
+            description: post.description,
+            price: post.price.toString()
+          });
+          setEditModalVisible(true);
+        }}    
+      >
+        <LinearGradient
+          colors={['#2196F3', '#1976D2']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.buttonGradient}
+        >
+          <FontAwesome5 name="edit" size={16} color="#FFF" style={styles.buttonIcon} />
+          <Text style={styles.buttonText}>Chỉnh sửa</Text>
+        </LinearGradient>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.disableButton}
+        onPress={() => {
+          Alert.alert('Xác nhận', 'Bạn có chắc muốn vô hiệu hóa bài đăng?', [
+            { text: 'Hủy' },
+            {
+              text: 'Vô hiệu hóa',
+              style: 'destructive',
+              onPress: async () => {
+                const result = await postService.inactivateRoommatePost(post.postId);
+                if (result.isSuccess) {
+                  Alert.alert('Thành công', 'Bài đăng đã được vô hiệu hóa');
+                  fetchPostData(); // Reload post data
+                } else {
+                  Alert.alert('Lỗi', result.message);
+                }
+              }
+            }
+          ]);
+        }}
+      >
+        <LinearGradient
+          colors={['#F44336', '#D32F2F']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.buttonGradient}
+        >
+          <FontAwesome5 name="ban" size={16} color="#FFF" style={styles.buttonIcon} />
+          <Text style={styles.buttonText}>Vô hiệu hóa</Text>
+        </LinearGradient>
+      </TouchableOpacity>
+    </View>
+  )}
+
+          <View style={styles.postCard}>
+            <View style={styles.userInfo}>
+              <Image
+                source={require('../assets/logoEasyRommie.png')}
+                style={styles.userAvatar}
+              />
+              <View style={styles.userDetails}>
+                <Text style={styles.userName}>{post.fullName || 'Không có tên'}</Text>
+              </View>
+              <Text style={styles.postTime}>{post.createdAt || 'Today'}</Text>
             </View>
-            <Text style={styles.postTime}>{post.createdAt || 'Today'}</Text>
+
+            {post.title && (
+              <Text style={styles.postTitle}>{post.title}</Text>
+            )}
+
+            <View style={styles.postDetails}>
+              <View style={styles.detailRow}>
+                <FontAwesome5 name="money-bill-wave" size={16} color="#ACDCD0" />
+                <Text style={styles.detailText}>
+                  {post.price ? Number(post.price).toLocaleString('vi-VN') + 'đ/tháng' : 'N/A'}
+                </Text>
+              </View>
+              {post.email && (
+                <View style={styles.detailRow}>
+                  <FontAwesome5 name="envelope" size={16} color="#ACDCD0" />
+                  <Text style={styles.detailText}>{post.email}</Text>
+                </View>
+              )}
+              {post.phoneNumber && (
+                <View style={styles.detailRow}>
+                  <FontAwesome5 name="phone" size={16} color="#ACDCD0" />
+                  <Text style={styles.detailText}>{post.phoneNumber}</Text>
+                </View>
+              )}
+              {post.status && (
+                <View style={styles.detailRow}>
+                  <FontAwesome5 name="info-circle" size={16} color="#ACDCD0" />
+                  <Text style={styles.detailText}>Trạng thái: {post.status}</Text>
+                </View>
+              )}
+            </View>
+
+            <Text style={styles.description}>{post.description || 'Không có mô tả'}</Text>
           </View>
 
-          {post.title && (
-            <Text style={styles.postTitle}>{post.title}</Text>
-          )}
-
-          <View style={styles.postDetails}>
-            
-            <View style={styles.detailRow}>
-              <FontAwesome5 name="money-bill-wave" size={16} color="#6D5BA3" />
-              <Text style={styles.detailText}>
-                {post.price ? Number(post.price).toLocaleString('vi-VN') + 'đ/tháng' : 'N/A'}
-              </Text>
-            </View>
-            {post.email && (
-              <View style={styles.detailRow}>
-                <FontAwesome5 name="envelope" size={16} color="#6D5BA3" />
-                <Text style={styles.detailText}>{post.email}</Text>
+          {/* Requests List */}
+          <View style={styles.requestsSection}>
+            <Text style={styles.sectionTitle}>Yêu cầu ở ghép</Text>
+            {requestLoading ? (
+              <View style={styles.requestLoadingContainer}>
+                <Text style={styles.loadingText}>Đang tải yêu cầu...</Text>
               </View>
-            )}
-            {post.phoneNumber && (
-              <View style={styles.detailRow}>
-                <FontAwesome5 name="phone" size={16} color="#6D5BA3" />
-                <Text style={styles.detailText}>{post.phoneNumber}</Text>
-              </View>
-            )}
-            {post.status && (
-              <View style={styles.detailRow}>
-                <FontAwesome5 name="info-circle" size={16} color="#6D5BA3" />
-                <Text style={styles.detailText}>Trạng thái: {post.status}</Text>
+            ) : roommateRequests.length > 0 ? (
+              roommateRequests.map((request, index) => (
+                <View key={request.requestId || index}>
+                  {renderRequestItem(request)}
+                </View>
+              ))
+            ) : (
+              <View style={styles.noRequestsContainer}>
+                <Text style={styles.noRequestsText}>Chưa có yêu cầu ở ghép nào</Text>
               </View>
             )}
           </View>
+        </ScrollView>
+      )}
+<Modal visible={editModalVisible} animationType="slide" transparent>
+  <View style={{ flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)', padding: 20 }}>
+    <View style={{ backgroundColor: 'white', borderRadius: 10, padding: 20 }}>
+      <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 10 }}>Chỉnh sửa bài đăng</Text>
 
-          <Text style={styles.description}>{post.description || 'Không có mô tả'}</Text>
-        </View>
+      <Text>Tiêu đề</Text>
+      <TextInput
+        value={editData.title}
+        onChangeText={(text) => setEditData({ ...editData, title: text })}
+        style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 6, marginBottom: 10, padding: 8 }}
+      />
 
-        {/* Requests List */}
-        <View style={styles.requestsSection}>
-          <Text style={styles.sectionTitle}>Yêu cầu ở ghép</Text>
-          {requestLoading ? (
-            <View style={styles.requestLoadingContainer}>
-              <Text style={styles.loadingText}>Đang tải yêu cầu...</Text>
-            </View>
-          ) : roommateRequests.length > 0 ? (
-            roommateRequests.map((request, index) => (
-              <View key={request.requestId || index}>
-                {renderRequestItem(request)}
-              </View>
-            ))
-          ) : (
-            <View style={styles.noRequestsContainer}>
-              <Text style={styles.noRequestsText}>Chưa có yêu cầu ở ghép nào</Text>
-            </View>
-          )}
-        </View>
-      </ScrollView>
+      <Text>Mô tả</Text>
+      <TextInput
+        value={editData.description}
+        onChangeText={(text) => setEditData({ ...editData, description: text })}
+        multiline
+        numberOfLines={4}
+        style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 6, marginBottom: 10, padding: 8 }}
+      />
+
+      <Text>Giá (VND)</Text>
+      <TextInput
+        value={editData.price}
+        onChangeText={(text) => setEditData({ ...editData, price: text })}
+        keyboardType="numeric"
+        style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 6, marginBottom: 20, padding: 8 }}
+      />
+
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 10 }}>
+        <TouchableOpacity onPress={() => setEditModalVisible(false)}>
+          <Text style={{ color: '#666' }}>Hủy</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={async () => {
+            const result = await postService.updateRoommatePost(post.postId, {
+              title: editData.title,
+              description: editData.description,
+              price: parseFloat(editData.price)
+            });
+
+            if (result.isSuccess) {
+              Alert.alert('Thành công', 'Đã cập nhật bài đăng');
+              fetchPostData();
+              setEditModalVisible(false);
+            } else {
+              Alert.alert('Lỗi', result.message);
+            }
+          }}
+        >
+          <Text style={{ color: '#1976D2', fontWeight: 'bold' }}>Lưu</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </View>
+</Modal>
 
       <ProfileModal 
         user={selectedUser}
         visible={showProfileModal}
         onClose={() => setShowProfileModal(false)}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  containerMain: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -625,7 +717,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: '#6D5BA3',
+    color: '#ACDCD0',
   },
   errorText: {
     fontSize: 16,
@@ -633,7 +725,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   retryButton: {
-    backgroundColor: '#6D5BA3',
+    backgroundColor: '#ACDCD0',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
@@ -643,15 +735,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingBottom: 16,
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -722,7 +810,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   tagText: {
-    color: '#6D5BA3',
+    color: '#ACDCD0',
     fontSize: 12,
   },
   postTime: {
@@ -814,7 +902,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#E3F2FD',
   },
   chatText: {
-    color: '#6D5BA3',
+    color: '#ACDCD0',
     fontSize: 14,
     fontWeight: '500',
     marginLeft: 6,
@@ -1035,6 +1123,46 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
   },
+  // Add these to your existing styles object
+buttonContainer: {
+  flexDirection: 'row',
+  justifyContent: 'flex-end',
+  marginBottom: 16,
+  gap: 12,
+},
+editButton: {
+  borderRadius: 8,
+  overflow: 'hidden',
+  elevation: 3,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 1 },
+  shadowOpacity: 0.2,
+  shadowRadius: 1.5,
+},
+disableButton: {
+  borderRadius: 8,
+  overflow: 'hidden',
+  elevation: 3,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 1 },
+  shadowOpacity: 0.2,
+  shadowRadius: 1.5,
+},
+buttonGradient: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  paddingVertical: 10,
+  paddingHorizontal: 16,
+},
+buttonText: {
+  color: '#FFF',
+  fontSize: 14,
+  fontWeight: '600',
+},
+buttonIcon: {
+  marginRight: 8,
+},
 });
 
 export default RoommatePostDetail;

@@ -536,20 +536,27 @@ const EditProfile = ({ navigation }) => {
         {activeTab === 'customer' && (
           <View style={styles.section}>
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Customer Type</Text>
-              <View style={styles.pickerContainer}>
-                <Icon name="category" size={20} color="#999" style={styles.pickerIcon} />
-                <Picker
-                  selectedValue={customerData.customerType}
-                  style={styles.picker}
-                  onValueChange={(value) => handleCustomerDataChange('customerType', value)}
-                >
-                  {customerTypes.map((type) => (
-                    <Picker.Item key={type} label={type} value={type} />
-                  ))}
-                </Picker>
-              </View>
-            </View>
+  <Text style={styles.inputLabel}>Customer Type</Text>
+  <View style={styles.buttonPickerContainer}>
+    {customerTypes.map((type) => (
+      <TouchableOpacity
+        key={type}
+        style={[
+          styles.typeButton,
+          customerData.customerType === type && styles.typeButtonSelected
+        ]}
+        onPress={() => handleCustomerDataChange('customerType', type)}
+      >
+        <Text style={[
+          styles.typeButtonText,
+          customerData.customerType === type && styles.typeButtonTextSelected
+        ]}>
+          {type}
+        </Text>
+      </TouchableOpacity>
+    ))}
+  </View>
+</View>
             
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Budget Range</Text>
@@ -708,6 +715,31 @@ const styles = StyleSheet.create({
   modalCancelButton: { backgroundColor: '#f2f2f2' },
   modalCancelButtonText: { color: '#666', textAlign: 'center', fontWeight: '500' },
   modalConfirmButton: { backgroundColor: '#4267B2' },
+  buttonPickerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 10
+  },
+  typeButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#f9fafb',
+  },
+  typeButtonSelected: {
+    backgroundColor: '#4267B2',
+    borderColor: '#4267B2',
+  },
+  typeButtonText: {
+    fontSize: 15,
+    color: '#333',
+  },
+  typeButtonTextSelected: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
   modalConfirmButtonText: { color: '#fff', textAlign: 'center', fontWeight: '500' }
 });
 
