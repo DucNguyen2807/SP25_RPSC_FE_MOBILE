@@ -225,7 +225,7 @@ inactivateRoommatePost: async (postId) => {
   try {
     const token = await AsyncStorage.getItem('token');
 
-    const url = `${API_BASE_URL}/post/inactivate-roommate-post/${postId}`;
+    const url = `${API_BASE_URL}/post/inactivate-roommate-post-by-tenant/${postId}`;
 
     const response = await fetch(url, {
       method: 'PUT',
