@@ -5,15 +5,20 @@ import {
   StyleSheet, 
   ScrollView, 
   Image, 
-  TouchableOpacity, 
+  KeyboardAvoidingView, 
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  Keyboard,
   Dimensions, 
   StatusBar, 
   ActivityIndicator, 
   Modal, 
   TextInput, 
   Alert,
-  FlatList 
+  FlatList, 
+  Platform,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,7 +26,7 @@ import { API_BASE_URL } from '../constants/config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import roomService from '../services/roomService';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const RoomDetailScreen = () => {
   const navigation = useNavigation();
@@ -41,7 +46,8 @@ const RoomDetailScreen = () => {
   const [submitError, setSubmitError] = useState(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  
   useEffect(() => {
     fetchRoomDetails();
   }, [roomId]);
@@ -219,6 +225,7 @@ const RoomDetailScreen = () => {
     return null;
   }
 
+  // Updated renderRentModal function to improve form accessibility and date selection
   const renderRentModal = () => (
     <Modal
       visible={showRentModal}
@@ -226,66 +233,93 @@ const RoomDetailScreen = () => {
       animationType="slide"
       onRequestClose={() => setShowRentModal(false)}
     >
-      <View style={styles.modalContainer}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Rent Request</Text>
-            <TouchableOpacity onPress={() => setShowRentModal(false)}>
-              <FontAwesome5 name="times" size={20} color="#666" />
-            </TouchableOpacity>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoidingView}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Rent Request</Text>
+                <TouchableOpacity onPress={() => setShowRentModal(false)}>
+                  <FontAwesome5 name="times" size={20} color="#666" />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView style={styles.formScrollContainer}>
+                <View style={styles.formContainer}>
+                  <Text style={styles.formLabel}>Message</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    value={rentRequest.message}
+                    onChangeText={(text) => setRentRequest(prev => ({ ...prev, message: text }))}
+                    placeholder="Enter your message"
+                    multiline
+                    numberOfLines={3}
+                  />
+
+                  <Text style={styles.formLabel}>Number of Months</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    value={rentRequest.monthWantRent}
+                    onChangeText={(text) => setRentRequest(prev => ({ ...prev, monthWantRent: text }))}
+                    placeholder="Enter number of months"
+                    keyboardType="numeric"
+                  />
+
+                  <Text style={styles.formLabel}>Desired Move-in Date</Text>
+                  <TouchableOpacity 
+                    style={styles.datePickerButton}
+                    onPress={() => {
+                      setShowDatePicker(true);
+                      Keyboard.dismiss();
+                    }}
+                  >
+                    <Text style={styles.datePickerButtonText}>
+                      {rentRequest.dateWantToRent ? new Date(rentRequest.dateWantToRent).toLocaleDateString() : 'Select a date'}
+                    </Text>
+                    <FontAwesome5 name="calendar-alt" size={16} color="#6D5BA3" />
+                  </TouchableOpacity>
+                  <Text style={styles.dateHint}>Please select a date at least 7 days from now</Text>
+
+                  {showDatePicker && (
+                    <DateTimePicker
+                      value={new Date(rentRequest.dateWantToRent)}
+                      mode="date"
+                      display="default"
+                      minimumDate={new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)}
+                      onChange={(event, selectedDate) => {
+                        setShowDatePicker(false);
+                        if (selectedDate) {
+                          selectedDate.setHours(2, 7, 28, 795);
+                          setRentRequest(prev => ({ ...prev, dateWantToRent: selectedDate.toISOString() }));
+                        }
+                      }}
+                    />
+                  )}
+
+                  {submitError && (
+                    <Text style={styles.errorText}>{submitError}</Text>
+                  )}
+
+                  <TouchableOpacity
+                    style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+                    onPress={handleRentRequest}
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <ActivityIndicator color="#FFF" />
+                    ) : (
+                      <Text style={styles.submitButtonText}>Submit Request</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            </View>
           </View>
-
-          <View style={styles.formContainer}>
-            <Text style={styles.formLabel}>Message</Text>
-            <TextInput
-              style={styles.formInput}
-              value={rentRequest.message}
-              onChangeText={(text) => setRentRequest(prev => ({ ...prev, message: text }))}
-              placeholder="Enter your message"
-              multiline
-              numberOfLines={3}
-            />
-
-            <Text style={styles.formLabel}>Number of Months</Text>
-            <TextInput
-              style={styles.formInput}
-              value={rentRequest.monthWantRent}
-              onChangeText={(text) => setRentRequest(prev => ({ ...prev, monthWantRent: text }))}
-              placeholder="Enter number of months"
-              keyboardType="numeric"
-            />
-
-            <Text style={styles.formLabel}>Desired Move-in Date</Text>
-            <TextInput
-              style={styles.formInput}
-              value={rentRequest.dateWantToRent.split('T')[0]}
-              onChangeText={(text) => {
-                const date = new Date(text);
-                date.setHours(2, 7, 28, 795);
-                setRentRequest(prev => ({ ...prev, dateWantToRent: date.toISOString() }));
-              }}
-              placeholder="YYYY-MM-DD"
-            />
-            <Text style={styles.dateHint}>Please select a date at least 7 days from now</Text>
-
-            {submitError && (
-              <Text style={styles.errorText}>{submitError}</Text>
-            )}
-
-            <TouchableOpacity
-              style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
-              onPress={handleRentRequest}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <ActivityIndicator color="#FFF" />
-              ) : (
-                <Text style={styles.submitButtonText}>Submit Request</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </Modal>
   );
 
@@ -973,7 +1007,46 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 16,
     fontWeight: '600',
-  }
+  },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  formScrollContainer: {
+    maxHeight: height * 0.6, // Limit to 60% of screen height
+  },
+  datePickerButton: {
+    backgroundColor: '#F0EDF6',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  datePickerButtonText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  
+  // Update these existing styles
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -5 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 10,
+    maxHeight: '80%',
+  },
 });
 
 export default RoomDetailScreen;
