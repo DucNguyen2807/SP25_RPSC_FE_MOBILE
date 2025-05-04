@@ -12,6 +12,7 @@ const RoommateScreen = () => {
   const navigation = useNavigation();
   const [roommates, setRoommates] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false); // For pagination loading state
   const [error, setError] = useState('');
   const [searchText, setSearchText] = useState('');
   const [filterModalVisible, setFilterModalVisible] = useState(false);
@@ -20,6 +21,12 @@ const RoommateScreen = () => {
   const [filters, setFilters] = useState({
     minBudget: null, maxBudget: null, gender: null, minAge: null, maxAge: null, lifeStyles: [],
   });
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const pageSize = 5;
 
   const lifeStyleOptions = ['Năng động', 'Thích hoạt động cộng đồng', 'Thích sự yên tĩnh', 'Thích làm việc tại nhà'
     , 'Thường xuyên đi công tác', 'Gia đình có trẻ nhỏ', 'Thích nuôi thú cưng', 'Thích nấu ăn'];
@@ -37,8 +44,12 @@ const RoommateScreen = () => {
   };
   
   // Fetch roommate posts
-  const fetchRoommatePosts = async () => {
-    setLoading(true);
+  const fetchRoommatePosts = async (page = 1, loadMore = false) => {
+    if (loadMore) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
     setError('');
     
     try {
@@ -46,17 +57,26 @@ const RoommateScreen = () => {
       
       if (activeTab === 'recommended') {
         // Call the recommended posts API
-        result = await postService.getRecommendedRoommatePosts(1, 10);
+        result = await postService.getRecommendedRoommatePosts(page, pageSize);
         if (result.isSuccess && result.data && Array.isArray(result.data.items)) {
-          setRoommates(result.data.items);
+          if (loadMore) {
+            setRoommates(prev => [...prev, ...result.data.items]);
+          } else {
+            setRoommates(result.data.items);
+          }
+          
+          // Update pagination info
+          setTotalPages(result.data.totalPages);
+          setTotalItems(result.data.totalCount);
+          setCurrentPage(page);
         } else {
           setError(result.message || 'No recommended posts available');
         }
       } else {
         // Call the original search API with filters
         const searchRequest = {
-          pageNumber: 1,
-          pageSize: 10,
+          pageNumber: page,
+          pageSize: pageSize,
           address: searchText || undefined,
           minBudget: filters.minBudget,
           maxBudget: filters.maxBudget,
@@ -68,7 +88,16 @@ const RoommateScreen = () => {
     
         result = await postService.getAllRoommatePosts(searchRequest);
         if (result.isSuccess && Array.isArray(result.posts.items)) {
-          setRoommates(result.posts.items);
+          if (loadMore) {
+            setRoommates(prev => [...prev, ...result.posts.items]);
+          } else {
+            setRoommates(result.posts.items);
+          }
+          
+          // Update pagination info
+          setTotalPages(result.posts.totalPages);
+          setTotalItems(result.posts.totalCount);
+          setCurrentPage(page);
         } else {
           setError(result.message || 'No posts available');
         }
@@ -78,6 +107,14 @@ const RoommateScreen = () => {
       setError('Error fetching data');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  // Handle load more when reaching end of list
+  const handleLoadMore = () => {
+    if (currentPage < totalPages && !loadingMore && !loading) {
+      fetchRoommatePosts(currentPage + 1, true);
     }
   };
 
@@ -171,7 +208,9 @@ const RoommateScreen = () => {
   // Use focus effect to reload data when tab is focused
   useFocusEffect(
     React.useCallback(() => {
-      fetchRoommatePosts();
+      // Reset to first page when filters change
+      setCurrentPage(1);
+      fetchRoommatePosts(1, false);
     }, [filters, searchText, activeTab])  // Add activeTab as dependency
   );
 
@@ -217,6 +256,69 @@ const RoommateScreen = () => {
       </View>
     </View>
   );
+
+  // Pagination controls component
+  const PaginationControls = () => {
+    // Only show if we have more than one page
+    if (totalPages <= 1) return null;
+    
+    return (
+      <View style={styles.paginationContainer}>
+        <Text style={styles.paginationText}>
+          {totalItems > 0 ? `Showing ${Math.min((currentPage - 1) * pageSize + 1, totalItems)}-${Math.min(currentPage * pageSize, totalItems)} of ${totalItems}` : 'No results'}
+        </Text>
+        <View style={styles.paginationControls}>
+          <TouchableOpacity 
+            style={[styles.paginationButton, currentPage === 1 && styles.paginationButtonDisabled]}
+            onPress={() => {
+              if (currentPage > 1) {
+                fetchRoommatePosts(currentPage - 1, false);
+              }
+            }}
+            disabled={currentPage === 1}
+          >
+            <MaterialCommunityIcons 
+              name="chevron-left" 
+              size={22} 
+              color={currentPage === 1 ? '#CBD5E1' : themeColors.accent} 
+            />
+          </TouchableOpacity>
+          
+          <View style={styles.paginationPageIndicator}>
+            <Text style={styles.paginationPageText}>{currentPage} / {totalPages}</Text>
+          </View>
+          
+          <TouchableOpacity 
+            style={[styles.paginationButton, currentPage === totalPages && styles.paginationButtonDisabled]}
+            onPress={() => {
+              if (currentPage < totalPages) {
+                fetchRoommatePosts(currentPage + 1, false);
+              }
+            }}
+            disabled={currentPage === totalPages}
+          >
+            <MaterialCommunityIcons 
+              name="chevron-right" 
+              size={22} 
+              color={currentPage === totalPages ? '#CBD5E1' : themeColors.accent} 
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
+  // Footer component for FlatList with loading indicator
+  const renderFooter = () => {
+    if (!loadingMore) return null;
+    
+    return (
+      <View style={styles.loadingMoreContainer}>
+        <ActivityIndicator size="small" color={themeColors.accent} />
+        <Text style={styles.loadingMoreText}>Loading more...</Text>
+      </View>
+    );
+  };
 
   const renderRoommateCard = ({ item }) => (
     <TouchableOpacity
@@ -328,7 +430,7 @@ const RoommateScreen = () => {
               placeholderTextColor="#9CA3AF"
               value={searchText}
               onChangeText={setSearchText}
-              onSubmitEditing={fetchRoommatePosts}
+              onSubmitEditing={() => fetchRoommatePosts(1, false)}
               editable={activeTab !== 'recommended'}
             />
           </View>
@@ -418,6 +520,9 @@ const RoommateScreen = () => {
           keyExtractor={item => item.postId}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.3}
+          ListFooterComponent={renderFooter}
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <MaterialCommunityIcons name="account-group" size={80} color={themeColors.secondary} />
@@ -430,6 +535,13 @@ const RoommateScreen = () => {
             </View>
           }
         />
+      )}
+
+      {/* Pagination Controls - display below the list */}
+      {!loading && !error && roommates.length > 0 && (
+        <View style={styles.paginationWrapper}>
+          <PaginationControls />
+        </View>
       )}
 
       {/* Filter Modal */}
@@ -462,7 +574,7 @@ const RoommateScreen = () => {
                     minAge: null, maxAge: null, lifeStyles: [],
                   });
                   setFilterModalVisible(false);
-                  fetchRoommatePosts();
+                  fetchRoommatePosts(1, false);
                 }}
               >
                 <Text style={styles.resetButtonText}>Reset</Text>
@@ -472,7 +584,7 @@ const RoommateScreen = () => {
                 style={styles.applyButton}
                 onPress={() => {
                   setFilterModalVisible(false);
-                  fetchRoommatePosts();
+                  fetchRoommatePosts(1, false);
                 }}
               >
                 <Text style={styles.applyButtonText}>Apply</Text>
@@ -486,16 +598,16 @@ const RoommateScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F9FA', },
-  header: { paddingTop: 50, paddingBottom: 18, paddingHorizontal: 18, },
-  searchContainer: { flexDirection: 'row', alignItems: 'center', },
-  searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8F9FA', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12, marginRight: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 5, },
-  searchInput: { flex: 1, marginLeft: 12, fontSize: 15, color: '#1F2937', fontFamily: 'System', },
-  notificationButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center', },
-  notificationBadge: { position: 'absolute', top: 0, right: 0, width: 18, height: 18, borderRadius: 9, backgroundColor: '#EF4444', justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: '#FFF', },
-  notificationBadgeText: { color: '#FFF', fontSize: 10, fontWeight: 'bold', },
+  container: { flex: 1, backgroundColor: '#F8F9FA' },
+  header: { paddingTop: 50, paddingBottom: 18, paddingHorizontal: 18 },
+  searchContainer: { flexDirection: 'row', alignItems: 'center' },
+  searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8F9FA', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12, marginRight: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 5 },
+  searchInput: { flex: 1, marginLeft: 12, fontSize: 15, color: '#1F2937', fontFamily: 'System' },
+  notificationButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
+  notificationBadge: { position: 'absolute', top: 0, right: 0, width: 18, height: 18, borderRadius: 9, backgroundColor: '#EF4444', justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: '#FFF' },
+  notificationBadgeText: { color: '#FFF', fontSize: 10, fontWeight: 'bold' },
   
-  // New Tab Styles - Replacing the Switch
+  // Tab Styles
   tabContainer: { 
     flexDirection: 'row', 
     backgroundColor: '#FFF',
@@ -527,64 +639,254 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   
-  filtersBar: { padding: 14, backgroundColor: '#FFF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 5, elevation: 3, },
-  filterChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EEF2FF', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12, marginHorizontal: 6, },
-  filterChipActive: { backgroundColor: '#6366F1', },
-  filterChipText: { color: '#4F46E5', fontSize: 14, fontWeight: '600', marginLeft: 8, fontFamily: 'System', },
-  filterChipTextActive: { color: '#FFF', },
-  centerContent: { flex: 1, justifyContent: 'center', alignItems: 'center', },
-  errorText: { color: '#EF4444', fontSize: 16, fontFamily: 'System', },
-  listContainer: { padding: 16, paddingBottom: 80, },
-  card: { borderRadius: 20, overflow: 'hidden', marginBottom: 18, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 6, backgroundColor: '#FFF', },
-  cardGradient: { padding: 18, },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', },
-  userInfoContainer: { flexDirection: 'row', alignItems: 'center', flex: 1, },
-  avatarWrapper: { position: 'relative', marginRight: 14, },
-  avatar: { width: 60, height: 60, borderRadius: 30, borderWidth: 2, borderColor: '#FFF', },
-  activeIndicator: { position: 'absolute', bottom: 0, right: 0, width: 16, height: 16, borderRadius: 8, backgroundColor: '#10B981', borderWidth: 2, borderColor: '#FFF', },
-  userDetails: { flex: 1, },
-  nameRow: { flexDirection: 'row', alignItems: 'center', },
-  userName: { fontSize: 17, fontWeight: '700', color: '#1F2937', marginRight: 8, fontFamily: 'System', },
-  verifiedBadge: { backgroundColor: '#10B981', width: 18, height: 18, borderRadius: 9, justifyContent: 'center', alignItems: 'center', },
-  userTitle: { fontSize: 14, color: '#6B7280', marginTop: 2, fontFamily: 'System', },
-  badgeRow: { flexDirection: 'row', marginTop: 6, },
-  badge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EEF2FF', paddingVertical: 4, paddingHorizontal: 8, borderRadius: 8, marginRight: 8, },
-  badgeText: { fontSize: 12, color: '#4F46E5', marginLeft: 4, fontFamily: 'System', },
-  divider: { height: 1, backgroundColor: '#F3F4F6', marginVertical: 14, },
-  locationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, },
-  locationText: { fontSize: 14, color: '#6B7280', marginLeft: 6, flex: 1, fontFamily: 'System', },
-  postTitle: { fontSize: 16, fontWeight: '700', color: '#1F2937', marginBottom: 6, fontFamily: 'System', },
-  postDescription: { fontSize: 14, color: '#6B7280', lineHeight: 20, marginBottom: 12, fontFamily: 'System', },
-  priceContainer: { flexDirection: 'row', alignItems: 'center', marginVertical: 10, backgroundColor: '#F3F4F6', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, alignSelf: 'flex-start', },
-  priceText: { fontSize: 16, fontWeight: '700', color: '#4F46E5', marginLeft: 6, fontFamily: 'System', },  
-  tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', marginVertical: 10, },
-  tag: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EEF2FF', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 10, marginRight: 8, marginBottom: 8, },
-  tagIcon: { marginRight: 4, },
-  tagText: { fontSize: 12, color: '#4F46E5', fontFamily: 'System', },
-  messageButton: { marginTop: 6, },
-  buttonGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: 14, },
-  buttonText: { color: '#FFF', fontSize: 15, fontWeight: '600', marginLeft: 8, fontFamily: 'System', },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end', },
-  modalContainer: { backgroundColor: '#FFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 36, },
-  modalContent: { padding: 4, },
-  modalTitle: { fontSize: 20, fontWeight: '700', color: '#1F2937', marginBottom: 18, fontFamily: 'System', },
-  inputRow: { flexDirection: 'row', justifyContent: 'space-between', },
-  inputGroup: { flex: 1, marginHorizontal: 6, },
-  inputLabel: { fontSize: 14, color: '#6B7280', marginBottom: 8, fontFamily: 'System', },
-  input: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, backgroundColor: '#F9FAFB', },
-  chipContainer: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6, },
-  chip: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12, backgroundColor: '#EEF2FF', margin: 6, },
-  chipSelected: { backgroundColor: '#6366F1', },
-  chipText: { color: '#4F46E5', fontSize: 14, fontFamily: 'System', },
-  chipTextSelected: { color: '#FFF', },
-  modalActions: { flexDirection: 'row', marginTop: 24, },
-  resetButton: { flex: 1, paddingVertical: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#6366F1', borderRadius: 12, marginRight: 8, },
-  resetButtonText: { color: '#6366F1', fontSize: 16, fontWeight: '600', fontFamily: 'System', },
-  applyButton: { flex: 1, paddingVertical: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#6366F1', borderRadius: 12, marginLeft: 8, },
-  applyButtonText: { color: '#FFF', fontSize: 16, fontWeight: '600', fontFamily: 'System', },
-  emptyState: { alignItems: 'center', justifyContent: 'center', padding: 40, },
-  emptyStateText: { fontSize: 18, fontWeight: '600', color: '#1F2937', marginTop: 16, fontFamily: 'System', },
-  emptyStateSubtext: { fontSize: 14, color: '#6B7280', marginTop: 8, fontFamily: 'System', },
+  filtersBar: { padding: 14, backgroundColor: '#FFF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 5, elevation: 3 },
+  filterChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EEF2FF', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12, marginHorizontal: 6 },
+  filterChipActive: { backgroundColor: '#6366F1' },
+  filterChipText: { color: '#4F46E5', fontSize: 14, fontWeight: '600', marginLeft: 8, fontFamily: 'System' },
+  filterChipTextActive: { color: '#FFF' },
+  centerContent: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  errorText: { color: '#EF4444', fontSize: 16, fontFamily: 'System' },
+  listContainer: { padding: 16, paddingBottom: 88 },
+  card: { borderRadius: 20, overflow: 'hidden', marginBottom: 18, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 6, backgroundColor: '#FFF' },
+  cardGradient: { padding: 18 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  userInfoContainer: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  avatarWrapper: { position: 'relative', marginRight: 14 },
+  avatar: { width: 60, height: 60, borderRadius: 30, borderWidth: 2, borderColor: '#FFF' },
+  activeIndicator: { position: 'absolute', bottom: 0, right: 0, width: 16, height: 16, borderRadius: 8, backgroundColor: '#10B981', borderWidth: 2, borderColor: '#FFF' },
+  userDetails: { flex: 1 },
+  nameRow: { flexDirection: 'row', alignItems: 'center' },
+  userName: { fontSize: 17, fontWeight: '700', color: '#1F2937', marginRight: 8, fontFamily: 'System' },
+  verifiedBadge: { backgroundColor: '#10B981', width: 18, height: 18, borderRadius: 9, justifyContent: 'center', alignItems: 'center' },
+  userTitle: { fontSize: 14, color: '#6B7280', marginTop: 2, fontFamily: 'System' },
+  badgeRow: { flexDirection: 'row', marginTop: 6 },
+  badge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EEF2FF', paddingVertical: 4, paddingHorizontal: 8, borderRadius: 8, marginRight: 8 },
+  badgeText: { fontSize: 12, color: '#4F46E5', marginLeft: 4, fontFamily: 'System' },
+  divider: { height: 1, backgroundColor: '#F3F4F6', marginVertical: 14 },
+  locationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  locationText: { fontSize: 14, color: '#6B7280', marginLeft: 6, flex: 1, fontFamily: 'System' },
+  postTitle: { fontSize: 16, fontWeight: '700', color: '#1F2937', marginBottom: 6, fontFamily: 'System' },
+  postDescription: { fontSize: 14, color: '#6B7280', lineHeight: 20, marginBottom: 12, fontFamily: 'System' },
+  priceContainer: { flexDirection: 'row', alignItems: 'center', marginVertical: 10, backgroundColor: '#F3F4F6', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, alignSelf: 'flex-start' },
+  priceText: { fontSize: 16, fontWeight: '700', color: '#4F46E5', marginLeft: 6, fontFamily: 'System' },  
+  tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', marginVertical: 10 },
+  tag: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#F3F4F6', 
+    paddingVertical: 6, 
+    paddingHorizontal: 10, 
+    borderRadius: 12, 
+    marginRight: 8, 
+    marginBottom: 8 
+  },
+  tagIcon: { marginRight: 4 },
+  tagText: { fontSize: 12, color: '#4B5563', fontFamily: 'System' },
+  
+  messageButton: { marginTop: 12 },
+  buttonGradient: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    paddingVertical: 12, 
+    borderRadius: 12 
+  },
+  buttonText: { 
+    color: '#FFF', 
+    fontSize: 14, 
+    fontWeight: '600', 
+    marginLeft: 8, 
+    fontFamily: 'System' 
+  },
+
+  // Modal Styles
+  modalOverlay: { 
+    flex: 1, 
+    backgroundColor: 'rgba(0,0,0,0.5)', 
+    justifyContent: 'flex-end' 
+  },
+  modalContainer: { 
+    backgroundColor: '#FFF', 
+    borderTopLeftRadius: 24, 
+    borderTopRightRadius: 24, 
+    padding: 20, 
+    maxHeight: '80%' 
+  },
+  modalTitle: { 
+    fontSize: 18, 
+    fontWeight: '700', 
+    color: '#1F2937', 
+    marginBottom: 16, 
+    fontFamily: 'System' 
+  },
+  modalContent: { 
+    marginBottom: 20 
+  },
+  chipContainer: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap' 
+  },
+  chip: { 
+    backgroundColor: '#F3F4F6', 
+    paddingVertical: 8, 
+    paddingHorizontal: 16, 
+    borderRadius: 12, 
+    marginRight: 8, 
+    marginBottom: 8 
+  },
+  chipSelected: { 
+    backgroundColor: '#6D5BA3' 
+  },
+  chipText: { 
+    color: '#4B5563', 
+    fontSize: 14, 
+    fontFamily: 'System' 
+  },
+  chipTextSelected: { 
+    color: '#FFF', 
+    fontWeight: '500' 
+  },
+  
+  inputRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    marginBottom: 12 
+  },
+  inputGroup: { 
+    width: '48%' 
+  },
+  inputLabel: { 
+    fontSize: 14, 
+    color: '#4B5563', 
+    marginBottom: 6, 
+    fontFamily: 'System' 
+  },
+  input: { 
+    backgroundColor: '#F3F4F6', 
+    borderRadius: 12, 
+    paddingHorizontal: 12, 
+    paddingVertical: 10, 
+    fontSize: 14, 
+    color: '#1F2937', 
+    fontFamily: 'System' 
+  },
+  
+  modalActions: { 
+    flexDirection: 'row', 
+    justifyContent: 'flex-end', 
+    marginTop: 12 
+  },
+  resetButton: { 
+    paddingVertical: 12, 
+    paddingHorizontal: 20, 
+    borderRadius: 12, 
+    marginRight: 12 
+  },
+  resetButtonText: { 
+    color: '#6B7280', 
+    fontSize: 14, 
+    fontWeight: '600', 
+    fontFamily: 'System' 
+  },
+  applyButton: { 
+    backgroundColor: '#6D5BA3', 
+    paddingVertical: 12, 
+    paddingHorizontal: 24, 
+    borderRadius: 12 
+  },
+  applyButtonText: { 
+    color: '#FFF', 
+    fontSize: 14, 
+    fontWeight: '600', 
+    fontFamily: 'System' 
+  },
+  
+  // Empty State Styles
+  emptyState: { 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    padding: 24 
+  },
+  emptyStateText: { 
+    fontSize: 18, 
+    fontWeight: '600', 
+    color: '#4B5563', 
+    marginTop: 16, 
+    marginBottom: 8, 
+    fontFamily: 'System' 
+  },
+  emptyStateSubtext: { 
+    fontSize: 14, 
+    color: '#6B7280', 
+    textAlign: 'center', 
+    fontFamily: 'System' 
+  },
+  
+  // Pagination Styles
+  paginationWrapper: { 
+    position: 'absolute', 
+    bottom: 0, 
+    left: 0, 
+    right: 0, 
+    backgroundColor: '#FFF', 
+    borderTopWidth: 1, 
+    borderTopColor: '#F3F4F6', 
+    paddingHorizontal: 16, 
+    paddingVertical: 12, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: -2 }, 
+    shadowOpacity: 0.05, 
+    shadowRadius: 5, 
+    elevation: 5 
+  },
+  paginationContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between' 
+  },
+  paginationText: { 
+    fontSize: 14, 
+    color: '#6B7280', 
+    fontFamily: 'System' 
+  },
+  paginationControls: { 
+    flexDirection: 'row', 
+    alignItems: 'center' 
+  },
+  paginationButton: { 
+    width: 36, 
+    height: 36, 
+    borderRadius: 18, 
+    backgroundColor: '#F3F4F6', 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  paginationButtonDisabled: { 
+    opacity: 0.5 
+  },
+  paginationPageIndicator: { 
+    marginHorizontal: 12, 
+  },
+  paginationPageText: { 
+    fontSize: 14, 
+    fontWeight: '600', 
+    color: '#4B5563', 
+    fontFamily: 'System' 
+  },
+  
+  // Loading More Indicator
+  loadingMoreContainer: { 
+    flexDirection: 'row', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    paddingVertical: 16 
+  },
+  loadingMoreText: { 
+    marginLeft: 8, 
+    fontSize: 14, 
+    color: '#6B7280', 
+    fontFamily: 'System' 
+  }
 });
 
 export default RoommateScreen;

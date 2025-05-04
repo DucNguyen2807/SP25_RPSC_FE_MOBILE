@@ -314,6 +314,44 @@ getAllPostRoommateByCustomerId: async () => {
   }
 },
 
+getFeedbackByUserId: async (userId) => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+
+    if (!token) {
+      throw new Error('Unauthorized: No token found');
+    }
+
+    const url = `${API_BASE_URL}/post/feedback/${userId}`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return { isSuccess: true, data };
+    } else {
+      return {
+        isSuccess: false,
+        message: 'Failed to fetch feedback',
+      };
+    }
+  } catch (error) {
+    console.error('Error fetching feedback by userId:', error);
+    return {
+      isSuccess: false,
+      message: 'Something went wrong while fetching feedback',
+    };
+  }
+},
+
+
 };
 
 export default postService;

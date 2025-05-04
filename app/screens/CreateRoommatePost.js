@@ -156,7 +156,7 @@ const CreateRoommatePost = ({ route, navigation }) => {
       {/* Status Bar Configuration */}
       <StatusBar 
         barStyle="light-content" 
-        backgroundColor="#6366F1" 
+        backgroundColor="#ACDCD0" 
         translucent={true}
       />
       
