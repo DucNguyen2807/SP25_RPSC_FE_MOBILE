@@ -1,22 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  Image, 
-  KeyboardAvoidingView, 
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  Keyboard,
-  Dimensions, 
-  StatusBar, 
-  ActivityIndicator, 
-  Modal, 
-  TextInput, 
-  Alert,
-  FlatList, 
-  Platform,
+  View, Text, StyleSheet, ScrollView, Image, KeyboardAvoidingView, TouchableOpacity,
+  TouchableWithoutFeedback, Keyboard, Dimensions, StatusBar, ActivityIndicator, 
+  Modal, TextInput, Alert, FlatList, Platform
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -33,7 +19,9 @@ const RoomDetailScreen = () => {
   const route = useRoute();
   const { roomId } = route.params;
   const [room, setRoom] = useState(null);
+  const [feedback, setFeedback] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [feedbackLoading, setFeedbackLoading] = useState(true);
   const [error, setError] = useState(null);
   const [imageLoadError, setImageLoadError] = useState(false);
   const [showRentModal, setShowRentModal] = useState(false);
@@ -47,9 +35,11 @@ const RoomDetailScreen = () => {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [activeFeedbackIndex, setActiveFeedbackIndex] = useState(0);
   
   useEffect(() => {
     fetchRoomDetails();
+    fetchFeedback();
   }, [roomId]);
 
   const fetchRoomDetails = async () => {
@@ -67,6 +57,21 @@ const RoomDetailScreen = () => {
       console.error('Error fetching room details:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFeedback = async () => {
+    try {
+      setFeedbackLoading(true);
+      const result = await roomService.getFeedbackByRoomId(roomId);
+      
+      if (result.isSuccess) {
+        setFeedback(result.data);
+      }
+    } catch (err) {
+      console.error('Error fetching feedback:', err);
+    } finally {
+      setFeedbackLoading(false);
     }
   };
 
@@ -113,13 +118,6 @@ const RoomDetailScreen = () => {
       formattedDate.setHours(2, 7, 28, 795); // Set to match API format
       const isoDate = formattedDate.toISOString();
 
-      console.log('Sending rent request with data:', {
-        roomId,
-        message: rentRequest.message,
-        monthWantRent: parseInt(rentRequest.monthWantRent),
-        dateWantToRent: isoDate
-      });
-
       const response = await fetch(`${API_BASE_URL}/customerrequestrent/room-rent-request`, {
         method: 'POST',
         headers: {
@@ -134,9 +132,7 @@ const RoomDetailScreen = () => {
         })
       });
 
-      console.log('Response status:', response.status);
       const data = await response.json();
-      console.log('Response data:', data);
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to send rent request');
@@ -190,9 +186,61 @@ const RoomDetailScreen = () => {
     );
   };
 
+  // Updated renderFeedbackItem for horizontal scrolling
+  const renderFeedbackItem = ({ item }) => {
+    return (
+      <View style={styles.feedbackItemHorizontal}>
+        <View style={styles.feedbackHeader}>
+          <View style={styles.reviewerInfo}>
+            <View style={styles.avatarSmall}>
+              <FontAwesome5 name="user" size={14} color="#6D5BA3" />
+            </View>
+            <Text style={styles.reviewerName}>{item.reviewerName}</Text>
+          </View>
+          <View style={styles.ratingContainer}>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <FontAwesome5 
+                key={star}
+                name="star" 
+                size={14} 
+                color={star <= item.rating ? '#FFD700' : '#E0E0E0'} 
+                style={styles.starIcon}
+              />
+            ))}
+          </View>
+        </View>
+        
+        <Text style={styles.ratingDate}>
+          {new Date(item.createdDate).toLocaleDateString()}
+        </Text>
+        
+        <Text style={styles.feedbackText}>{item.description}</Text>
+        
+        {item.imageUrls && item.imageUrls.length > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.feedbackImages}>
+            {item.imageUrls.map((image, index) => (
+              <Image 
+                key={index}
+                source={{ uri: image }} 
+                style={styles.feedbackImage}
+                resizeMode="cover"
+              />
+            ))}
+          </ScrollView>
+        )}
+      </View>
+    );
+  };
+
   const onViewableItemsChanged = ({ viewableItems }) => {
     if (viewableItems.length > 0) {
       setActiveImageIndex(viewableItems[0].index);
+    }
+  };
+
+  const onViewableFeedbackItemsChanged = ({ viewableItems }) => {
+    if (viewableItems.length > 0) {
+      setActiveFeedbackIndex(viewableItems[0].index);
     }
   };
 
@@ -498,6 +546,54 @@ const RoomDetailScreen = () => {
             ))}
           </View>
 
+          {/* Feedback Section - MODIFIED TO HORIZONTAL SCROLLING */}
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>Đánh giá phòng</Text>
+            
+            {feedbackLoading ? (
+              <View style={styles.feedbackLoading}>
+                <ActivityIndicator size="small" color="#6D5BA3" />
+                <Text style={styles.loadingText}>Loading feedback...</Text>
+              </View>
+            ) : feedback && feedback.length > 0 ? (
+              <View>
+                <FlatList
+                  data={feedback}
+                  renderItem={renderFeedbackItem}
+                  keyExtractor={(item, index) => index.toString()}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  pagingEnabled
+                  snapToInterval={width - 40} // Account for container padding
+                  decelerationRate="fast"
+                  contentContainerStyle={styles.feedbackListHorizontal}
+                  onViewableItemsChanged={onViewableFeedbackItemsChanged}
+                  viewabilityConfig={viewabilityConfig}
+                />
+                
+                {/* Feedback indicators */}
+                {feedback.length > 1 && (
+                  <View style={styles.feedbackIndicators}>
+                    {feedback.map((_, index) => (
+                      <View 
+                        key={index} 
+                        style={[
+                          styles.feedbackIndicator, 
+                          index === activeFeedbackIndex ? styles.activeFeedbackIndicator : {}
+                        ]} 
+                      />
+                    ))}
+                  </View>
+                )}
+              </View>
+            ) : (
+              <View style={styles.noFeedbackContainer}>
+                <FontAwesome5 name="comment-slash" size={32} color="#AAA" />
+                <Text style={styles.noFeedbackText}>Phòng này chưa có feedback</Text>
+              </View>
+            )}
+          </View>
+
           {/* Additional Info */}
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>Additional Information</Text>
@@ -556,497 +652,112 @@ const RoomDetailScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F8F9FA',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#6D5BA3',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#F8F9FA',
-  },
-  errorText: {
-    marginTop: 16,
-    marginBottom: 24,
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-  },
-  retryButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    backgroundColor: '#6D5BA3',
-    borderRadius: 12,
-  },
-  retryButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  imageContainer: {
-    width: width,
-    height: width * 0.75,
-    position: 'relative',
-  },
-  imageSlide: {
-    width: width,
-    height: width * 0.75,
-  },
-  roomImage: {
-    width: '100%',
-    height: '100%',
-  },
-  imageGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-  },
-  backButton: {
-    position: 'absolute',
-    top: 44,
-    left: 16,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backdropFilter: 'blur(10px)',
-  },
-  imageIndicators: {
-    position: 'absolute',
-    bottom: 20,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  indicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    marginHorizontal: 4,
-  },
-  activeIndicator: {
-    width: 24,
-    backgroundColor: '#FFF',
-  },
-  content: {
-    flex: 1,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    marginTop: -24,
-    backgroundColor: '#F8F9FA',
-  },
-  infoContainer: {
-    padding: 20,
-  },
-  ownerInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  avatarContainer: {
-    position: 'relative',
-    marginRight: 12,
-  },
-  ownerAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 2,
-    borderColor: '#FFF',
-  },
-  onlineIndicator: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#4CAF50',
-    borderWidth: 2,
-    borderColor: '#FFF',
-  },
-  ownerDetails: {
-    flex: 1,
-  },
-  ownerName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
-  },
-  verifiedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  verifiedText: {
-    fontSize: 12,
-    color: '#4CAF50',
-    marginLeft: 4,
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  statusText: {
-    color: '#FFF',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  priceSection: {
-    marginBottom: 24,
-  },
-  priceLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-  },
-  priceValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#6D5BA3',
-  },
-  duration: {
-    fontSize: 16,
-    color: '#666',
-    fontWeight: 'normal',
-  },
-  descriptionCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  descriptionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 16,
-  },
-  descriptionText: {
-    fontSize: 14,
-    color: '#333',
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-  detailsCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  detailIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F0EDF6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  detailContent: {
-    flex: 1,
-  },
-  detailLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 2,
-  },
-  detailValue: {
-    fontSize: 14,
-    color: '#333',
-    fontWeight: '500',
-  },
-  sectionContainer: {
-    marginBottom: 24,
-  },
-  amenitiesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    margin: -6,
-  },
-  amenityItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    margin: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  amenityIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  amenityText: {
-    fontSize: 14,
-    color: '#333',
-  },
-  servicesCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-    marginBottom: 16,
-  },
-  serviceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  serviceInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  serviceLabel: {
-    fontSize: 14,
-    color: '#333',
-    marginLeft: 8,
-  },
-  servicePrice: {
-    fontSize: 14,
-    color: '#6D5BA3',
-    fontWeight: '600',
-  },
-  serviceDescription: {
-    backgroundColor: '#F0EDF6',
-    borderRadius: 12,
-    padding: 12,
-  },
-  serviceNote: {
-    fontSize: 14,
-    color: '#666',
-  },
-  additionalInfoCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  infoLabel: {
-    fontSize: 14,
-    color: '#666',
-  },
-  infoValue: {
-    fontSize: 14,
-    color: '#333',
-    fontWeight: '500',
-  },
-  bottomButtons: {
-    flexDirection: 'row',
-    padding: 16,
-    backgroundColor: '#FFF',
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-  },
-  messageButton: {
-    flex: 1,
-    marginRight: 8,
-  },
-  messageGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#6D5BA3',
-  },
-  messageButtonText: {
-    color: '#6D5BA3',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  rentButton: {
-    flex: 1,
-    marginLeft: 8,
-  },
-  rentGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  rentButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#FFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -5 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 10,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333',
-  },
-  formContainer: {
-    marginBottom: 20,
-  },
-  formLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#666',
-    marginBottom: 8,
-  },
-  formInput: {
-    backgroundColor: '#F0EDF6',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 16,
-  },
-  dateHint: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: -12,
-    marginBottom: 16,
-  },
-  submitButton: {
-    backgroundColor: '#6D5BA3',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  submitButtonDisabled: {
-    backgroundColor: '#A69DC6',
-  },
-  submitButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  keyboardAvoidingView: {
-    flex: 1,
-  },
-  formScrollContainer: {
-    maxHeight: height * 0.6, // Limit to 60% of screen height
-  },
-  datePickerButton: {
-    backgroundColor: '#F0EDF6',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginBottom: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  datePickerButtonText: {
-    fontSize: 16,
-    color: '#333',
-  },
+  container: { flex: 1, backgroundColor: '#F8F9FA' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8F9FA' },
+  loadingText: { marginTop: 16, fontSize: 16, color: '#6D5BA3' },
+  errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: '#F8F9FA' },
+  errorText: { marginTop: 16, marginBottom: 24, fontSize: 16, color: '#666', textAlign: 'center' },
+  retryButton: { paddingHorizontal: 24, paddingVertical: 12, backgroundColor: '#6D5BA3', borderRadius: 12 },
+  retryButtonText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
+  imageContainer: { width: width, height: width * 0.75, position: 'relative' },
+  imageSlide: { width: width, height: width * 0.75 },
+  roomImage: { width: '100%', height: '100%' },
+  imageGradient: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
+  backButton: { position: 'absolute', top: 44, left: 16, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center', backdropFilter: 'blur(10px)' },
+  imageIndicators: { position: 'absolute', bottom: 20, flexDirection: 'row', justifyContent: 'center', width: '100%' },
+  indicator: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.5)', marginHorizontal: 4 },
+  activeIndicator: { width: 24, backgroundColor: '#FFF' },
+  content: { flex: 1, borderTopLeftRadius: 24, borderTopRightRadius: 24, marginTop: -24, backgroundColor: '#F8F9FA' },
+  infoContainer: { padding: 20 },
+  ownerInfo: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
+  avatarContainer: { position: 'relative', marginRight: 12 },
+  ownerAvatar: { width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: '#FFF' },
+  onlineIndicator: { position: 'absolute', bottom: 0, right: 0, width: 14, height: 14, borderRadius: 7, backgroundColor: '#4CAF50', borderWidth: 2, borderColor: '#FFF' },
+  ownerDetails: { flex: 1 },
+  ownerName: { fontSize: 18, fontWeight: '600', color: '#333', marginBottom: 4 },
+  verifiedBadge: { flexDirection: 'row', alignItems: 'center' },
+  verifiedText: { fontSize: 12, color: '#4CAF50', marginLeft: 4 },
+  statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  statusText: { color: '#FFF', fontSize: 12, fontWeight: '500' },
+  priceSection: { marginBottom: 24 },
+  priceLabel: { fontSize: 14, color: '#666', marginBottom: 4 },
+  priceValue: { fontSize: 24, fontWeight: 'bold', color: '#6D5BA3' },
+  duration: { fontSize: 16, color: '#666', fontWeight: 'normal' },
+  descriptionCard: { backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 5 },
+  descriptionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  sectionTitle: { fontSize: 18, fontWeight: '600', color: '#333', marginBottom: 16 },
+  descriptionText: { fontSize: 14, color: '#333', lineHeight: 20, marginBottom: 16 },
+  detailsCard: { backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 5 },
+  detailRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
+  detailIcon: { width: 32, height: 32, backgroundColor: 'rgba(109, 91, 163, 0.1)', borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  detailContent: { flex: 1 },
+  detailLabel: { fontSize: 12, color: '#666', marginBottom: 4 },
+  detailValue: { fontSize: 14, color: '#333', fontWeight: '500' },
+  sectionContainer: { marginBottom: 24 },
+  amenitiesGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 },
+  amenityItem: { flexDirection: 'row', alignItems: 'center', width: '50%', marginBottom: 16 },
+  amenityIcon: { width: 24, height: 24, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 8 },
+  amenityText: { fontSize: 14, color: '#333' },
+  servicesCard: { backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  serviceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  serviceInfo: { flexDirection: 'row', alignItems: 'center' },
+  serviceLabel: { fontSize: 14, color: '#333', fontWeight: '500', marginLeft: 8 },
+  servicePrice: { fontSize: 14, color: '#6D5BA3', fontWeight: '600' },
+  serviceDescription: { marginTop: 4 },
+  serviceNote: { fontSize: 12, color: '#666' },
   
-  // Update these existing styles
-  modalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#FFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -5 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 10,
-    maxHeight: '80%',
-  },
+  // Additional styles for the feedback section
+  feedbackLoading: { alignItems: 'center', padding: 16 },
+  noFeedbackContainer: { alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: '#FFF', borderRadius: 16, marginBottom: 16 },
+  noFeedbackText: { marginTop: 12, fontSize: 14, color: '#666', textAlign: 'center' },
+  feedbackListHorizontal: { paddingRight: 20 },
+  feedbackItemHorizontal: { width: width - 40, padding: 16, backgroundColor: '#FFF', borderRadius: 16, marginRight: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  feedbackHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  reviewerInfo: { flexDirection: 'row', alignItems: 'center' },
+  avatarSmall: { width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(109, 91, 163, 0.1)', justifyContent: 'center', alignItems: 'center', marginRight: 8 },
+  reviewerName: { fontSize: 14, fontWeight: '500', color: '#333' },
+  ratingContainer: { flexDirection: 'row' },
+  starIcon: { marginHorizontal: 1 },
+  ratingDate: { fontSize: 12, color: '#999', marginBottom: 8 },
+  feedbackText: { fontSize: 14, color: '#333', lineHeight: 20, marginBottom: 8 },
+  feedbackImages: { flexDirection: 'row', marginTop: 8 },
+  feedbackImage: { width: 80, height: 80, borderRadius: 8, marginRight: 8 },
+  feedbackIndicators: { flexDirection: 'row', justifyContent: 'center', marginTop: 16 },
+  feedbackIndicator: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(109, 91, 163, 0.3)', marginHorizontal: 4 },
+  activeFeedbackIndicator: { width: 24, backgroundColor: '#6D5BA3' },
+  
+  // Additional Info styles
+  additionalInfoCard: { backgroundColor: '#FFF', borderRadius: 16, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
+  infoLabel: { fontSize: 14, color: '#666' },
+  infoValue: { fontSize: 14, color: '#333', fontWeight: '500' },
+  
+  // Bottom button styles
+  bottomButtons: { flexDirection: 'row', padding: 16, backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: '#EFEFEF' },
+  messageButton: { flex: 1, marginRight: 8 },
+  messageGradient: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#6D5BA3' },
+  messageButtonText: { marginLeft: 8, fontSize: 16, color: '#6D5BA3', fontWeight: '600' },
+  rentButton: { flex: 2 },
+  rentGradient: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 14, borderRadius: 12 },
+  rentButtonText: { marginLeft: 8, fontSize: 16, color: '#FFF', fontWeight: '600' },
+  
+  // Modal styles
+  keyboardAvoidingView: { flex: 1 },
+  modalContainer: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
+  modalContent: { backgroundColor: '#FFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, maxHeight: height * 0.9 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  modalTitle: { fontSize: 20, fontWeight: '600', color: '#333' },
+  formScrollContainer: { maxHeight: height * 0.7 },
+  formContainer: { marginBottom: 20 },
+  formLabel: { fontSize: 14, color: '#666', marginBottom: 8, marginTop: 16 },
+  formInput: { backgroundColor: '#F8F9FA', borderRadius: 12, padding: 12, fontSize: 16, color: '#333', borderWidth: 1, borderColor: '#E0E0E0' },
+  datePickerButton: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F8F9FA', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#E0E0E0' },
+  datePickerButtonText: { fontSize: 16, color: '#333' },
+  dateHint: { fontSize: 12, color: '#999', marginTop: 4 },
+  submitButton: { backgroundColor: '#6D5BA3', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 24 },
+  submitButtonDisabled: { backgroundColor: '#AAA' },
+  submitButtonText: { color: '#FFF', fontSize: 16, fontWeight: '600' }
 });
 
-export default RoomDetailScreen;
+
+    export default RoomDetailScreen; 

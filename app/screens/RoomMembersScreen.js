@@ -258,6 +258,55 @@ const RoomMembersScreen = ({ navigation }) => {
     );
   };
 
+  const handleRequestLeaveToLandlord = async () => {
+    Alert.alert(
+      "Xác nhận gửi yêu cầu",
+      "Bạn có chắc chắn muốn gửi yêu cầu rời phòng cho chủ trọ?",
+      [
+        {
+          text: "Hủy",
+          style: "cancel"
+        },
+        {
+          text: "Xác nhận",
+          onPress: async () => {
+            try {
+              const result = await roomStayService.requestLeaveRoomByTenant(
+                token,
+                ''
+              );
+              
+              if (result.isSuccess) {
+                Alert.alert(
+                  "Thành công",
+                  "Đã gửi yêu cầu rời phòng cho chủ trọ thành công",
+                  [
+                    {
+                      text: "OK",
+                      onPress: () => {
+                        navigation.goBack();
+                      }
+                    }
+                  ]
+                );
+              } else {
+                Alert.alert("Lỗi", result.message);
+              }
+            } catch (error) {
+              console.error('Leave room error:', error);
+              if (error.response?.data?.message) {
+                Alert.alert('Lỗi', error.response.data.message);
+              } else {
+                Alert.alert('Lỗi', 'Có lỗi xảy ra khi gửi yêu cầu rời phòng');
+              }
+            }
+          }
+        }
+      ]
+    );
+  };
+
+
   // Loading state with fixed header
   if (loading) {
     return (
@@ -544,34 +593,45 @@ const RoomMembersScreen = ({ navigation }) => {
                 </>
               )}
               {selectedMember?.isCurrentUser && (
-                <>
-                  {currentUser?.roomerType === 'Tenant' ? (
-                    <>
-                      <MenuOption
-                        icon="exit-to-app"
-                        label="Rời phòng và chuyển cọc"
-                        onPress={() => handleOptionPress(() => setShowTransferModal(true))}
-                        color="#00A67E"
-                      />
-                      <MenuOption
-                        icon="list"
-                        label="Xem yêu cầu rời phòng"
-                        onPress={() => handleOptionPress(() => 
-                          navigation.navigate('LeaveRequests', { roomId: roomData.roomStay.roomId })
-                        )}
-                        color="#00A67E"
-                      />
-                    </>
-                  ) : (
-                    <MenuOption
-                      icon="logout"
-                      label="Rời phòng"
-                      onPress={() => handleOptionPress(handleLeaveRoom)}
-                      color="#FF5252"
-                    />
-                  )}
-                </>
+  <>
+    {currentUser?.roomerType === 'Tenant' ? (
+      <>
+        {roomData.totalRoomer > 1 ? (
+          <>
+            <MenuOption
+              icon="exit-to-app"
+              label="Rời phòng và chuyển cọc"
+              onPress={() => handleOptionPress(() => setShowTransferModal(true))}
+              color="#00A67E"
+            />
+            <MenuOption
+              icon="list"
+              label="Xem yêu cầu rời phòng"
+              onPress={() => handleOptionPress(() => 
+                navigation.navigate('LeaveRequests', { roomId: roomData.roomStay.roomId })
               )}
+              color="#00A67E"
+            />
+          </>
+        ) : (
+          <MenuOption
+            icon="logout"
+            label="Gửi yêu cầu rời cho chủ trọ"
+            onPress={() => handleOptionPress(handleRequestLeaveToLandlord)}
+            color="#FF5252"
+          />
+        )}
+      </>
+    ) : (
+      <MenuOption
+        icon="logout"
+        label="Rời phòng"
+        onPress={() => handleOptionPress(handleLeaveRoom)}
+        color="#FF5252"
+      />
+    )}
+  </>
+)}
             </View>
           </BlurView>
         </Pressable>

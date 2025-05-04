@@ -390,7 +390,7 @@ const PastRoomDetailScreen = () => {
           </View>
 
           {/* Description Section */}
-          <View style={styles.descriptionCard}>
+          {/* <View style={styles.descriptionCard}>
             <View style={styles.descriptionHeader}>
               <Text style={styles.sectionTitle}>{room.title || 'Mô tả'}</Text>
             </View>
@@ -398,7 +398,7 @@ const PastRoomDetailScreen = () => {
             <Text style={styles.descriptionText}>
               {room.description || 'No description available'}
             </Text>
-          </View>
+          </View> */}
 
           {/* Room Details Card */}
           <View style={styles.detailsCard}>

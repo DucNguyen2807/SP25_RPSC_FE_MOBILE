@@ -72,6 +72,41 @@ const roomService = {
       };
     }
   },
+  getFeedbackByRoomId: async (roomId) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const url = `${API_BASE_URL}/room/feedback/${roomId}`; // Đúng URL
+  
+      console.log('Fetching feedback from:', url);
+  
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+  
+      const data = await response.json();
+      console.log('Feedback response:', data);
+  
+      if (response.ok) {
+        return { isSuccess: true, data: data };
+      } else {
+        return {
+          isSuccess: false,
+          message: data.message || 'Failed to fetch feedback',
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching feedback:', error);
+      return {
+        isSuccess: false,
+        message: 'Something went wrong while fetching feedback',
+      };
+    }
+  }
+  
 };
 
 export default roomService;

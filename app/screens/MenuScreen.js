@@ -214,9 +214,6 @@ const MenuScreen = ({ navigation, route }) => {
             >
               <MaterialIcons name="send" size={24} color="#666" />
               <Text style={styles.menuItemText}>Yêu cầu ở ghép đã gửi</Text>
-              <View style={styles.badgeContainer}>
-                <Text style={styles.badgeText}>{requestCount}</Text>
-              </View>
               <MaterialIcons name="chevron-right" size={24} color="#666" />
             </TouchableOpacity>
 

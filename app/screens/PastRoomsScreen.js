@@ -381,9 +381,9 @@ const PastRoomsScreen = ({ navigation }) => {
                   style={styles.roomImage}
                 />
                 <View style={styles.roomInfo}>
-                  <Text style={styles.roomTitle} numberOfLines={1}>
+                  {/* <Text style={styles.roomTitle} numberOfLines={1}>
                     {room.title}
-                  </Text>
+                  </Text> */}
                   <Text style={styles.roomAddress} numberOfLines={1}>
                     {room.address}
                   </Text>
