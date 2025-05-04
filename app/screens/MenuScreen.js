@@ -235,6 +235,14 @@ const MenuScreen = ({ navigation, route }) => {
               <Text style={styles.menuItemText}>Danh sách người trong phòng</Text>
               <MaterialIcons name="chevron-right" size={24} color="#666" />
             </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={() => navigation.navigate('PostHistoryByOwner')}
+            >
+              <MaterialIcons name="people" size={24} color="#666" />
+              <Text style={styles.menuItemText}>Danh sách bài đăng cũ</Text>
+              <MaterialIcons name="chevron-right" size={24} color="#666" />
+            </TouchableOpacity>
           </View>
 
           {/* Logout Button */}

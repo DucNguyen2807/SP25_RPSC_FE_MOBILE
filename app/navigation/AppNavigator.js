@@ -23,7 +23,7 @@ import ViewAllRequestExtendContract from '../screens/ViewAllRequestExtendContrac
 import PastRoomsScreen from '../screens/PastRoomsScreen';
 import PastRoomDetailScreen from '../screens/PastRoomDetailScreen';
 import MyFeedbacksScreen from '../screens/MyFeedbacksScreen';
-
+import PostHistoryByOwner from '../screens/PostHistorybyOwner';
 const Stack = createStackNavigator();
 
 const AppNavigator = () => {
@@ -105,6 +105,13 @@ const AppNavigator = () => {
       <Stack.Screen 
         name="History-Request-Extend-Contract" 
         component={ViewAllRequestExtendContract}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="PostHistoryByOwner" 
+        component={PostHistoryByOwner}
         options={{
           headerShown: false,
         }}

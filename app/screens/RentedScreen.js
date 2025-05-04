@@ -366,9 +366,12 @@ const RentedScreen = ({ navigation }) => {
               <Text style={styles.existingPostDescription} numberOfLines={2}>{existingPost.description}</Text>
               <View style={styles.existingPostFooter}>
                 <View style={styles.existingPostPrice}>
-                  <Text style={styles.existingPostPriceValue}>
-                    {existingPost.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
-                  </Text>
+                <Text style={styles.existingPostPriceValue}>
+  {typeof existingPost?.price === 'number'
+    ? existingPost.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })
+    : 'Đang cập nhật'}
+</Text>
+
                 </View>
                 <View style={[styles.existingPostStatus, { backgroundColor: getStatusColor(existingPost.status) + '20' }]}>
                   <Text style={[styles.existingPostStatusText, { color: getStatusColor(existingPost.status) }]}>

@@ -47,7 +47,7 @@ const postService = {
 
       // Prepare the URL with query parameters
       const url = `${API_BASE_URL}/post/get-all-roommate-post?${queryParams.toString()}`;
-      console.log('Request URL:', url);
+      //console.log('Request URL:', url);
 
       // Make the API request with Authorization header
       const response = await fetch(url, {
@@ -60,10 +60,10 @@ const postService = {
       });
 
       // Log response for debugging
-      console.log('Response Status:', response.status);
+      //console.log('Response Status:', response.status);
       
       const data = await response.json();
-      console.log('Response Data:', data);
+      //console.log('Response Data:', data);
 
       if (data?.isSuccess) {
         return { isSuccess: true, message: data.message, posts: data.data };
@@ -82,7 +82,7 @@ const postService = {
       const token = await AsyncStorage.getItem('token');
   
       const url = `${API_BASE_URL}/post/get-roommate-post-detail?postId=${postId}`;
-      console.log('Request URL for Post Detail:', url);
+      //console.log('Request URL for Post Detail:', url);
   
       const response = await fetch(url, {
         method: 'GET',
@@ -99,7 +99,7 @@ const postService = {
         // Sửa ở đây: trả về data thay vì postDetail
         return { isSuccess: true, message: data.message, data: data.data }; 
       } else {
-        console.log('Error message from API:', data.message);
+        //console.log('Error message from API:', data.message);
         return { isSuccess: false, message: data.message || 'Failed to fetch roommate post detail' };
       }
     } catch (error) {
@@ -167,7 +167,7 @@ createRoommatePost: async (title, description, price, rentalRoomId) => {
     });
 
     const data = await response.json();
-    console.log('API Response:', data);
+    //console.log('API Response:', data);
 
     if (data?.isSuccess) {
       return { isSuccess: true, message: data.message, data: data.data };
@@ -274,6 +274,43 @@ getRecommendedRoommatePosts: async (pageNumber = 1, pageSize = 10) => {
   } catch (error) {
     console.error('Error fetching recommended roommate posts:', error);
     return { isSuccess: false, message: 'Something went wrong while fetching recommended roommate posts' };
+  }
+},
+getAllPostRoommateByCustomerId: async () => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+
+    if (!token) {
+      throw new Error('Unauthorized: No token found');
+    }
+
+    const url = `${API_BASE_URL}/post/Get-All-Roommate-Post-By-Customer`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (data?.isSuccess) {
+      return { isSuccess: true, message: data.message, data: data.data };
+    } else {
+      return {
+        isSuccess: false,
+        message: data.message || 'Failed to fetch all roommate posts by customer',
+      };
+    }
+  } catch (error) {
+    console.error('Error fetching all roommate posts by customer:', error);
+    return {
+      isSuccess: false,
+      message: 'Something went wrong while fetching posts by customer',
+    };
   }
 },
 
