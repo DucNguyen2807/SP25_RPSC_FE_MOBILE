@@ -16,6 +16,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import authService from '../services/authService';
+import { colors, typography, spacing, borderRadius } from '../theme/theme';
 
 const MenuScreen = ({ navigation, route }) => {
   const [requestCount, setRequestCount] = useState(0);
@@ -122,20 +123,14 @@ const MenuScreen = ({ navigation, route }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#00A67E" />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.primary} />
       
       {/* Header */}
       <SafeAreaView style={styles.safeAreaTop}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={goBack}>
-            <MaterialIcons name="arrow-back" size={24} color="#FFF" />
-          </TouchableOpacity>
           <View style={styles.headerTitle}>
-            <Text style={styles.headerText}>My Profile</Text>
+            <Text style={styles.headerText}>Hồ sơ của tôi</Text>
           </View>
-          <TouchableOpacity style={styles.notificationButton}>
-            <MaterialIcons name="notifications-none" size={24} color="#FFF" />
-          </TouchableOpacity>
         </View>
       </SafeAreaView>
 
@@ -169,7 +164,7 @@ const MenuScreen = ({ navigation, route }) => {
                 style={styles.editButton}
                 onPress={() => navigation.navigate('EditProfile')}
               >
-                <Text style={styles.editButtonText}>Edit Profile</Text>
+                <Text style={styles.editButtonText}>Chỉnh sửa hồ sơ</Text>
               </TouchableOpacity>
           </View>
 
@@ -262,123 +257,121 @@ const MenuScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background.secondary,
   },
   safeAreaTop: {
-    backgroundColor: '#00A67E',
+    backgroundColor: colors.primary,
   },
   safeAreaContent: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background.secondary,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#00A67E',
-  },
-  backButton: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    backgroundColor: colors.primary,
   },
   headerTitle: {
     flex: 1,
     alignItems: 'center',
   },
   headerText: {
-    fontSize: 18,
+    fontSize: typography.fontSize.xl,
     fontWeight: '600',
-    color: '#FFF',
-  },
-  notificationButton: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    color: colors.white,
   },
   scrollContent: {
     flexGrow: 1,
   },
   profileSection: {
     alignItems: 'center',
-    paddingVertical: 24,
-    backgroundColor: '#00A67E',
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    paddingVertical: spacing.xl,
+    backgroundColor: colors.primary,
+    borderBottomLeftRadius: borderRadius.xl,
+    borderBottomRightRadius: borderRadius.xl,
   },
   avatar: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    marginBottom: 12,
+    marginBottom: spacing.md,
     borderWidth: 3,
-    borderColor: '#FFF',
+    borderColor: colors.white,
   },
   userName: {
-    fontSize: 24,
+    fontSize: typography.fontSize.xxl,
     fontWeight: '600',
-    color: '#FFF',
-    marginBottom: 12,
+    color: colors.white,
+    marginBottom: spacing.md,
   },
   editButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 20,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 2,
+    marginTop: spacing.sm,
   },
   editButtonText: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: '500',
+    color: colors.primary,
+    fontSize: typography.fontSize.sm,
+    fontWeight: '600',
   },
   menuSection: {
-    paddingHorizontal: 16,
-    paddingTop: 24,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: colors.background.tertiary,
   },
   menuItemText: {
     flex: 1,
-    marginLeft: 16,
-    fontSize: 16,
-    color: '#424242',
+    marginLeft: spacing.lg,
+    fontSize: typography.fontSize.md,
+    color: colors.text.primary,
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 32,
-    marginHorizontal: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#FFF',
-    borderRadius: 12,
+    marginTop: spacing.xl,
+    marginBottom: spacing.xxl,
+    marginHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: '#FF5252',
+    borderColor: colors.error,
   },
   logoutText: {
-    marginLeft: 16,
-    fontSize: 16,
+    marginLeft: spacing.lg,
+    fontSize: typography.fontSize.md,
     fontWeight: '600',
-    color: '#FF5252',
+    color: colors.error,
   },
   badgeContainer: {
-    backgroundColor: '#00A67E',
-    borderRadius: 12,
-    paddingHorizontal: 8,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.sm,
     paddingVertical: 2,
-    marginRight: 8,
+    marginRight: spacing.sm,
   },
   badgeText: {
-    color: '#FFF',
-    fontSize: 12,
+    color: colors.white,
+    fontSize: typography.fontSize.xs,
     fontWeight: '600',
   },
 });

@@ -18,6 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import roommateService from '../services/roommateService';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { colors } from '../theme/theme';
 
 // Main component
 const SentRequestsScreen = ({ navigation, route }) => {
@@ -329,14 +330,14 @@ const SentRequestsScreen = ({ navigation, route }) => {
   return (
     <View style={styles.mainContainer}>
       <StatusBar 
-        barStyle="light-content" 
-        backgroundColor="#00A67E" 
+        barStyle="dark-content" 
+        backgroundColor={colors.primary} 
         translucent={true}
       />
       
       {/* Header with proper insets */}
       <LinearGradient
-        colors={['#00A67E', '#008C69']}
+        colors={[colors.primary, colors.primary]}
         style={[
           styles.header,
           { paddingTop: insets.top || (Platform.OS === 'ios' ? 44 : 16) }
@@ -645,7 +646,7 @@ const styles = StyleSheet.create({
     marginBottom: 16 
   },
   browseButton: { 
-    backgroundColor: '#00A67E', 
+    backgroundColor: colors.primary, 
     paddingHorizontal: 16, 
     paddingVertical: 10, 
     borderRadius: 8 

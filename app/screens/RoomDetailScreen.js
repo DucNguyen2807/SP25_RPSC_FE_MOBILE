@@ -11,6 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { API_BASE_URL } from '../constants/config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import roomService from '../services/roomService';
+import { colors } from '../theme/theme';
 
 const { width, height } = Dimensions.get('window');
 
@@ -623,11 +624,11 @@ const RoomDetailScreen = () => {
       <View style={styles.bottomButtons}>
         <TouchableOpacity style={styles.messageButton}>
           <LinearGradient
-            colors={['rgba(109, 91, 163, 0.1)', 'rgba(136, 115, 190, 0.1)']}
-            style={styles.messageGradient}
+            colors={[colors.primaryLight || '#E6F4F1', colors.primaryLight || '#E6F4F1']}
+            style={[styles.messageGradient, { borderColor: colors.primary }]}
           >
-            <FontAwesome5 name="comment-alt" size={16} color="#6D5BA3" />
-            <Text style={styles.messageButtonText}>Chat</Text>
+            <FontAwesome5 name="comment-alt" size={16} color={colors.primary} />
+            <Text style={[styles.messageButtonText, { color: colors.primary }]}>Nhắn tin</Text>
           </LinearGradient>
         </TouchableOpacity>
         <TouchableOpacity 
@@ -635,13 +636,13 @@ const RoomDetailScreen = () => {
           onPress={() => setShowRentModal(true)}
         >
           <LinearGradient
-            colors={['#6D5BA3', '#8873BE']}
+            colors={[colors.primary, colors.primaryDark || colors.primary]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.rentGradient}
           >
             <FontAwesome5 name="key" size={16} color="#FFF" />
-            <Text style={styles.rentButtonText}>Rent Room</Text>
+            <Text style={styles.rentButtonText}>Thuê Phòng</Text>
           </LinearGradient>
         </TouchableOpacity>
       </View>

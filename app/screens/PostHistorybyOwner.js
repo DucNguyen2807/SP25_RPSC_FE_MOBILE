@@ -16,6 +16,7 @@ import {
 import { MaterialIcons, Feather, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import postService from '../services/postService';
+import { colors, typography, spacing, borderRadius, shadows } from '../theme/theme';
 
 const { width } = Dimensions.get('window');
 const ITEM_HEIGHT = 160;
@@ -237,11 +238,11 @@ const PostHistoryByOwner = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#5E8B7E" />
+      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
       
       {/* Header with gradient */}
       <LinearGradient
-        colors={['#5E8B7E', '#7CAA98']}
+        colors={[colors.primary, colors.primary]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.header}

@@ -23,6 +23,7 @@ import { vi } from 'date-fns/locale';
 import { useFocusEffect } from '@react-navigation/native';
 import roomStayService from '../services/roomStayService';
 import { useAuth } from '../context/AuthContext';
+import { colors, typography, spacing, borderRadius, shadows } from '../theme/theme';
 
 const { width } = Dimensions.get('window');
 
@@ -319,7 +320,7 @@ const RoomMembersScreen = ({ navigation }) => {
         
         {/* Header with Gradient */}
         <LinearGradient
-          colors={['#00A67E', '#00A67E']}
+          colors={[colors.primary, colors.primary]}
           style={styles.headerGradient}
         >
           <SafeAreaView style={styles.safeHeader}>
@@ -358,7 +359,7 @@ const RoomMembersScreen = ({ navigation }) => {
         
         {/* Header with Gradient */}
         <LinearGradient
-          colors={['#00A67E', '#00A67E']}
+          colors={[colors.primary, colors.primary]}
           style={styles.headerGradient}
         >
           <SafeAreaView style={styles.safeHeader}>
@@ -423,7 +424,7 @@ const RoomMembersScreen = ({ navigation }) => {
       
       {/* Header with Gradient */}
       <LinearGradient
-        colors={['#00A67E', '#00A67E']}
+        colors={[colors.primary, colors.primary]}
         style={styles.headerGradient}
       >
         <SafeAreaView style={styles.safeHeader}>

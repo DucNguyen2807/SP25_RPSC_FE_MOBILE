@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  StatusBar,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -14,6 +15,7 @@ import { API_BASE_URL } from '../constants/config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 // Import NetInfo from the community package
 import NetInfo from '@react-native-community/netinfo';
+import { colors, typography, spacing, borderRadius, shadows } from '../theme/theme';
 
 const CustomerRequestsScreen = ({ navigation, route }) => {
   const [requests, setRequests] = useState([]);
@@ -244,8 +246,9 @@ const CustomerRequestsScreen = ({ navigation, route }) => {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.primary} />
       <LinearGradient
-        colors={['#00A67E', '#00A67E']}
+        colors={[colors.primary, colors.primary]}
         style={styles.header}
       >
         <TouchableOpacity
@@ -254,7 +257,7 @@ const CustomerRequestsScreen = ({ navigation, route }) => {
         >
           <MaterialIcons name="arrow-back" size={24} color="#FFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Room Requests</Text>
+        <Text style={styles.headerTitle}>Yêu cầu thuê phòng đã gửi</Text>
         <TouchableOpacity 
           style={styles.refreshButton}
           onPress={fetchRequests}

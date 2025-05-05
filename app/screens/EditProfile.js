@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Alert, Modal } from 'react-native';
+import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Alert, Modal, StatusBar } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import * as ImagePicker from 'expo-image-picker';
 import authService from '../services/authService';
+import { colors, typography, spacing, borderRadius, shadows } from '../theme/theme';
 
 const EditProfile = ({ navigation }) => {
   // State for active tab (User or Customer)
@@ -245,6 +246,7 @@ const EditProfile = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
       {/* Date Picker Modal */}
       <Modal
         animationType="slide"
@@ -347,7 +349,7 @@ const EditProfile = ({ navigation }) => {
         <TouchableOpacity style={styles.backButton} onPress={goBack}>
           <Icon name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Profile</Text>
+        <Text style={styles.headerTitle}>Chỉnh sửa thông tin cá nhân</Text>
         <View style={styles.headerRightPlaceholder} />
       </View>
       
@@ -656,7 +658,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f0f2f5' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f0f2f5' },
   loadingText: { marginTop: 10, fontSize: 16, color: '#4267B2', fontWeight: '500' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#00A67E', paddingVertical: 16, paddingHorizontal: 16, elevation: 4 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.primary, paddingVertical: 16, paddingHorizontal: 16, elevation: 4 },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#fff', textAlign: 'center' },
   backButton: { padding: 8 },
   headerRightPlaceholder: { width: 40 },

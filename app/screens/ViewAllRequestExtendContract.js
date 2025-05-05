@@ -16,6 +16,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import contractService from '../services/contractService';
+import { colors } from '../theme/theme';
 
 const ViewAllRequestExtendContract = ({ navigation }) => {
   const [requests, setRequests] = useState([]);
@@ -181,13 +182,13 @@ const ViewAllRequestExtendContract = ({ navigation }) => {
       {/* Set StatusBar */}
       <StatusBar
         barStyle="light-content"
-        backgroundColor="#00A67E"
+        backgroundColor={colors.primary}
         translucent={true}
       />
       
       {/* Header with gradient that extends to status bar */}
       <LinearGradient
-        colors={['#00A67E', '#00A67E']}
+        colors={[colors.primary, colors.primary]}
         style={styles.headerGradient}
       >
         <SafeAreaView style={styles.safeHeader}>
