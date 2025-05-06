@@ -314,7 +314,7 @@ const RoomMembersScreen = ({ navigation }) => {
       <View style={styles.container}>
         <StatusBar 
           barStyle="light-content" 
-          backgroundColor="#00A67E"
+          backgroundColor={colors.primary}
           translucent={true}
         />
         
@@ -353,7 +353,7 @@ const RoomMembersScreen = ({ navigation }) => {
       <View style={styles.container}>
         <StatusBar 
           barStyle="light-content" 
-          backgroundColor="#00A67E"
+          backgroundColor={colors.primary}
           translucent={true} 
         />
         
@@ -418,7 +418,7 @@ const RoomMembersScreen = ({ navigation }) => {
     <View style={styles.container}>
       <StatusBar 
         barStyle="light-content" 
-        backgroundColor="#00A67E"
+        backgroundColor={colors.primary}
         translucent={true}
       />
       
