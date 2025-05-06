@@ -52,8 +52,8 @@ const ChatScreen = ({ route }) => {
     const connectToSignalR = async () => {
       const newConnection = new signalR.HubConnectionBuilder()
         //  .withUrl('http://10.0.2.2:5262/chatHub')
-         .withUrl('https://opal.io.vn/chatHub')
-       //withUrl('http://192.168.0.100:5262/chatHub')
+         //.withUrl('https://opal.io.vn/chatHub')
+       .withUrl('http://192.168.0.101:5262/chatHub')
         .withAutomaticReconnect()
         .build();
 
@@ -101,6 +101,10 @@ newConnection.on('ReceiveMessage', (senderId, receiverId, newMessage, clientTime
 
   const handleSendMessage = async () => {
     if (!message.trim()) return;
+    
+    console.log('Sending message:', message);
+    console.log('Receiver ID (userId):', userId);
+    console.log('Sender ID (myId):', myId); // Đảm bảo biến myId được định nghĩa ở ngoài
     
     const messageToSend = message; // Store message in a temporary variable
     setMessage(''); // Clear input immediately

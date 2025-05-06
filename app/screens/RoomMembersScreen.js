@@ -21,6 +21,7 @@ import { BlurView } from 'expo-blur';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import roomStayService from '../services/roomStayService';
 import { useAuth } from '../context/AuthContext';
 import { colors, typography, spacing, borderRadius, shadows } from '../theme/theme';
@@ -48,6 +49,23 @@ const RoomMembersScreen = ({ navigation }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [selectedNewTenant, setSelectedNewTenant] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
+
+  // Fetch current user ID from AsyncStorage
+  useEffect(() => {
+    const getUserId = async () => {
+      try {
+        const userId = await AsyncStorage.getItem('userId');
+        if (userId) {
+          setCurrentUserId(userId);
+        }
+      } catch (error) {
+        console.log('Lỗi khi lấy ID người dùng:', error);
+      }
+    };
+    
+    getUserId();
+  }, []);
 
   const fetchData = useCallback(async () => {
     if (authLoading) {
@@ -307,6 +325,25 @@ const RoomMembersScreen = ({ navigation }) => {
     );
   };
 
+  // Function to handle chat navigation
+  const handleContactClick = (member) => {
+    if (!currentUserId) {
+      Alert.alert('Lỗi', 'Không tìm thấy ID người dùng của bạn');
+      return;
+    }
+
+    if (member.isCurrentUser) {
+      Alert.alert('Thông báo', 'Bạn không thể chat với chính mình');
+      return;
+    }
+
+    navigation.navigate('Chat', {
+      userName: member.fullName,
+      avatar: member.avatar ? { uri: member.avatar } : 'https://via.placeholder.com/40', // Make sure you have a default avatar
+      userId: member.userId || member.customerId, // Use the correct ID field
+      myId: currentUserId,
+    });
+  };
 
   // Loading state with fixed header
   if (loading) {
@@ -587,52 +624,50 @@ const RoomMembersScreen = ({ navigation }) => {
                   <MenuOption
                     icon="chat"
                     label="Nhắn tin"
-                    onPress={() => handleOptionPress(() => {
-                      // TODO: Implement chat functionality
-                    })}
+                    onPress={() => handleOptionPress(() => handleContactClick(selectedMember))}
                   />
                 </>
               )}
               {selectedMember?.isCurrentUser && (
-  <>
-    {currentUser?.roomerType === 'Tenant' ? (
-      <>
-        {roomData.totalRoomer > 1 ? (
-          <>
-            <MenuOption
-              icon="exit-to-app"
-              label="Rời phòng và chuyển cọc"
-              onPress={() => handleOptionPress(() => setShowTransferModal(true))}
-              color="#00A67E"
-            />
-            <MenuOption
-              icon="list"
-              label="Xem yêu cầu rời phòng"
-              onPress={() => handleOptionPress(() => 
-                navigation.navigate('LeaveRequests', { roomId: roomData.roomStay.roomId })
+                <>
+                  {currentUser?.roomerType === 'Tenant' ? (
+                    <>
+                      {roomData.totalRoomer > 1 ? (
+                        <>
+                          <MenuOption
+                            icon="exit-to-app"
+                            label="Rời phòng và chuyển cọc"
+                            onPress={() => handleOptionPress(() => setShowTransferModal(true))}
+                            color="#00A67E"
+                          />
+                          <MenuOption
+                            icon="list"
+                            label="Xem yêu cầu rời phòng"
+                            onPress={() => handleOptionPress(() => 
+                              navigation.navigate('LeaveRequests', { roomId: roomData.roomStay.roomId })
+                            )}
+                            color="#00A67E"
+                          />
+                        </>
+                      ) : (
+                        <MenuOption
+                          icon="logout"
+                          label="Gửi yêu cầu rời cho chủ trọ"
+                          onPress={() => handleOptionPress(handleRequestLeaveToLandlord)}
+                          color="#FF5252"
+                        />
+                      )}
+                    </>
+                  ) : (
+                    <MenuOption
+                      icon="logout"
+                      label="Rời phòng"
+                      onPress={() => handleOptionPress(handleLeaveRoom)}
+                      color="#FF5252"
+                    />
+                  )}
+                </>
               )}
-              color="#00A67E"
-            />
-          </>
-        ) : (
-          <MenuOption
-            icon="logout"
-            label="Gửi yêu cầu rời cho chủ trọ"
-            onPress={() => handleOptionPress(handleRequestLeaveToLandlord)}
-            color="#FF5252"
-          />
-        )}
-      </>
-    ) : (
-      <MenuOption
-        icon="logout"
-        label="Rời phòng"
-        onPress={() => handleOptionPress(handleLeaveRoom)}
-        color="#FF5252"
-      />
-    )}
-  </>
-)}
             </View>
           </BlurView>
         </Pressable>
@@ -1089,3 +1124,5 @@ const styles = StyleSheet.create({
 });
 
 export default RoomMembersScreen; 
+
+

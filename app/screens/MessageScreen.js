@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, StatusBar } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';  // Thêm useFocusEffect
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import chatService from '../services/chatService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -15,26 +15,44 @@ const MessageScreen = () => {
   useFocusEffect(
     React.useCallback(() => {
       const fetchMessages = async () => {
-        const res = await chatService.getHistoryByUserId();
-        if (res.isSuccess) {
-          const data = res.data.map((item, index) => ({
-            id: item.chatId || index.toString(),
-            sender: item.receiver?.username || 'Unknown',
-            userId: item.receiver?.id,
-            message: item.latestMessage || '',
-            description: '',
-            avatar: item.receiver?.avatar
-              ? { uri: item.receiver.avatar }
-              : require('../assets/logoEasyRommie.png'),
-            time: new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            unread: false,
-            online: false,
-          }));
-          setMessages(data);
+        try {
+          const currentUserId = await AsyncStorage.getItem('userId');
+          if (!currentUserId) return;
+          
+          setMyId(currentUserId);
+          
+          const res = await chatService.getHistoryByUserId();
+          if (res.isSuccess) {
+            const data = res.data.map((item, index) => {
+              // Determine if I'm the sender or receiver
+              const isUserSender = item.sender?.id === currentUserId;
+              
+              // Use the other person's info (not mine)
+              const chatPartner = isUserSender ? item.receiver : item.sender;
+              
+              return {
+                id: item.chatId || index.toString(),
+                sender: chatPartner?.username || 'Unknown',
+                userId: chatPartner?.id,
+                message: item.latestMessage || '',
+                description: '',
+                avatar: chatPartner?.avatar
+                  ? { uri: chatPartner.avatar }
+                  : require('../assets/logoEasyRommie.png'),
+                time: new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                unread: false,
+                online: false,
+              };
+            });
+            setMessages(data);
+          }
+        } catch (error) {
+          console.error('Failed to load chat history:', error);
         }
       };
+      
       fetchMessages();
-    }, [])  // Empty dependency array ensures it runs only when tab is focused
+    }, [])
   );
 
   useEffect(() => {
@@ -42,23 +60,32 @@ const MessageScreen = () => {
       try {
         const currentUserId = await AsyncStorage.getItem('userId');
         if (!currentUserId) return;
+        
         setMyId(currentUserId);
   
         const res = await chatService.getHistoryByUserId(); 
         if (res.isSuccess) {
-          const data = res.data.map((item, index) => ({
-            id: item.chatId || index.toString(),
-            sender: item.receiver?.username || 'Unknown',
-            userId: item.receiver?.id,
-            message: item.latestMessage || '',
-            description: '',
-            avatar: item.receiver?.avatar
-              ? { uri: item.receiver.avatar }
-              : require('../assets/logoEasyRommie.png'),
-            time: new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            unread: false,
-            online: false,
-          }));
+          const data = res.data.map((item, index) => {
+            // Determine if I'm the sender or receiver
+            const isUserSender = item.sender?.id === currentUserId;
+            
+            // Use the other person's info (not mine)
+            const chatPartner = isUserSender ? item.receiver : item.sender;
+            
+            return {
+              id: item.chatId || index.toString(),
+              sender: chatPartner?.username || 'Unknown',
+              userId: chatPartner?.id,
+              message: item.latestMessage || '',
+              description: '',
+              avatar: chatPartner?.avatar
+                ? { uri: chatPartner.avatar }
+                : require('../assets/logoEasyRommie.png'),
+              time: new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              unread: false,
+              online: false,
+            };
+          });
           setMessages(data);
         }
       } catch (error) {
@@ -77,7 +104,7 @@ const MessageScreen = () => {
           userName: item.sender,
           avatar: item.avatar,
           userId: item.userId,
-          myId: myId, // truyền myId sang ChatScreen
+          myId: myId,
         })
       }
     >

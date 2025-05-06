@@ -388,9 +388,6 @@ const RoomStayDetail = () => {
                 <Text style={styles.landlordName}>{roomStayData.landlordName}</Text>
                 <Text style={styles.landlordTitle}>Chủ trọ</Text>
               </View>
-              <TouchableOpacity style={styles.contactButton}>
-                <Ionicons name="chatbubble-ellipses" size={20} color="#FFF" />
-              </TouchableOpacity>
             </View>
           </View>
 

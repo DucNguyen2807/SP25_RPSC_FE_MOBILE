@@ -19,6 +19,7 @@ import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import postService from '../services/postService';
 import roommateService from '../services/roommateService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -35,6 +36,29 @@ const RoommatePostDetail = ({ route, navigation }) => {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editData, setEditData] = useState({ title: '', description: '', price: '' });
   
+  const handleChatNavigation = async (recipientUserId) => {
+    try {
+      // Get the current user's ID from AsyncStorage
+      const myId = await AsyncStorage.getItem('userId');
+      
+      if (!myId) {
+        Alert.alert("Lỗi", "Không tìm thấy thông tin người dùng, vui lòng đăng nhập lại");
+        return;
+      }
+
+      // Navigate to Chat screen with required parameters
+      navigation.navigate('Chat', {
+        userName: post?.fullName || 'Người dùng',  // Default name if not available
+        avatar: require('../assets/logoEasyRommie.png'), // Default avatar
+        userId: recipientUserId,  // ID of the person we want to chat with
+        myId: myId,  // Current user's ID
+      });
+    } catch (error) {
+      console.error('Error navigating to chat:', error);
+      Alert.alert("Lỗi", "Không thể mở cuộc trò chuyện lúc này");
+    }
+  };
+
   // Fetch post data if only postId is provided
   const fetchPostData = async () => {
     if (postId && !postData) {
@@ -341,24 +365,24 @@ const RoommatePostDetail = ({ route, navigation }) => {
 
             {/* Actions */}
             <View style={styles.profileActions}>
-              <TouchableOpacity 
-                style={styles.profileActionButton}
-                onPress={() => {
-                  onClose();
-                  navigation.navigate('Chat', { userId: user?.userId });
-                }}
-              >
-                <LinearGradient
-                  colors={['#ACDCD0', '#ACDCD0']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.actionButtonGradient}
-                >
-                  <FontAwesome5 name="comment" size={16} color="#FFF" />
-                  <Text style={styles.actionButtonText}>Nhắn tin ngay</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
+        <TouchableOpacity 
+          style={styles.profileActionButton}
+          onPress={() => {
+            onClose();
+            handleChatNavigation(user?.userId);
+          }}
+        >
+          <LinearGradient
+            colors={['#ACDCD0', '#ACDCD0']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.actionButtonGradient}
+          >
+            <FontAwesome5 name="comment" size={16} color="#FFF" />
+            <Text style={styles.actionButtonText}>Nhắn tin ngay</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
           </ScrollView>
 
           <TouchableOpacity 
@@ -389,7 +413,7 @@ const RoommatePostDetail = ({ route, navigation }) => {
         <View style={styles.headerButtons}>
           <TouchableOpacity 
             style={[styles.actionButton, styles.chatButton]}
-            onPress={() => navigation.navigate('Chat', { userId: request.userId })}
+            onPress={() => handleChatNavigation(request.userId)}
           >
             <FontAwesome5 name="comment" size={16} color="#ACDCD0" />
             <Text style={styles.chatText}>Chat</Text>
@@ -1166,3 +1190,5 @@ buttonIcon: {
 });
 
 export default RoommatePostDetail;
+
+

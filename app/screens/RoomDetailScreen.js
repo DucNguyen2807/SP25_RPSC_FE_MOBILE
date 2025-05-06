@@ -80,6 +80,31 @@ const RoomDetailScreen = () => {
     navigation.goBack();
   };
 
+  const handleContactClick = async () => {
+    try {
+      const currentUserId = await AsyncStorage.getItem('userId');
+      if (!currentUserId) {
+        console.log('Không tìm thấy ID người dùng');
+        return;
+      }
+      
+      // Navigate to Chat screen with required params
+      navigation.navigate('Chat', {
+        userName: room.landlord?.landlordName || 'Landlord', 
+        avatar: { uri: room.roomImages?.[0] || 'https://via.placeholder.com/40' },  
+        userId: room.landlord?.userId, 
+        myId: currentUserId,  
+      });
+    } catch (error) {
+      console.log('Lỗi khi lấy ID người dùng:', error);
+      Alert.alert(
+        'Error',
+        'Could not open chat. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
   const handleRentRequest = async () => {
     try {
       // Validate input
@@ -622,7 +647,10 @@ const RoomDetailScreen = () => {
 
       {/* Bottom Buttons */}
       <View style={styles.bottomButtons}>
-        <TouchableOpacity style={styles.messageButton}>
+        <TouchableOpacity 
+          style={styles.messageButton}
+          onPress={handleContactClick}
+        >
           <LinearGradient
             colors={[colors.primaryLight || '#E6F4F1', colors.primaryLight || '#E6F4F1']}
             style={[styles.messageGradient, { borderColor: colors.primary }]}

@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
 import roomService from '../services/roomService';
 import postService from '../services/postService';
 import { useNavigation } from '@react-navigation/native';
@@ -40,6 +41,8 @@ const RentedScreen = ({ navigation }) => {
         setCustomerType(roomData.roomStayCustomerType);
         
         setRentedRoom({
+          landlordId : roomData.landlordId,
+          userId : roomData.userId,
           landlordName: roomData.landlordName,
           landlordAvatar: roomData.landlordAvatar || null,
           statusOfMaxRoom: roomData.statusOfMaxRoom,
@@ -88,6 +91,27 @@ const RentedScreen = ({ navigation }) => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Function to handle contact button click and navigate to Chat
+  const handleContactClick = async () => {
+    try {
+      const currentUserId = await AsyncStorage.getItem('userId');
+      if (!currentUserId) {
+        console.log('Không tìm thấy ID người dùng');
+        return;
+      }
+      
+      // Navigate to Chat screen with required params
+      navigation.navigate('Chat', {
+        userName: rentedRoom.landlordName, 
+        avatar: { uri: rentedRoom.landlordAvatar || 'https://via.placeholder.com/40' },  
+        userId: rentedRoom.userId, 
+        myId: currentUserId,  
+      });
+    } catch (error) {
+      console.log('Lỗi khi lấy ID người dùng:', error);
+    }
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -319,7 +343,10 @@ const RentedScreen = ({ navigation }) => {
                   <Text style={styles.landlordName}>{rentedRoom.landlordName}</Text>
                   <Text style={styles.landlordTitle}>Chủ trọ</Text>
                 </View>
-                <TouchableOpacity style={styles.contactButton}>
+                <TouchableOpacity 
+                  style={styles.contactButton}
+                  onPress={handleContactClick}
+                >
                   <Ionicons name="chatbubble-ellipses" size={20} color="#FFF" />
                 </TouchableOpacity>
               </View>
