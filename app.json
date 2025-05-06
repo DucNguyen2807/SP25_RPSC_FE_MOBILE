@@ -19,7 +19,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./app/assets/logoEasyRommie.png",
         "backgroundColor": "#ACDCD0"
-      }
+      },
+      "package": "com.nguyenxuanduc280703.EasyRoomie"
     },
     "web": {
       "favicon": "./app/assets/logoEasyRommie.png"
