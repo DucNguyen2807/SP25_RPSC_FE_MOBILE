@@ -35,7 +35,7 @@ const PostHistoryByOwner = ({ navigation }) => {
       if (response.isSuccess) {
         setPosts(response.data);
       } else {
-        Alert.alert('Thông báo', response.message);
+        ///Alert.alert('Thông báo', response.message);
       }
     } catch (error) {
       console.error('Error fetching posts:', error);
@@ -201,15 +201,6 @@ const PostHistoryByOwner = ({ navigation }) => {
           navigation.navigate('CreatePost');
         }}
       >
-        <LinearGradient
-          colors={['#2196F3', '#03A9F4']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.createButtonGradient}
-        >
-          <Feather name="plus" size={20} color="#FFF" />
-          <Text style={styles.createButtonText}>Tạo bài đăng mới</Text>
-        </LinearGradient>
       </TouchableOpacity>
     </View>
   );
@@ -257,12 +248,7 @@ const PostHistoryByOwner = ({ navigation }) => {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Danh sách bài đăng</Text>
         <TouchableOpacity 
-          style={styles.addButton}
-          onPress={() => {
-            navigation.navigate('CreatePost');
-          }}
-        >
-          <Feather name="plus" size={24} color="#FFF" />
+         >
         </TouchableOpacity>
       </LinearGradient>
       

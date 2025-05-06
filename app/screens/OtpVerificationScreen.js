@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   verifyButton: {
-    backgroundColor: '#6C63FF',
+    backgroundColor: '#ACDCD0',
     borderRadius: 12,
     height: 56,
     justifyContent: 'center',

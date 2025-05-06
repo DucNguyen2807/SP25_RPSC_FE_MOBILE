@@ -153,7 +153,9 @@ const PersonalInfoScreen = () => {
   const [gender, setGender] = useState('Other');
   const [dob, setDob] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneNumberError, setPhoneNumberError] = useState('');
   const [budgetRange, setBudgetRange] = useState('');
+  const [budgetRangeError, setBudgetRangeError] = useState('');
   const [preferences, setPreferences] = useState('');
   const [requirement, setRequirement] = useState('');
   const [lifeStyle, setLifeStyle] = useState('');
@@ -162,6 +164,7 @@ const PersonalInfoScreen = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [dobInput, setDobInput] = useState('');
+  const [dobError, setDobError] = useState('');
 
   // For date validation
   useEffect(() => {
@@ -177,10 +180,16 @@ const PersonalInfoScreen = () => {
   };
 
   const validateDate = (inputDate) => {
+    // Clear previous error
+    setDobError('');
+    
     const datePattern = /^(\d{2})\/(\d{2})\/(\d{4})$/;
     const match = inputDate.match(datePattern);
     
-    if (!match) return false;
+    if (!match) {
+      setDobError('Date format should be DD/MM/YYYY');
+      return false;
+    }
     
     const day = parseInt(match[1], 10);
     const month = parseInt(match[2], 10) - 1;
@@ -188,13 +197,30 @@ const PersonalInfoScreen = () => {
     
     const date = new Date(year, month, day);
     const isValidDate = date.getDate() === day && 
-                         date.getMonth() === month && 
-                         date.getFullYear() === year;
+                        date.getMonth() === month && 
+                        date.getFullYear() === year;
     
-    if (!isValidDate) return false;
+    if (!isValidDate) {
+      setDobError('Please enter a valid date');
+      return false;
+    }
     
     const today = new Date();
-    return date <= today;
+    const age = today.getFullYear() - year - 
+               (today.getMonth() < month || 
+               (today.getMonth() === month && today.getDate() < day) ? 1 : 0);
+    
+    if (age < 18) {
+      setDobError('You must be at least 18 years old');
+      return false;
+    }
+    
+    if (date > today) {
+      setDobError('Date of birth cannot be in the future');
+      return false;
+    }
+    
+    return true;
   };
 
   const handleDobInputChange = (text) => {
@@ -209,10 +235,132 @@ const PersonalInfoScreen = () => {
     
     setDobInput(value);
     
-    if (validateDate(value)) {
-      const [day, month, year] = value.split('/');
-      setDob(`${year}-${month}-${day}`);
+    if (value.length === 10) {
+      if (validateDate(value)) {
+        const [day, month, year] = value.split('/');
+        setDob(`${year}-${month}-${day}`);
+      }
+    } else {
+      setDob('');
     }
+  };
+  
+  const validatePhoneNumber = (number) => {
+    // Clear previous error
+    setPhoneNumberError('');
+    
+    // Remove any non-numeric characters
+    const cleanNumber = number.replace(/\D/g, '');
+    
+    // Check if the number is empty
+    if (!cleanNumber) {
+      setPhoneNumberError('Phone number is required');
+      return false;
+    }
+    
+    // Check if the number has at least 10 digits (common in most countries)
+    if (cleanNumber.length < 10) {
+      setPhoneNumberError('Phone number must have at least 10 digits');
+      return false;
+    }
+    
+    // Check if the number has a reasonable length (not too long)
+    if (cleanNumber.length > 15) {
+      setPhoneNumberError('Phone number is too long');
+      return false;
+    }
+    
+    return true;
+  };
+  
+  const handlePhoneNumberChange = (text) => {
+    // Allow only numbers, spaces, and common separators
+    const formatted = text.replace(/[^\d\s+()-]/g, '');
+    setPhoneNumber(formatted);
+    
+    // Validate while typing but only show errors after user stops typing
+    validatePhoneNumber(formatted);
+  };
+  
+  const validateBudgetRange = (budget) => {
+    // Clear previous error
+    setBudgetRangeError('');
+    
+    // Check if it's a single number
+    const singleNumberPattern = /^(?:(?:\d{1,3}(?:,\d{3})+)|(?:\d+))(?:,\d{3})*$/;
+    const rangePattern = /^(?:(?:\d{1,3}(?:,\d{3})+)|(?:\d+))(?:,\d{3})*-(?:(?:\d{1,3}(?:,\d{3})+)|(?:\d+))(?:,\d{3})*$/;
+    
+    // Remove commas for numerical processing
+    const cleanBudget = budget.replace(/,/g, '');
+    
+    if (singleNumberPattern.test(budget)) {
+      const value = parseInt(cleanBudget, 10);
+      if (value < 1000000) {
+        setBudgetRangeError('Budget should be at least 1,000,000');
+        return false;
+      }
+      if (value > 50000000) {
+        setBudgetRangeError('Budget seems too high');
+        return false;
+      }
+      return true;
+    } 
+    else if (rangePattern.test(budget)) {
+      const [minStr, maxStr] = cleanBudget.split('-');
+      const min = parseInt(minStr, 10);
+      const max = parseInt(maxStr, 10);
+      
+      if (min >= max) {
+        setBudgetRangeError('Minimum budget must be less than maximum');
+        return false;
+      }
+      
+      if (min < 1000000) {
+        setBudgetRangeError('Minimum budget should be at least 1,000,000');
+        return false;
+      }
+      
+      if (max > 50000000) {
+        setBudgetRangeError('Maximum budget seems too high');
+        return false;
+      }
+      
+      return true;
+    } 
+    else {
+      setBudgetRangeError('Please enter a single number or a range (min-max)');
+      return false;
+    }
+  };
+  
+  const formatCurrency = (text) => {
+    // Remove all non-digit characters except for the hyphen
+    const cleanText = text.replace(/[^\d-]/g, '');
+    
+    // Split by hyphen to handle range format
+    const parts = cleanText.split('-');
+    
+    if (parts.length > 2) {
+      // Too many hyphens, keep only the first and second parts
+      parts.splice(2);
+    }
+    
+    // Format each part with commas
+    const formattedParts = parts.map(part => {
+      if (!part) return '';
+      
+      // Convert to number and format with commas
+      return part.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    });
+    
+    // Join back with hyphen if it's a range
+    return formattedParts.join('-');
+  };
+  
+  const handleBudgetChange = (text) => {
+    const formatted = formatCurrency(text);
+    setBudgetRange(formatted);
+    validateBudgetRange(formatted);
   };
 
   const handleNextStep = () => {
@@ -221,16 +369,33 @@ const PersonalInfoScreen = () => {
     let errorMessage = '';
 
     switch (step) {
-      case 2:
+      case 1:
+        // Validate date of birth
         if (!dob) {
           isValid = false;
           errorMessage = 'Please enter a valid date of birth';
+          setDobError(errorMessage);
+        } else if (!validateDate(dobInput)) {
+          isValid = false;
+          errorMessage = dobError;
+        }
+        
+        // Validate phone number
+        if (!validatePhoneNumber(phoneNumber)) {
+          isValid = false;
+          errorMessage = phoneNumberError || 'Please enter a valid phone number';
         }
         break;
-      case 3:
-        if (!phoneNumber || phoneNumber.length < 10) {
+        
+      case 2:
+        // Validate budget range
+        if (!budgetRange) {
           isValid = false;
-          errorMessage = 'Please enter a valid phone number';
+          errorMessage = 'Please enter your budget';
+          setBudgetRangeError(errorMessage);
+        } else if (!validateBudgetRange(budgetRange)) {
+          isValid = false;
+          errorMessage = budgetRangeError;
         }
         break;
     }
@@ -461,11 +626,14 @@ const renderLifestyleDropdown = () => {
         return;
       }
       
+      // Remove commas from budget before sending to backend
+      const cleanBudget = budgetRange ? budgetRange.replace(/,/g, '') : "0";
+      
       const formValues = {
         Gender: gender,
         Dob: dob, 
         PhoneNumber: phoneNumber,
-        BudgetRange: budgetRange || "0-0",
+        BudgetRange: cleanBudget || "0",
         Preferences: preferences || "",
         Requirement: requirement || "",
         LifeStyle: lifeStyle || "",
@@ -564,7 +732,7 @@ const renderLifestyleDropdown = () => {
               <Text style={styles.inputLabel}>Date of Birth</Text>
               <View style={styles.dateInputContainer}>
                 <TextInput 
-                  style={styles.dateInput} 
+                  style={[styles.dateInput, dobError ? styles.inputError : null]} 
                   value={dobInput} 
                   onChangeText={handleDobInputChange} 
                   placeholder="DD/MM/YYYY"
@@ -579,32 +747,37 @@ const renderLifestyleDropdown = () => {
                   <Ionicons name="calendar" size={24} color="#1E88E5" />
                 </TouchableOpacity>
               </View>
+              {dobError ? <Text style={styles.errorText}>{dobError}</Text> : null}
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Phone Number</Text>
               <TextInput 
-                style={styles.input} 
+                style={[styles.input, phoneNumberError ? styles.inputError : null]} 
                 value={phoneNumber} 
-                onChangeText={setPhoneNumber} 
-                keyboardType="numeric"
+                onChangeText={handlePhoneNumberChange} 
+                keyboardType="phone-pad"
                 placeholder="Enter your phone number"
                 placeholderTextColor="#888"
               />
+              {phoneNumberError ? <Text style={styles.errorText}>{phoneNumberError}</Text> : null}
             </View>
           </View>
         );
       case 2:
         return (
           <View style={styles.inputWrapper}>
-            <Text style={styles.inputLabel}>What's your budget range?</Text>
+            <Text style={styles.stepTitle}>What's your budget?</Text>
+            <Text style={styles.stepDescription}>Enter a single amount (e.g., 5,000,000) or a range (e.g., 3,000,000-10,000,000)</Text>
             <TextInput 
-              style={styles.input} 
+              style={[styles.input, budgetRangeError ? styles.inputError : null]} 
               value={budgetRange} 
-              onChangeText={setBudgetRange}
-              placeholder="e.g., 500-1000"
+              onChangeText={handleBudgetChange}
+              placeholder="e.g., 5,000,000"
               placeholderTextColor="#888"
+              keyboardType="numeric"
             />
+            {budgetRangeError ? <Text style={styles.errorText}>{budgetRangeError}</Text> : null}
           </View>
         );
         case 3:
@@ -640,7 +813,7 @@ const renderLifestyleDropdown = () => {
   };
 
   return (
-    <LinearGradient colors={['#1E88E5', '#42A5F5', '#64B5F6']} style={styles.container}>
+    <View style={[styles.container, { backgroundColor: '#ACDCD0' }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
         style={styles.keyboardAvoidView}
@@ -736,7 +909,7 @@ const renderLifestyleDropdown = () => {
               }}
               maxDate={new Date().toISOString().split('T')[0]}
               theme={{
-                backgroundColor: '#ffffff',
+                backgroundColor: '#ACDCD0',
                 calendarBackground: '#ffffff',
                 textSectionTitleColor: '#1E88E5',
                 selectedDayBackgroundColor: '#1E88E5',
@@ -749,7 +922,7 @@ const renderLifestyleDropdown = () => {
           </View>
         </View>
       </Modal>
-    </LinearGradient>
+      </View>
   );
 };
 const additionalStyles = {

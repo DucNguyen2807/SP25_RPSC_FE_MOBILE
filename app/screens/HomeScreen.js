@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, Text, TextInput, TouchableOpacity, FlatList, 
   Image, StyleSheet, Dimensions, ActivityIndicator, Modal 
 } from 'react-native';
-import { FontAwesome5 } from '@expo/vector-icons';
+import { FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { API_BASE_URL } from '../constants/config';
@@ -13,6 +13,7 @@ const { width } = Dimensions.get('window');
 const HomeScreen = () => {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -31,16 +32,31 @@ const HomeScreen = () => {
   const [totalPosts, setTotalPosts] = useState(0);
   const [pageSize, setPageSize] = useState(5);
   
+  // Add this to prevent multiple load more requests
+  const [isLoadingMoreInProgress, setIsLoadingMoreInProgress] = useState(false);
+  const onEndReachedCalledDuringMomentum = useRef(true);
+  
   const navigation = useNavigation();
   const [imageLoadErrors, setImageLoadErrors] = useState({});
+
+  const themeColors = {
+    primary: '#ACDCD0',
+    secondary: '#6D5BA3',
+    accent: '#6D5BA3',
+  };
 
   useEffect(() => {
     fetchRooms();
   }, [filters, currentPage]);
 
-  const fetchRooms = async () => {
+  const fetchRooms = async (loadMore = false) => {
     try {
-      setLoading(true);
+      if (loadMore) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
+
       // Build query parameters
       const queryParams = new URLSearchParams();
       if (filters.minPrice) queryParams.append('minPrice', filters.minPrice);
@@ -58,7 +74,18 @@ const HomeScreen = () => {
       }
       const data = await response.json();
       
-      setRooms(data.rooms);
+      // Ensure we have unique roomIds by using a Map
+      const processedRooms = data.rooms.map(room => ({
+        ...room,
+        // Generate a unique identifier if roomId is duplicated
+        uniqueId: `${room.roomId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      }));
+      
+      if (loadMore) {
+        setRooms(prev => [...prev, ...processedRooms]);
+      } else {
+        setRooms(processedRooms);
+      }
       setTotalPosts(data.totalActivePosts);
       setTotalPages(Math.ceil(data.totalFilteredRooms / pageSize));
       
@@ -67,6 +94,8 @@ const HomeScreen = () => {
       console.error('Error fetching rooms:', err);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
+      setIsLoadingMoreInProgress(false);
     }
   };
 
@@ -84,16 +113,17 @@ const HomeScreen = () => {
     setShowFilterModal(false);
   };
 
-  // Pagination handlers
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(prev => prev + 1);
+  // Handle load more when reaching end of list - Fixed to prevent continuous loading
+  const handleLoadMore = () => {
+    // Additional check to prevent continuous loading when already at the last page
+    if (currentPage >= totalPages || loadingMore || loading || isLoadingMoreInProgress) {
+      return;
     }
-  };
-
-  const goToPrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(prev => prev - 1);
+    
+    if (!onEndReachedCalledDuringMomentum.current) {
+      setIsLoadingMoreInProgress(true);
+      setCurrentPage(prev => prev + 1);
+      onEndReachedCalledDuringMomentum.current = true;
     }
   };
 
@@ -142,6 +172,69 @@ const HomeScreen = () => {
 
   const handleImageError = (roomId) => {
     setImageLoadErrors(prev => ({ ...prev, [roomId]: true }));
+  };
+
+  // Footer component for FlatList with loading indicator
+  const renderFooter = () => {
+    if (!loadingMore) return null;
+    
+    return (
+      <View style={styles.loadingMoreContainer}>
+        <ActivityIndicator size="small" color={themeColors.accent} />
+        <Text style={styles.loadingMoreText}>Loading more...</Text>
+      </View>
+    );
+  };
+
+  // Pagination controls component
+  const PaginationControls = () => {
+    // Only show if we have more than one page
+    if (totalPages <= 1) return null;
+    
+    return (
+      <View style={styles.paginationContainer}>
+        <Text style={styles.paginationText}>
+          {totalPosts > 0 ? `Showing ${Math.min((currentPage - 1) * pageSize + 1, totalPosts)}-${Math.min(currentPage * pageSize, totalPosts)} of ${totalPosts}` : 'No results'}
+        </Text>
+        <View style={styles.paginationControls}>
+          <TouchableOpacity 
+            style={[styles.paginationButton, currentPage === 1 && styles.paginationButtonDisabled]}
+            onPress={() => {
+              if (currentPage > 1) {
+                setCurrentPage(prev => prev - 1);
+              }
+            }}
+            disabled={currentPage === 1}
+          >
+            <MaterialCommunityIcons 
+              name="chevron-left" 
+              size={22} 
+              color={currentPage === 1 ? '#CBD5E1' : themeColors.accent} 
+            />
+          </TouchableOpacity>
+          
+          <View style={styles.paginationPageIndicator}>
+            <Text style={styles.paginationPageText}>{currentPage} / {totalPages}</Text>
+          </View>
+          
+          <TouchableOpacity 
+            style={[styles.paginationButton, currentPage === totalPages && styles.paginationButtonDisabled]}
+            onPress={() => {
+              if (currentPage < totalPages) {
+                setCurrentPage(prev => prev + 1);
+              }
+            }}
+            disabled={currentPage === totalPages}
+          >
+            <MaterialCommunityIcons 
+              name="chevron-right" 
+              size={22} 
+              color={currentPage === totalPages ? '#CBD5E1' : themeColors.accent} 
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
   };
 
   const renderRoomCard = ({ item }) => (
@@ -241,33 +334,6 @@ const HomeScreen = () => {
     </TouchableOpacity>
   );
 
-  // Render pagination controls
-  const renderPagination = () => (
-    <View style={styles.paginationContainer}>
-      <TouchableOpacity 
-        style={[styles.paginationButton, currentPage === 1 && styles.paginationButtonDisabled]}
-        onPress={goToPrevPage}
-        disabled={currentPage === 1}
-      >
-        <FontAwesome5 name="chevron-left" size={16} color={currentPage === 1 ? "#CCC" : "#6D5BA3"} />
-      </TouchableOpacity>
-      
-      <View style={styles.paginationInfo}>
-        <Text style={styles.paginationText}>
-          Page {currentPage} of {totalPages}
-        </Text>
-      </View>
-      
-      <TouchableOpacity 
-        style={[styles.paginationButton, currentPage === totalPages && styles.paginationButtonDisabled]}
-        onPress={goToNextPage}
-        disabled={currentPage === totalPages}
-      >
-        <FontAwesome5 name="chevron-right" size={16} color={currentPage === totalPages ? "#CCC" : "#6D5BA3"} />
-      </TouchableOpacity>
-    </View>
-  );
-
   // Filter Modal
   const renderFilterModal = () => (
     <Modal
@@ -317,9 +383,9 @@ const HomeScreen = () => {
 
           {activeFilter === 'roomType' && (
             <View style={styles.filterOptionsList}>
-              {['Studio', 'Single Room', 'Double Room', 'Apartment'].map((type) => (
+              {['Studio', 'Single Room', 'Double Room', 'Apartment'].map((type, index) => (
                 <TouchableOpacity
-                  key={type}
+                  key={`roomType-${index}`}
                   style={[
                     styles.filterOptionItem,
                     filters.roomTypeName === type && styles.filterOptionSelected
@@ -342,9 +408,9 @@ const HomeScreen = () => {
               {[
                 'District 1', 'District 2', 'District 3', 'Binh Thanh', 
                 'Go Vap', 'Phu Nhuan', 'Thu Duc'
-              ].map((district) => (
+              ].map((district, index) => (
                 <TouchableOpacity
-                  key={district}
+                  key={`district-${index}`}
                   style={[
                     styles.filterOptionItem,
                     filters.district === district && styles.filterOptionSelected
@@ -364,9 +430,9 @@ const HomeScreen = () => {
 
           {activeFilter === 'amenities' && (
             <View style={styles.filterOptionsList}>
-              {['WiFi', 'Cleaning Service', 'Air Conditioning', 'Parking'].map((amenity) => (
+              {['WiFi', 'Cleaning Service', 'Air Conditioning', 'Parking'].map((amenity, index) => (
                 <TouchableOpacity
-                  key={amenity}
+                  key={`amenity-${index}`}
                   style={[
                     styles.filterOptionItem,
                     filters.amenityIds.includes(amenity) && styles.filterOptionSelected
@@ -418,7 +484,7 @@ const HomeScreen = () => {
     </Modal>
   );
 
-  if (loading) {
+  if (loading && !loadingMore) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#6D5BA3" />
@@ -430,7 +496,7 @@ const HomeScreen = () => {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={fetchRooms}>
+        <TouchableOpacity style={styles.retryButton} onPress={() => fetchRooms(false)}>
           <Text style={styles.retryButtonText}>Retry</Text>
         </TouchableOpacity>
       </View>
@@ -457,12 +523,6 @@ const HomeScreen = () => {
               onChangeText={setSearchQuery}
             />
           </View>
-          <TouchableOpacity style={styles.notificationButton}>
-            <FontAwesome5 name="bell" size={20} color="#FFF" />
-            <View style={styles.notificationBadge}>
-              <Text style={styles.notificationBadgeText}>2</Text>
-            </View>
-          </TouchableOpacity>
         </View>
       </LinearGradient>
 
@@ -478,7 +538,7 @@ const HomeScreen = () => {
             { icon: 'wifi', text: 'Amenities', filter: 'amenities' },
             { icon: 'map', text: 'Map', filter: 'map' }
           ]}
-          keyExtractor={(item) => item.filter}
+          keyExtractor={(item, index) => `filter-${item.filter}-${index}`}
           renderItem={({ item }) => (
             <TouchableOpacity 
               style={styles.filterOption}
@@ -519,14 +579,24 @@ const HomeScreen = () => {
       ) : (
         <FlatList
           data={rooms}
-          keyExtractor={(item) => item.roomId}
+          keyExtractor={(item) => item.uniqueId || `room-${item.roomId}-${Math.random().toString(36).substring(2, 9)}`}
           renderItem={renderRoomCard}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContainer}
-          onRefresh={fetchRooms}
+          onRefresh={() => fetchRooms(false)}
           refreshing={loading}
-          ListFooterComponent={renderPagination}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          onMomentumScrollBegin={() => { onEndReachedCalledDuringMomentum.current = false; }}
+          ListFooterComponent={renderFooter}
         />
+      )}
+
+      {/* Pagination Controls - fixed at bottom */}
+      {!loading && !error && rooms.length > 0 && (
+        <View style={styles.paginationWrapper}>
+          <PaginationControls />
+        </View>
       )}
 
       {renderFilterModal()}
@@ -535,243 +605,446 @@ const HomeScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F9FA' },
-  header: { paddingTop: 40, paddingBottom: 16 },
-  headerContent: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 },
+  container: {
+    flex: 1,
+    backgroundColor: '#F5F5F5',
+  },
+  header: {
+    paddingTop: 50,
+    paddingHorizontal: 15,
+    paddingBottom: 15,
+    borderBottomLeftRadius: 15,
+    borderBottomRightRadius: 15,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   searchContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFF',
     borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    marginRight: 12,
+    paddingHorizontal: 12,
+    height: 48,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 2
+    elevation: 3,
+    marginRight: 12,
   },
-  searchIcon: { marginRight: 8 },
-  searchInput: { flex: 1, fontSize: 14, color: '#333' },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    height: 48,
+    fontSize: 15,
+    color: '#333',
+  },
   notificationButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: '#6D5BA3',
+    borderRadius: 12,
+    width: 48,
+    height: 48,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center'
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
   notificationBadge: {
     position: 'absolute',
     top: 8,
     right: 8,
     backgroundColor: '#FF385C',
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
-    justifyContent: 'center',
+    borderRadius: 10,
+    width: 20,
+    height: 20,
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: '#FFF'
+    justifyContent: 'center',
   },
-  notificationBadgeText: { color: '#FFF', fontSize: 10, fontWeight: 'bold' },
-  filterContainer: { paddingVertical: 12 },
-  filterScroll: { paddingHorizontal: 16 },
+  notificationBadgeText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  filterContainer: {
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    backgroundColor: '#FFF',
+  },
+  filterScroll: {
+    paddingHorizontal: 15,
+  },
   filterOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF',
-    paddingVertical: 8,
+    justifyContent: 'center',
+    backgroundColor: '#F3F4F6',
     paddingHorizontal: 12,
-    borderRadius: 12,
-    marginRight: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
   },
-  filterOptionText: { color: '#6D5BA3', fontSize: 13, fontWeight: '600', marginLeft: 6 },
-  
-  // Cards
-  listContainer: { padding: 16, paddingBottom: 24 },
+  filterOptionText: {
+    marginLeft: 6,
+    color: '#6D5BA3',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  listContainer: {
+    padding: 15,
+    paddingBottom: 80, // Added extra padding for pagination control
+  },
   card: {
     backgroundColor: '#FFF',
-    borderRadius: 16,
-    marginBottom: 16,
+    borderRadius: 15,
+    marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
-    overflow: 'hidden'
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 5,
+    overflow: 'hidden',
   },
-  imageContainer: { position: 'relative', height: 180 },
-  roomImage: { width: '100%', height: '100%' },
+  featuredLabelContainer: {
+    position: 'absolute',
+    top: 12,
+    left: 0,
+    zIndex: 10,
+  },
+  featuredLabel: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderTopRightRadius: 15,
+    borderBottomRightRadius: 15,
+  },
+  featuredLabelText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  imageContainer: {
+    position: 'relative',
+    height: 180,
+    width: '100%',
+  },
+  roomImage: {
+    width: '100%',
+    height: '100%',
+  },
   favoriteButton: {
     position: 'absolute',
     top: 12,
     right: 12,
-    backgroundColor: '#FFF',
-    borderRadius: 20,
-    width: 36,
-    height: 36,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 3
-  },
-  featuredLabelContainer: { position: 'absolute', top: 12, left: 0, zIndex: 1 },
-  featuredLabel: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderTopRightRadius: 12,
-    borderBottomRightRadius: 12
-  },
-  featuredLabelText: { color: '#FFF', fontSize: 12, fontWeight: 'bold' },
-  roomContent: { padding: 12 },
-  userInfo: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  avatar: { width: 36, height: 36, borderRadius: 18, marginRight: 8 },
-  userDetails: { flex: 1 },
-  userName: { fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 2 },
-  ratingContainer: { flexDirection: 'row', alignItems: 'center' },
-  rating: { fontSize: 12, color: '#333', fontWeight: '600', marginLeft: 4 },
-  reviews: { fontSize: 11, color: '#666', marginLeft: 4 },
-  badgeContainer: { marginLeft: 'auto' },
-  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10 },
-  badgeText: { color: '#FFF', fontSize: 11, fontWeight: '600' },
-  roomInfo: { marginTop: 4 },
-  price: { fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 6 },
-  duration: { fontSize: 13, color: '#666', fontWeight: 'normal' },
-  description: { fontSize: 13, color: '#666', marginBottom: 8, lineHeight: 18 },
-  locationContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  location: { fontSize: 13, color: '#666', marginLeft: 6, flex: 1 },
-  
-  // Pagination
-  paginationContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#EEEEEE',
-    marginTop: 8
-  },
-  paginationButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F0F0F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  roomContent: {
+    padding: 15,
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  userDetails: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#1F2937',
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  rating: {
+    marginLeft: 4,
+    fontSize: 12,
+    color: '#4B5563',
+    fontWeight: '500',
+  },
+  reviews: {
+    marginLeft: 4,
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  badgeContainer: {
+    alignItems: 'flex-end',
+  },
+  badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  badgeText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  roomInfo: {
+    marginTop: 8,
+  },
+  price: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#6D5BA3',
+    marginBottom: 6,
+  },
+  duration: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: 'normal',
+  },
+  description: {
+    fontSize: 14,
+    color: '#4B5563',
+    lineHeight: 20,
+    marginBottom: 10,
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  location: {
+    marginLeft: 6,
+    color: '#6B7280',
+    fontSize: 13,
+  },
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1
   },
-  paginationButtonDisabled: { backgroundColor: '#F8F8F8', shadowOpacity: 0, elevation: 0 },
-  paginationInfo: { alignItems: 'center' },
-  paginationText: { fontSize: 13, fontWeight: '600', color: '#333' },
-  
-  // Modal
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#EF4444',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: '#6D5BA3',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  noResultsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  noResultsText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginTop: 16,
+  },
+  noResultsSubText: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginTop: 8,
+    marginBottom: 24,
+  },
+  resetFiltersButton: {
+    backgroundColor: '#6D5BA3',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  resetFiltersButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '500',
+  },
   modalContainer: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.5)'
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
     backgroundColor: '#FFF',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    maxHeight: '70%'
+    padding: 20,
+    maxHeight: '80%',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16
+    marginBottom: 20,
   },
-  modalTitle: { fontSize: 16, fontWeight: 'bold', color: '#333' },
-  filterContent: { marginBottom: 16 },
-  inputContainer: { marginBottom: 12 },
-  filterLabel: { fontSize: 14, color: '#333', marginBottom: 6 },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1F2937',
+  },
+  filterContent: {
+    marginBottom: 20,
+  },
+  inputContainer: {
+    marginBottom: 15,
+  },
+  filterLabel: {
+    fontSize: 14,
+    color: '#4B5563',
+    marginBottom: 6,
+  },
   filterInput: {
     borderWidth: 1,
-    borderColor: '#DDD',
-    borderRadius: 10,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 14
+    paddingVertical: 10,
+    fontSize: 15,
   },
-  filterOptionsList: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 },
+  filterOptionsList: {
+    marginBottom: 20,
+  },
   filterOptionItem: {
-    backgroundColor: '#F0F0F0',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginRight: 8,
-    marginBottom: 8
-  },
-  filterOptionSelected: { backgroundColor: '#6D5BA3' },
-  filterOptionText: { fontSize: 13, color: '#666' },
-  filterOptionTextSelected: { color: '#FFF', fontWeight: '600' },
-  modalFooter: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
-  resetButton: {
-    flex: 1,
-    paddingVertical: 12,
     borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 10,
+  },
+  filterOptionSelected: {
+    backgroundColor: '#EEEAFF',
     borderColor: '#6D5BA3',
-    borderRadius: 10,
-    marginRight: 8,
-    alignItems: 'center'
   },
-  resetButtonText: { color: '#6D5BA3', fontSize: 14, fontWeight: '600' },
-  applyButton: {
-    flex: 1,
+  filterOptionText: {
+    fontSize: 15,
+    color: '#4B5563',
+  },
+  filterOptionTextSelected: {
+    color: '#6D5BA3',
+    fontWeight: '500',
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  resetButton: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
     paddingVertical: 12,
-    backgroundColor: '#6D5BA3',
-    borderRadius: 10,
-    alignItems: 'center'
-  },
-  applyButtonText: { color: '#FFF', fontSize: 14, fontWeight: '600' },
-  
-  // Empty states
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  errorText: { fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 16 },
-  retryButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: '#6D5BA3',
-    borderRadius: 10,
-    alignItems: 'center'
-  },
-  retryButtonText: { color: '#FFF', fontSize: 14, fontWeight: '600' },
-  noResultsContainer: {
+    paddingHorizontal: 15,
     flex: 1,
-    justifyContent: 'center',
+    marginRight: 10,
     alignItems: 'center',
-    padding: 24
   },
-  noResultsText: { fontSize: 18, fontWeight: 'bold', color: '#333', marginTop: 12, marginBottom: 6 },
-  noResultsSubText: { fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 16 },
-  resetFiltersButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+  resetButtonText: {
+    color: '#4B5563',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  applyButton: {
     backgroundColor: '#6D5BA3',
-    borderRadius: 10,
-    alignItems: 'center'
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    flex: 1,
+    marginLeft: 10,
+    alignItems: 'center',
   },
-  resetFiltersButtonText: { color: '#FFF', fontSize: 14, fontWeight: '600' }
+  applyButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  loadingMoreContainer: {
+    padding: 20,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  loadingMoreText: {
+    marginLeft: 10,
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  paginationWrapper: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFF',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  paginationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  paginationText: {
+    fontSize: 14,
+    color: '#4B5563',
+  },
+  paginationControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  paginationButton: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  paginationButtonDisabled: {
+    backgroundColor: '#F9FAFB',
+  },
+  paginationPageIndicator: {
+    paddingHorizontal: 12,
+  },
+  paginationPageText: {
+    fontSize: 14,
+    color: '#4B5563',
+    fontWeight: '500',
+  }
 });
 
 export default HomeScreen;

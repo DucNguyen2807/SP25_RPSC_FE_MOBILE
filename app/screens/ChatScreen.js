@@ -84,7 +84,7 @@ newConnection.on('ReceiveMessage', (senderId, receiverId, newMessage, clientTime
   }
 });
       } catch (err) {
-        console.error('SignalR Connection Error:', err);
+        //console.error('SignalR Connection Error:', err);
       }
     };
 
@@ -102,9 +102,9 @@ newConnection.on('ReceiveMessage', (senderId, receiverId, newMessage, clientTime
   const handleSendMessage = async () => {
     if (!message.trim()) return;
     
-    console.log('Sending message:', message);
-    console.log('Receiver ID (userId):', userId);
-    console.log('Sender ID (myId):', myId); // Đảm bảo biến myId được định nghĩa ở ngoài
+    // console.log('Sending message:', message);
+    // console.log('Receiver ID (userId):', userId);
+    // console.log('Sender ID (myId):', myId); // Đảm bảo biến myId được định nghĩa ở ngoài
     
     const messageToSend = message; // Store message in a temporary variable
     setMessage(''); // Clear input immediately

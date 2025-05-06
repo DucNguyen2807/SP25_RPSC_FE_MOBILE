@@ -47,7 +47,7 @@ const MessageScreen = () => {
             setMessages(data);
           }
         } catch (error) {
-          console.error('Failed to load chat history:', error);
+          //console.error('Failed to load chat history:', error);
         }
       };
       
@@ -89,7 +89,7 @@ const MessageScreen = () => {
           setMessages(data);
         }
       } catch (error) {
-        console.error('Failed to load chat history:', error);
+        //console.error('Failed to load chat history:', error);
       }
     };
   

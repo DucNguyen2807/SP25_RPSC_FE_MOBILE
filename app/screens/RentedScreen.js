@@ -71,7 +71,7 @@ const RentedScreen = ({ navigation }) => {
         console.warn('Failed to fetch room data:', roomResult.message || 'Unknown error');
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
+      //console.error('Error fetching data:', error);
       // You might want to show an error message to the user here
     } finally {
       setLoading(false);
