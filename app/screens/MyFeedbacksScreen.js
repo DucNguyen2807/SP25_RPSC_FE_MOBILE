@@ -37,6 +37,8 @@ const MyFeedbacksScreen = ({ navigation }) => {
   const [editDescription, setEditDescription] = useState('');
   const [editImages, setEditImages] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [receivedFeedbacks, setReceivedFeedbacks] = useState([]);
+  const [loadingReceived, setLoadingReceived] = useState(false);
 
   const fetchFeedbacks = async () => {
     try {
@@ -65,9 +67,34 @@ const MyFeedbacksScreen = ({ navigation }) => {
     }
   };
 
+  const fetchReceivedFeedbacks = async () => {
+    try {
+      setLoadingReceived(true);
+      const token = await AsyncStorage.getItem('token');
+      if (!token) throw new Error('No token found');
+      const response = await fetch(`${API_BASE_URL}/feedback/my-received-feedbacks`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'accept': '*/*'
+        }
+      });
+      const data = await response.json();
+      if (data.isSuccess) {
+        setReceivedFeedbacks(data.data);
+      } else {
+        throw new Error(data.message || 'Failed to fetch received feedbacks');
+      }
+    } catch (error) {
+      console.error('Error fetching received feedbacks:', error);
+    } finally {
+      setLoadingReceived(false);
+    }
+  };
+
   useEffect(() => {
     fetchFeedbacks();
-  }, []);
+    if (activeTab === 'received') fetchReceivedFeedbacks();
+  }, [activeTab]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -261,6 +288,8 @@ const MyFeedbacksScreen = ({ navigation }) => {
         return feedbacks.filter(feedback => feedback.type === 'Roommate');
       case 'rooms':
         return feedbacks.filter(feedback => feedback.type === 'Room');
+      case 'received':
+        return receivedFeedbacks;
       default:
         return feedbacks;
     }
@@ -370,49 +399,51 @@ const MyFeedbacksScreen = ({ navigation }) => {
       </LinearGradient>
 
       {/* Tabs */}
-      <View style={styles.tabsContainer}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'all' && styles.activeTab]}
-          onPress={() => setActiveTab('all')}
-        >
-          <MaterialIcons 
-            name="format-list-bulleted" 
-            size={20} 
-            color={activeTab === 'all' ? colors.primary : colors.text.secondary} 
-            style={styles.tabIcon}
-          />
-          <Text style={[styles.tabText, activeTab === 'all' && styles.activeTabText]}>
-            Tất cả
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'roommates' && styles.activeTab]}
-          onPress={() => setActiveTab('roommates')}
-        >
-          <Ionicons 
-            name="people" 
-            size={20} 
-            color={activeTab === 'roommates' ? colors.primary : colors.text.secondary} 
-            style={styles.tabIcon}
-          />
-          <Text style={[styles.tabText, activeTab === 'roommates' && styles.activeTabText]}>
-            Người ở ghép
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'rooms' && styles.activeTab]}
-          onPress={() => setActiveTab('rooms')}
-        >
-          <Ionicons 
-            name="home" 
-            size={20} 
-            color={activeTab === 'rooms' ? colors.primary : colors.text.secondary} 
-            style={styles.tabIcon}
-          />
-          <Text style={[styles.tabText, activeTab === 'rooms' && styles.activeTabText]}>
-            Phòng đã ở
-          </Text>
-        </TouchableOpacity>
+      <View style={styles.tabsWrapper}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsContainer}>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'roommates' && styles.activeTab]}
+            onPress={() => setActiveTab('roommates')}
+          >
+            <Ionicons 
+              name="people" 
+              size={20} 
+              color={activeTab === 'roommates' ? colors.primary : colors.text.secondary} 
+              style={styles.tabIcon}
+            />
+            <Text style={[styles.tabText, activeTab === 'roommates' && styles.activeTabText]}>
+              Người ở ghép
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'rooms' && styles.activeTab]}
+            onPress={() => setActiveTab('rooms')}
+          >
+            <Ionicons 
+              name="home" 
+              size={20} 
+              color={activeTab === 'rooms' ? colors.primary : colors.text.secondary} 
+              style={styles.tabIcon}
+            />
+            <Text style={[styles.tabText, activeTab === 'rooms' && styles.activeTabText]}>
+              Phòng đã ở
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'received' && styles.activeTab]}
+            onPress={() => setActiveTab('received')}
+          >
+            <MaterialIcons 
+              name="inbox" 
+              size={20} 
+              color={activeTab === 'received' ? colors.primary : colors.text.secondary} 
+              style={styles.tabIcon}
+            />
+            <Text style={[styles.tabText, activeTab === 'received' && styles.activeTabText]}>
+              Đánh giá nhận được
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
       </View>
 
       <ScrollView
@@ -426,20 +457,65 @@ const MyFeedbacksScreen = ({ navigation }) => {
           />
         }
       >
-        {filteredFeedbacks.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <MaterialIcons name="rate-review" size={64} color={colors.gray[400]} />
-            <Text style={styles.emptyText}>
-              {activeTab === 'all' 
-                ? 'Bạn chưa có đánh giá nào'
-                : activeTab === 'roommates'
-                ? 'Bạn chưa có đánh giá nào về người ở ghép'
-                : 'Bạn chưa có đánh giá nào về phòng đã ở'
-              }
-            </Text>
-          </View>
+        {activeTab === 'received' ? (
+          loadingReceived ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Text style={styles.loadingText}>Đang tải đánh giá nhận được...</Text>
+            </View>
+          ) : receivedFeedbacks.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <MaterialIcons name="inbox" size={64} color={colors.gray[400]} />
+              <Text style={styles.emptyText}>Bạn chưa nhận được đánh giá nào</Text>
+            </View>
+          ) : (
+            receivedFeedbacks.map((feedback, idx) => (
+              <View key={idx} style={styles.feedbackCard}>
+                <View style={styles.cardHeader}>
+                  <View style={styles.headerLeft}>
+                    <View style={styles.avatarContainer}>
+                      <Image source={{ uri: feedback.reviewerAvatar }} style={styles.cardImage} />
+                      <MaterialIcons name="person" size={16} color={colors.white} style={styles.typeIcon} />
+                    </View>
+                    <View style={styles.headerInfo}>
+                      <Text style={styles.cardTitle} numberOfLines={2}>{feedback.reviewerName}</Text>
+                      <Text style={styles.cardSubtitle}>{feedback.type === 'Roommate' ? 'Người ở ghép' : 'Phòng'}</Text>
+                    </View>
+                  </View>
+                </View>
+                <View style={styles.cardContent}>
+                  <View style={styles.ratingContainer}>
+                    {renderStars(feedback.rating)}
+                    <Text style={styles.dateText}>{formatDate(feedback.createdDate)}</Text>
+                  </View>
+                  <Text style={styles.description}>{feedback.description}</Text>
+                  {feedback.imageUrls && feedback.imageUrls.length > 0 && (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagesContainer}>
+                      {feedback.imageUrls.map((img, i) => (
+                        <Image key={i} source={{ uri: img }} style={styles.feedbackImage} />
+                      ))}
+                    </ScrollView>
+                  )}
+                </View>
+              </View>
+            ))
+          )
         ) : (
-          filteredFeedbacks.map(renderFeedbackCard)
+          filteredFeedbacks.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <MaterialIcons name="rate-review" size={64} color={colors.gray[400]} />
+              <Text style={styles.emptyText}>
+                {activeTab === 'all' 
+                  ? 'Bạn chưa có đánh giá nào'
+                  : activeTab === 'roommates'
+                  ? 'Bạn chưa có đánh giá nào về người ở ghép'
+                  : 'Bạn chưa có đánh giá nào về phòng đã ở'
+                }
+              </Text>
+            </View>
+          ) : (
+            filteredFeedbacks.map(renderFeedbackCard)
+          )
         )}
       </ScrollView>
 
@@ -605,10 +681,9 @@ const styles = StyleSheet.create({
   headerRight: {
     width: 40,
   },
+  tabsWrapper: { marginHorizontal: spacing.md, marginVertical: spacing.md },
   tabsContainer: {
     flexDirection: 'row',
-    marginHorizontal: spacing.md,
-    marginVertical: spacing.md,
     backgroundColor: colors.white,
     borderRadius: borderRadius.lg,
     elevation: 2,
@@ -618,16 +693,21 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   tab: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    marginRight: spacing.md,
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
+    borderRadius: borderRadius.md,
+    backgroundColor: 'transparent',
   },
   activeTab: {
     borderBottomColor: colors.primary,
+    backgroundColor: colors.primaryLight || '#E6F4F1',
+    borderRadius: borderRadius.md,
   },
   tabIcon: {
     marginRight: spacing.xs,
@@ -639,6 +719,7 @@ const styles = StyleSheet.create({
   },
   activeTabText: {
     color: colors.primary,
+    fontWeight: '700',
   },
   content: {
     flex: 1,
