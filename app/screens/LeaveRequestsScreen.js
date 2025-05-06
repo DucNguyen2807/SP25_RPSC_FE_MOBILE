@@ -20,6 +20,7 @@ import { vi } from 'date-fns/locale';
 import roomStayService from '../services/roomStayService';
 import { useAuth } from '../context/AuthContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { colors } from '../theme/theme';
 
 const LeaveRequestsScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
@@ -67,13 +68,13 @@ const LeaveRequestsScreen = ({ navigation }) => {
   const getStatusColor = (status) => {
     switch (status) {
       case 0:
-        return '#FFA000';
+        return colors.warning;
       case 1:
-        return '#4CAF50';
+        return colors.success;
       case 2:
-        return '#F44336';
+        return colors.error;
       default:
-        return '#666';
+        return colors.text.secondary;
     }
   };
 
@@ -111,7 +112,7 @@ const LeaveRequestsScreen = ({ navigation }) => {
     if (loading) {
       return (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#00A67E" />
+          <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>Đang tải danh sách yêu cầu...</Text>
         </View>
       );
@@ -121,7 +122,7 @@ const LeaveRequestsScreen = ({ navigation }) => {
       <ScrollView style={styles.listContainer} contentContainerStyle={{ paddingBottom: insets.bottom }}>
         {requests.length === 0 ? (
           <View style={styles.emptyState}>
-            <MaterialIcons name="assignment" size={64} color="#00A67E" />
+            <MaterialIcons name="assignment" size={64} color={colors.primary} />
             <Text style={styles.emptyStateText}>Không có yêu cầu nào</Text>
           </View>
         ) : (
@@ -147,13 +148,13 @@ const LeaveRequestsScreen = ({ navigation }) => {
                   {/* Request Details */}
                   <View style={styles.requestDetails}>
                     <View style={styles.detailRow}>
-                      <MaterialIcons name="calendar-today" size={16} color="#00A67E" />
+                      <MaterialIcons name="calendar-today" size={16} color={colors.primary} />
                       <Text style={styles.detailText}>
                         Ngày yêu cầu: {formatDate(request.dateRequest)}
                       </Text>
                     </View>
                     <View style={styles.detailRow}>
-                      <MaterialIcons name="info" size={16} color="#00A67E" />
+                      <MaterialIcons name="info" size={16} color={colors.primary} />
                       <Text style={[styles.detailText, { color: getStatusColor(request.status) }]}>
                         Trạng thái: {getStatusText(request.status)}
                       </Text>
@@ -169,12 +170,6 @@ const LeaveRequestsScreen = ({ navigation }) => {
                       >
                         <Text style={styles.actionButtonText}>Chấp nhận</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity 
-                        style={[styles.actionButton, styles.rejectButton]}
-                        onPress={() => handleRejectRequest(request.cmoid)}
-                      >
-                        <Text style={styles.actionButtonText}>Từ chối</Text>
-                      </TouchableOpacity>
                     </View>
                   )}
                 </LinearGradient>
@@ -188,11 +183,11 @@ const LeaveRequestsScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#00A67E" translucent />
+      <StatusBar barStyle="light-content" backgroundColor={colors.primary} translucent />
       
       {/* Header */}
       <LinearGradient
-        colors={['#00A67E', '#00A67E']}
+        colors={[colors.primary, colors.primary]}
         style={[
           styles.header,
           { 
@@ -204,7 +199,7 @@ const LeaveRequestsScreen = ({ navigation }) => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <MaterialIcons name="arrow-back" size={24} color="#FFF" />
+          <MaterialIcons name="arrow-back" size={24} color={colors.white} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Yêu cầu rời phòng</Text>
         <View style={styles.headerPlaceholder} />
@@ -219,18 +214,18 @@ const LeaveRequestsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background,
   },
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#00A67E',
+    color: colors.text.primary,
   },
   header: {
     flexDirection: 'row',
@@ -247,7 +242,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#FFF',
+    color: colors.white,
     flex: 1,
     textAlign: 'center',
   },
@@ -268,7 +263,7 @@ const styles = StyleSheet.create({
   emptyStateText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#666',
+    color: colors.text.secondary,
     textAlign: 'center',
   },
   requestCard: {
@@ -305,11 +300,11 @@ const styles = StyleSheet.create({
   memberName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: colors.text.primary,
   },
   memberPhone: {
     fontSize: 14,
-    color: '#666',
+    color: colors.text.secondary,
     marginTop: 4,
   },
   requestDetails: {
@@ -325,7 +320,7 @@ const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: 14,
-    color: '#333',
+    color: colors.text.primary,
     marginLeft: 8,
   },
   actionButtons: {
@@ -341,13 +336,13 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   acceptButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: colors.success,
   },
   rejectButton: {
-    backgroundColor: '#F44336',
+    backgroundColor: colors.error,
   },
   actionButtonText: {
-    color: '#FFF',
+    color: colors.white,
     fontSize: 14,
     fontWeight: '600',
   },
