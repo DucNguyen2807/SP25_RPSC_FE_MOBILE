@@ -410,8 +410,7 @@ const HomeScreen = () => {
 
           {activeFilter === 'roomType' && (
             <View style={styles.filterOptionsList}>
-              {['Studio', 'Phòng đơn', 'Phòng đôi', 'Căn hộ'].map((type) => (
-              {['Studio', 'Single Room', 'Double Room', 'Apartment'].map((type, index) => (
+              {['Studio', 'Phòng đơn', 'Phòng đôi', 'Căn hộ'].map((type, index) => (
                 <TouchableOpacity
                   key={`roomType-${index}`}
                   style={[
@@ -436,9 +435,6 @@ const HomeScreen = () => {
               {[
                 'Quận 1', 'Quận 2', 'Quận 3', 'Bình Thạnh', 
                 'Gò Vấp', 'Phú Nhuận', 'Thủ Đức'
-              ].map((district) => (
-                'District 1', 'District 2', 'District 3', 'Binh Thanh', 
-                'Go Vap', 'Phu Nhuan', 'Thu Duc'
               ].map((district, index) => (
                 <TouchableOpacity
                   key={`district-${index}`}
@@ -461,8 +457,7 @@ const HomeScreen = () => {
 
           {activeFilter === 'amenities' && (
             <View style={styles.filterOptionsList}>
-              {['Wifi', 'Dịch vụ dọn phòng', 'Điều hòa', 'Chỗ đậu xe'].map((amenity) => (
-              {['WiFi', 'Cleaning Service', 'Air Conditioning', 'Parking'].map((amenity, index) => (
+              {['Wifi', 'Dịch vụ dọn phòng', 'Điều hòa', 'Chỗ đậu xe'].map((amenity, index) => (
                 <TouchableOpacity
                   key={`amenity-${index}`}
                   style={[

@@ -893,39 +893,29 @@ const renderLifestyleDropdown = () => {
         transparent={true}
         animationType="slide"
       >
-        <View style={[styles.modalOverlay, { backgroundColor: colors.overlay }]}>
-          <View style={[styles.calendarModal, { backgroundColor: colors.background.primary }]}>
-            <View style={[styles.modalHeader, { borderBottomColor: colors.gray[200] }]}>
-              <Text style={[styles.modalTitle, { color: colors.text.primary }]}>Chọn ngày sinh</Text>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Chọn ngày sinh</Text>
               <TouchableOpacity onPress={() => setShowCalendar(false)} style={styles.closeButton}>
                 <Ionicons name="close" size={24} color={colors.text.primary} />
               </TouchableOpacity>
             </View>
             <Calendar
-              current={dob || new Date().toISOString().split('T')[0]}
               onDayPress={(day) => {
                 setDob(day.dateString);
                 setShowCalendar(false);
               }}
               markedDates={{
-                [dob]: { selected: true, selectedColor: colors.primary, selectedTextColor: colors.white },
+                [dob]: { selected: true, selectedColor: '#1E88E5' }
               }}
+              minDate="1900-01-01"
               maxDate={new Date().toISOString().split('T')[0]}
-              theme={{
-                backgroundColor: colors.background.primary,
-                calendarBackground: colors.background.primary,
-                textSectionTitleColor: colors.primary,
-                selectedDayBackgroundColor: colors.primary,
-                selectedDayTextColor: colors.white,
-                todayTextColor: colors.primary,
-                dayTextColor: colors.text.primary,
-                arrowColor: colors.primary,
-              }}
             />
           </View>
         </View>
       </Modal>
-      </View>
+    </LinearGradient>
   );
 };
 const additionalStyles = {
@@ -1255,25 +1245,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.xl,
   },
-  calendarModal: {
-    borderRadius: borderRadius.xl,
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 24,
     width: '100%',
-    padding: spacing.xl,
+    maxHeight: height * 0.7,
+    padding: 0,
     elevation: 5,
-    shadowColor: colors.shadow,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
+    overflow: 'hidden',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.md,
+    padding: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    backgroundColor: '#f9f9f9',
   },
   modalTitle: {
-    fontSize: typography.fontSize.lg,
+    fontSize: 18,
     fontWeight: '600',
+    color: '#333',
   },
   closeButton: {
     padding: spacing.xs,
