@@ -38,7 +38,7 @@ const PostHistoryByOwner = ({ navigation }) => {
         Alert.alert('Thông báo', response.message);
       }
     } catch (error) {
-      console.error('Error fetching posts:', error);
+      console.error('Lỗi khi tải bài đăng:', error);
       Alert.alert('Lỗi', 'Không thể tải danh sách bài đăng. Vui lòng thử lại sau.');
     } finally {
       setLoading(false);

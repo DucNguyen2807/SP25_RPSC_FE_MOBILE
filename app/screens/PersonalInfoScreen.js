@@ -21,6 +21,7 @@ import * as ImagePicker from 'expo-image-picker';
 import authService from '../services/authService';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Picker } from '@react-native-picker/picker';
+import { colors, typography, spacing, borderRadius, components, layout } from '../theme/theme';
 const { width, height } = Dimensions.get('window');
 
 // Multi-select component for preferences, requirements, and lifestyle
@@ -533,13 +534,13 @@ const renderLifestyleDropdown = () => {
 
   const getStepTitle = () => {
     switch (step) {
-      case 1: return "Personal Details";
-      case 2: return "Budget Range";
-      case 3: return "Your Preferences";
-      case 4: return "Requirements";
-      case 5: return "Lifestyle";
-      case 6: return "Preferred Location";
-      case 7: return "Your Profile Picture";
+      case 1: return "Thông tin cá nhân";
+      case 2: return "Khoảng ngân sách";
+      case 3: return "Sở thích của bạn";
+      case 4: return "Yêu cầu";
+      case 5: return "Phong cách sống";
+      case 6: return "Khu vực ưa thích";
+      case 7: return "Ảnh đại diện";
       default: return "";
     }
   };
@@ -550,18 +551,18 @@ const renderLifestyleDropdown = () => {
         return (
           <View style={styles.inputWrapper}>
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Gender</Text>
+              <Text style={styles.inputLabel}>Giới tính</Text>
               <View style={styles.pickerContainer}>
                 <Picker selectedValue={gender} onValueChange={setGender} style={styles.input}>
-                  <Picker.Item label="Male" value="Male" />
-                  <Picker.Item label="Female" value="Female" />
-                  <Picker.Item label="Other" value="Other" />
+                  <Picker.Item label="Nam" value="Male" />
+                  <Picker.Item label="Nữ" value="Female" />
+                  <Picker.Item label="Khác" value="Other" />
                 </Picker>
               </View>
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Date of Birth</Text>
+              <Text style={styles.inputLabel}>Ngày sinh</Text>
               <View style={styles.dateInputContainer}>
                 <TextInput 
                   style={styles.dateInput} 
@@ -582,13 +583,13 @@ const renderLifestyleDropdown = () => {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Phone Number</Text>
+              <Text style={styles.inputLabel}>Số điện thoại</Text>
               <TextInput 
                 style={styles.input} 
                 value={phoneNumber} 
                 onChangeText={setPhoneNumber} 
                 keyboardType="numeric"
-                placeholder="Enter your phone number"
+                placeholder="Nhập số điện thoại của bạn"
                 placeholderTextColor="#888"
               />
             </View>
@@ -597,12 +598,12 @@ const renderLifestyleDropdown = () => {
       case 2:
         return (
           <View style={styles.inputWrapper}>
-            <Text style={styles.inputLabel}>What's your budget range?</Text>
+            <Text style={styles.inputLabel}>Khoảng ngân sách của bạn là bao nhiêu?</Text>
             <TextInput 
               style={styles.input} 
               value={budgetRange} 
               onChangeText={setBudgetRange}
-              placeholder="e.g., 500-1000"
+              placeholder="Ví dụ: 500-1000"
               placeholderTextColor="#888"
             />
           </View>
@@ -618,18 +619,18 @@ const renderLifestyleDropdown = () => {
       case 7:
         return (
           <View style={styles.inputWrapper}>
-            <Text style={styles.inputLabel}>Choose your profile picture</Text>
+            <Text style={styles.inputLabel}>Chọn ảnh đại diện của bạn</Text>
             {avatar ? (
               <View style={styles.avatarContainer}>
                 <Image source={{ uri: avatar.uri }} style={styles.avatarPreview} />
                 <TouchableOpacity style={styles.changeAvatarButton} onPress={handlePickAvatar}>
-                  <Text style={styles.changeAvatarButtonText}>Change</Text>
+                  <Text style={styles.changeAvatarButtonText}>Thay đổi</Text>
                 </TouchableOpacity>
               </View>
             ) : (
               <TouchableOpacity style={styles.avatarButton} onPress={handlePickAvatar}>
                 <Ionicons name="cloud-upload-outline" size={28} color="white" style={styles.uploadIcon} />
-                <Text style={styles.avatarButtonText}>Select Avatar</Text>
+                <Text style={styles.avatarButtonText}>Chọn ảnh đại diện</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -640,7 +641,10 @@ const renderLifestyleDropdown = () => {
   };
 
   return (
-    <LinearGradient colors={['#1E88E5', '#42A5F5', '#64B5F6']} style={styles.container}>
+    <LinearGradient 
+      colors={[colors.primary, colors.primaryLight, colors.primaryLighter]} 
+      style={styles.container}
+    >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
         style={styles.keyboardAvoidView}
@@ -669,22 +673,22 @@ const renderLifestyleDropdown = () => {
               { transform: [{ translateX: slideAnim }] }
             ]}
           >
-            <View style={styles.cardHeader}>
+            <View style={[styles.cardHeader, { backgroundColor: colors.background.secondary }]}>
               {getStepIcon()}
-              <Text style={styles.cardTitle}>{getStepTitle()}</Text>
+              <Text style={[styles.cardTitle, { color: colors.text.primary }]}>{getStepTitle()}</Text>
             </View>
             
-            <View style={styles.cardContent}>
+            <View style={[styles.cardContent, { backgroundColor: colors.background.primary }]}>
               {renderStepContent()}
             </View>
             
-            <View style={styles.actionButtons}>
+            <View style={[styles.actionButtons, { backgroundColor: colors.background.secondary }]}>
               {step > 1 && (
                 <TouchableOpacity 
                   onPress={handlePreviousStep} 
-                  style={styles.secondaryButton}
+                  style={[styles.secondaryButton, { borderColor: colors.gray[300] }]}
                 >
-                  <Text style={styles.secondaryButtonText}>Back</Text>
+                  <Text style={[styles.secondaryButtonText, { color: colors.text.secondary }]}>Quay lại</Text>
                 </TouchableOpacity>
               )}
               
@@ -697,16 +701,16 @@ const renderLifestyleDropdown = () => {
                 disabled={isSubmitting}
               >
                 <Text style={styles.primaryButtonText}>
-                  {isSubmitting ? 'Processing...' : (step === 7 ? 'Finish' : 'Continue')}
+                  {isSubmitting ? 'Đang xử lý...' : (step === 7 ? 'Hoàn thành' : 'Tiếp tục')}
                 </Text>
               </TouchableOpacity>
             </View>
           </Animated.View>
           
           <View style={styles.swipeHint}>
-            <AntDesign name="swapleft" size={20} color="white" />
-            <Text style={styles.swipeHintText}>Swipe to navigate</Text>
-            <AntDesign name="swapright" size={20} color="white" />
+            <AntDesign name="swapleft" size={20} color={colors.white} />
+            <Text style={styles.swipeHintText}>Vuốt để điều hướng</Text>
+            <AntDesign name="swapright" size={20} color={colors.white} />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -717,12 +721,12 @@ const renderLifestyleDropdown = () => {
         transparent={true}
         animationType="slide"
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.calendarModal}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Date of Birth</Text>
+        <View style={[styles.modalOverlay, { backgroundColor: colors.overlay }]}>
+          <View style={[styles.calendarModal, { backgroundColor: colors.background.primary }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: colors.gray[200] }]}>
+              <Text style={[styles.modalTitle, { color: colors.text.primary }]}>Chọn ngày sinh</Text>
               <TouchableOpacity onPress={() => setShowCalendar(false)} style={styles.closeButton}>
-                <Ionicons name="close" size={24} color="#333" />
+                <Ionicons name="close" size={24} color={colors.text.primary} />
               </TouchableOpacity>
             </View>
             <Calendar
@@ -732,18 +736,18 @@ const renderLifestyleDropdown = () => {
                 setShowCalendar(false);
               }}
               markedDates={{
-                [dob]: { selected: true, selectedColor: '#1E88E5', selectedTextColor: 'white' },
+                [dob]: { selected: true, selectedColor: colors.primary, selectedTextColor: colors.white },
               }}
               maxDate={new Date().toISOString().split('T')[0]}
               theme={{
-                backgroundColor: '#ffffff',
-                calendarBackground: '#ffffff',
-                textSectionTitleColor: '#1E88E5',
-                selectedDayBackgroundColor: '#1E88E5',
-                selectedDayTextColor: '#ffffff',
-                todayTextColor: '#1E88E5',
-                dayTextColor: '#333333',
-                arrowColor: '#1E88E5',
+                backgroundColor: colors.background.primary,
+                calendarBackground: colors.background.primary,
+                textSectionTitleColor: colors.primary,
+                selectedDayBackgroundColor: colors.primary,
+                selectedDayTextColor: colors.white,
+                todayTextColor: colors.primary,
+                dayTextColor: colors.text.primary,
+                arrowColor: colors.primary,
               }}
             />
           </View>
@@ -871,13 +875,13 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'ios' ? 60 : 30,
-    paddingBottom: 40,
+    paddingHorizontal: spacing.xl,
+    paddingTop: Platform.OS === 'ios' ? spacing.xxl : spacing.xl,
+    paddingBottom: spacing.xl,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
   progressContainer: {
     flexDirection: 'row',
@@ -889,72 +893,70 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-    margin: 5,
+    backgroundColor: colors.white + '66', // 40% opacity
+    margin: spacing.xs,
   },
   activeDot: {
-    backgroundColor: 'white',
+    backgroundColor: colors.white,
     width: 12,
     height: 12,
   },
   card: {
-    backgroundColor: 'white',
-    borderRadius: 24,
+    backgroundColor: colors.background.primary,
+    borderRadius: borderRadius.xl,
     padding: 0,
     overflow: 'hidden',
     elevation: 8,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     minHeight: 450,
   },
   cardHeader: {
-    padding: 20,
+    padding: spacing.xl,
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    backgroundColor: '#f9f9f9',
+    borderBottomColor: colors.gray[200],
   },
   cardTitle: {
-    fontSize: 22,
+    fontSize: typography.fontSize.xxl,
     fontWeight: '700',
-    color: '#333',
-    marginTop: 10,
+    marginTop: spacing.sm,
   },
   cardContent: {
-    padding: 20,
+    padding: spacing.xl,
     flex: 1,
   },
   inputWrapper: {
-    marginBottom: 15,
+    marginBottom: spacing.md,
   },
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
   inputLabel: {
-    fontSize: 16,
+    fontSize: typography.fontSize.md,
     fontWeight: '600',
-    color: '#333',
-    marginBottom: 10,
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
   },
   pickerContainer: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
+    backgroundColor: colors.background.tertiary,
+    borderRadius: borderRadius.lg,
     overflow: 'hidden',
   },
   input: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
-    paddingHorizontal: 15,
-    paddingVertical: 15,
-    fontSize: 16,
-    color: '#333',
+    backgroundColor: colors.background.tertiary,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    fontSize: typography.fontSize.md,
+    color: colors.text.primary,
   },
   textArea: {
     height: 120,
     textAlignVertical: 'top',
-    paddingTop: 15,
+    paddingTop: spacing.md,
   },
   dateInputContainer: {
     flexDirection: 'row',
@@ -962,39 +964,38 @@ const styles = StyleSheet.create({
   },
   dateInput: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
-    paddingHorizontal: 15,
-    paddingVertical: 15,
-    fontSize: 16,
-    color: '#333',
-    marginRight: 10,
+    backgroundColor: colors.background.tertiary,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    fontSize: typography.fontSize.md,
+    color: colors.text.primary,
+    marginRight: spacing.sm,
   },
   calendarButton: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background.tertiary,
     height: 50,
     width: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: borderRadius.lg,
   },
   actionButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: 20,
-    backgroundColor: '#f9f9f9',
+    padding: spacing.xl,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: colors.gray[200],
   },
   primaryButton: {
-    backgroundColor: '#1E88E5',
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 30,
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    borderRadius: borderRadius.full,
     flex: 1,
-    marginLeft: 10,
+    marginLeft: spacing.sm,
     alignItems: 'center',
-    shadowColor: '#1E88E5',
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -1004,56 +1005,54 @@ const styles = StyleSheet.create({
     marginLeft: 0,
   },
   primaryButtonText: {
-    color: 'white',
-    fontSize: 16,
+    color: colors.white,
+    fontSize: typography.fontSize.md,
     fontWeight: '600',
   },
   secondaryButton: {
-    backgroundColor: 'white',
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 30,
+    backgroundColor: colors.white,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    borderRadius: borderRadius.full,
     borderWidth: 1,
-    borderColor: '#ccc',
     alignItems: 'center',
-    marginRight: 10,
+    marginRight: spacing.sm,
     flex: 1,
   },
   secondaryButtonText: {
-    color: '#666',
-    fontSize: 16,
+    fontSize: typography.fontSize.md,
     fontWeight: '600',
   },
   swipeHint: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: spacing.xl,
     opacity: 0.8,
   },
   swipeHintText: {
-    color: 'white',
-    fontSize: 14,
-    marginHorizontal: 10,
+    color: colors.white,
+    fontSize: typography.fontSize.sm,
+    marginHorizontal: spacing.sm,
   },
   avatarButton: {
     width: '100%',
     height: 150,
-    backgroundColor: 'rgba(30, 136, 229, 0.1)',
-    borderRadius: 20,
+    backgroundColor: colors.primary + '1A', // 10% opacity
+    borderRadius: borderRadius.xl,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(30, 136, 229, 0.3)',
+    borderColor: colors.primary + '4D', // 30% opacity
     borderStyle: 'dashed',
   },
   uploadIcon: {
-    marginBottom: 10,
-    color: '#1E88E5',
+    marginBottom: spacing.sm,
+    color: colors.primary,
   },
   avatarButtonText: {
-    color: '#1E88E5',
-    fontSize: 16,
+    color: colors.primary,
+    fontSize: typography.fontSize.md,
     fontWeight: '500',
   },
   avatarContainer: {
@@ -1063,35 +1062,33 @@ const styles = StyleSheet.create({
     width: 150,
     height: 150,
     borderRadius: 75,
-    marginBottom: 15,
+    marginBottom: spacing.md,
     borderWidth: 3,
-    borderColor: '#1E88E5',
+    borderColor: colors.primary,
   },
   changeAvatarButton: {
-    backgroundColor: '#1E88E5',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 30,
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    borderRadius: borderRadius.full,
   },
   changeAvatarButtonText: {
-    color: 'white',
-    fontSize: 14,
+    color: colors.white,
+    fontSize: typography.fontSize.sm,
     fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: spacing.xl,
   },
   calendarModal: {
-    backgroundColor: 'white',
-    borderRadius: 24,
+    borderRadius: borderRadius.xl,
     width: '100%',
-    padding: 20,
+    padding: spacing.xl,
     elevation: 5,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -1100,15 +1097,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: spacing.md,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: typography.fontSize.lg,
     fontWeight: '600',
-    color: '#333',
   },
   closeButton: {
-    padding: 5,
+    padding: spacing.xs,
   },
   stepTitle: additionalStyles.stepTitle,
   stepDescription: additionalStyles.stepDescription,

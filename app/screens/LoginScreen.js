@@ -67,8 +67,8 @@ const LoginScreen = ({ navigation }) => {
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.welcomeText}>Welcome Back</Text>
-            <Text style={styles.subtitleText}>Log in to continue using EasyRoomie</Text>
+            <Text style={styles.welcomeText}>Chào mừng trở lại</Text>
+            <Text style={styles.subtitleText}>Đăng nhập để tiếp tục sử dụng EasyRoomie</Text>
           </View>
           
           <View style={styles.formContainer}>
@@ -76,7 +76,7 @@ const LoginScreen = ({ navigation }) => {
               <Ionicons name="person-outline" size={22} color={colors.primary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Email or Phone Number"
+                placeholder="Email hoặc số điện thoại"
                 placeholderTextColor={colors.text.disabled}
                 value={emailOrPhone}
                 onChangeText={setEmailOrPhone}
@@ -89,7 +89,7 @@ const LoginScreen = ({ navigation }) => {
               <Ionicons name="lock-closed-outline" size={22} color={colors.primary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Password"
+                placeholder="Mật khẩu"
                 placeholderTextColor={colors.text.disabled}
                 secureTextEntry={!showPassword}
                 value={password}
@@ -112,11 +112,11 @@ const LoginScreen = ({ navigation }) => {
                 <View style={[styles.checkbox, rememberMe && styles.checkboxActive]}>
                   {rememberMe && <Ionicons name="checkmark" size={16} color={colors.white} />}
                 </View>
-                <Text style={styles.rememberMeText}>Remember me</Text>
+                <Text style={styles.rememberMeText}>Ghi nhớ đăng nhập</Text>
               </TouchableOpacity>
               
               <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-                <Text style={styles.forgotPassword}>Forgot password?</Text>
+                <Text style={styles.forgotPassword}>Quên mật khẩu?</Text>
               </TouchableOpacity>
             </View>
             
@@ -128,16 +128,16 @@ const LoginScreen = ({ navigation }) => {
               {isLoading ? (
                 <ActivityIndicator color={colors.white} size="small" />
               ) : (
-                <Text style={components.buttonText}>Log In</Text>
+                <Text style={components.buttonText}>Đăng nhập</Text>
               )}
             </TouchableOpacity>
           </View>
           
           <View style={styles.footerContainer}>
             <View style={styles.signUpContainer}>
-              <Text style={styles.signUpText}>Don't have an account? </Text>
+              <Text style={styles.signUpText}>Chưa có tài khoản? </Text>
               <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-                <Text style={styles.signUpLink}>Sign up</Text>
+                <Text style={styles.signUpLink}>Đăng ký</Text>
               </TouchableOpacity>
             </View>
           </View>
