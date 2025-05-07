@@ -278,7 +278,7 @@ const RoomDetailScreen = () => {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#6D5BA3" />
-        <Text style={styles.loadingText}>Loading room details...</Text>
+        <Text style={styles.loadingText}>Đang tải thông tin phòng...</Text>
       </View>
     );
   }
@@ -289,7 +289,7 @@ const RoomDetailScreen = () => {
         <FontAwesome5 name="exclamation-circle" size={50} color="#FF6B6B" />
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.retryButtonText}>Go Back</Text>
+          <Text style={styles.retryButtonText}>Quay lại</Text>
         </TouchableOpacity>
       </View>
     );
@@ -315,7 +315,7 @@ const RoomDetailScreen = () => {
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Rent Request</Text>
+                <Text style={styles.modalTitle}>Yêu cầu thuê phòng</Text>
                 <TouchableOpacity onPress={() => setShowRentModal(false)}>
                   <FontAwesome5 name="times" size={20} color="#666" />
                 </TouchableOpacity>
@@ -323,26 +323,26 @@ const RoomDetailScreen = () => {
 
               <ScrollView style={styles.formScrollContainer}>
                 <View style={styles.formContainer}>
-                  <Text style={styles.formLabel}>Message</Text>
+                  <Text style={styles.formLabel}>Tin nhắn</Text>
                   <TextInput
                     style={styles.formInput}
                     value={rentRequest.message}
                     onChangeText={(text) => setRentRequest(prev => ({ ...prev, message: text }))}
-                    placeholder="Enter your message"
+                    placeholder="Nhập tin nhắn của bạn"
                     multiline
                     numberOfLines={3}
                   />
 
-                  <Text style={styles.formLabel}>Number of Months</Text>
+                  <Text style={styles.formLabel}>Số tháng muốn thuê</Text>
                   <TextInput
                     style={styles.formInput}
                     value={rentRequest.monthWantRent}
                     onChangeText={(text) => setRentRequest(prev => ({ ...prev, monthWantRent: text }))}
-                    placeholder="Enter number of months"
+                    placeholder="Nhập số tháng"
                     keyboardType="numeric"
                   />
 
-                  <Text style={styles.formLabel}>Desired Move-in Date</Text>
+                  <Text style={styles.formLabel}>Ngày muốn dọn vào</Text>
                   <TouchableOpacity 
                     style={styles.datePickerButton}
                     onPress={() => {
@@ -351,11 +351,11 @@ const RoomDetailScreen = () => {
                     }}
                   >
                     <Text style={styles.datePickerButtonText}>
-                      {rentRequest.dateWantToRent ? new Date(rentRequest.dateWantToRent).toLocaleDateString() : 'Select a date'}
+                      {rentRequest.dateWantToRent ? new Date(rentRequest.dateWantToRent).toLocaleDateString() : 'Chọn ngày'}
                     </Text>
                     <FontAwesome5 name="calendar-alt" size={16} color="#6D5BA3" />
                   </TouchableOpacity>
-                  <Text style={styles.dateHint}>Please select a date at least 7 days from now</Text>
+                  <Text style={styles.dateHint}>Vui lòng chọn ngày ít nhất 7 ngày kể từ hôm nay</Text>
 
                   {showDatePicker && (
                     <DateTimePicker
@@ -385,7 +385,7 @@ const RoomDetailScreen = () => {
                     {isSubmitting ? (
                       <ActivityIndicator color="#FFF" />
                     ) : (
-                      <Text style={styles.submitButtonText}>Submit Request</Text>
+                      <Text style={styles.submitButtonText}>Gửi yêu cầu</Text>
                     )}
                   </TouchableOpacity>
                 </View>
@@ -490,7 +490,7 @@ const RoomDetailScreen = () => {
                 <FontAwesome5 name="map-marker-alt" size={16} color="#6D5BA3" />
               </View>
               <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Address</Text>
+                <Text style={styles.detailLabel}>Địa chỉ</Text>
                 <Text style={styles.detailValue}>
                   {room.roomType.address.houseNumber} {room.roomType.address.street}, 
                   {room.roomType.address.district}, {room.roomType.address.city}
@@ -531,7 +531,7 @@ const RoomDetailScreen = () => {
 
           {/* Amenities Section */}
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Amenities</Text>
+            <Text style={styles.sectionTitle}>Tiện ích</Text>
             <View style={styles.amenitiesGrid}>
               {room.roomAmenities?.map((amenity, index) => (
                 <View key={index} style={styles.amenityItem}>
@@ -622,7 +622,7 @@ const RoomDetailScreen = () => {
 
           {/* Additional Info */}
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Additional Information</Text>
+            <Text style={styles.sectionTitle}>Thông tin thêm</Text>
             <View style={styles.additionalInfoCard}>
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Bắt đầu vào ở</Text>
@@ -670,7 +670,7 @@ const RoomDetailScreen = () => {
             style={styles.rentGradient}
           >
             <FontAwesome5 name="key" size={16} color="#FFF" />
-            <Text style={styles.rentButtonText}>Thuê Phòng</Text>
+            <Text style={styles.rentButtonText}>Thuê phòng</Text>
           </LinearGradient>
         </TouchableOpacity>
       </View>

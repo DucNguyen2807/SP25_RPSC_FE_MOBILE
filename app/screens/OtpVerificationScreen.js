@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import authService from '../services/authService';
+import { colors, typography, spacing, borderRadius, components, layout } from '../theme/theme';
 
 const OtpVerificationScreen = ({ route, navigation }) => {
   const { email } = route.params;
@@ -22,7 +23,7 @@ const OtpVerificationScreen = ({ route, navigation }) => {
 
   const handleVerifyOtp = async () => {
     if (!otp) {
-      Alert.alert('Error', 'Please enter the verification code');
+      Alert.alert('Lỗi', 'Vui lòng nhập mã xác thực');
       return;
     }
     
@@ -34,47 +35,46 @@ const OtpVerificationScreen = ({ route, navigation }) => {
       console.log("OTP Verification result:", result);
       
       if (result.isSuccess) {
-        Alert.alert('Success', result.message);
+        Alert.alert('Thành công', result.message);
         navigation.replace('PersonalInfo', { email });
       } else {
-        Alert.alert('Error', result.message || 'Verification failed');
+        Alert.alert('Lỗi', result.message || 'Xác thực thất bại');
       }
     } catch (error) {
       console.error('Error during OTP verification:', error);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      Alert.alert('Lỗi', 'Đã xảy ra lỗi. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleResendCode = () => {
-    // Implement resend OTP functionality here
-    Alert.alert('Info', 'New verification code sent to your email');
+    Alert.alert('Thông báo', 'Mã xác thực mới đã được gửi đến email của bạn');
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[layout.container, styles.container]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoid}
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.headerContainer}>
-            <Ionicons name="mail-open-outline" size={80} color="#6C63FF" />
-            <Text style={styles.titleText}>Email Verification</Text>
+            <Ionicons name="mail-open-outline" size={80} color={colors.primary} />
+            <Text style={styles.titleText}>Xác thực Email</Text>
             <Text style={styles.subtitleText}>
-              We've sent a verification code to
+              Chúng tôi đã gửi mã xác thực đến
             </Text>
             <Text style={styles.emailText}>{email}</Text>
           </View>
           
           <View style={styles.formContainer}>
-            <View style={styles.inputContainer}>
-              <Ionicons name="key-outline" size={22} color="#6C63FF" style={styles.inputIcon} />
+            <View style={[components.input, styles.inputContainer]}>
+              <Ionicons name="key-outline" size={22} color={colors.primary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Enter Verification Code"
-                placeholderTextColor="#ACACAC"
+                placeholder="Nhập mã xác thực"
+                placeholderTextColor={colors.text.disabled}
                 value={otp}
                 onChangeText={setOtp}
                 keyboardType="numeric"
@@ -85,20 +85,20 @@ const OtpVerificationScreen = ({ route, navigation }) => {
             
             <TouchableOpacity 
               onPress={handleVerifyOtp} 
-              style={styles.verifyButton}
+              style={[components.button, components.buttonPrimary, styles.verifyButton]}
               disabled={isLoading}
             >
               {isLoading ? (
-                <ActivityIndicator color="white" size="small" />
+                <ActivityIndicator color={colors.white} size="small" />
               ) : (
-                <Text style={styles.verifyButtonText}>Verify Code</Text>
+                <Text style={components.buttonText}>Xác thực</Text>
               )}
             </TouchableOpacity>
             
             <View style={styles.resendContainer}>
-              <Text style={styles.resendText}>Didn't receive the code? </Text>
+              <Text style={styles.resendText}>Không nhận được mã? </Text>
               <TouchableOpacity onPress={handleResendCode}>
-                <Text style={styles.resendLink}>Resend</Text>
+                <Text style={styles.resendLink}>Gửi lại</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -108,8 +108,8 @@ const OtpVerificationScreen = ({ route, navigation }) => {
               onPress={() => navigation.goBack()} 
               style={styles.backButton}
             >
-              <Ionicons name="arrow-back-outline" size={20} color="#6C63FF" style={styles.backIcon} />
-              <Text style={styles.backButtonText}>Go Back</Text>
+              <Ionicons name="arrow-back-outline" size={20} color={colors.primary} style={styles.backIcon} />
+              <Text style={styles.backButtonText}>Quay lại</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -120,85 +120,76 @@ const OtpVerificationScreen = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.background.secondary,
   },
   keyboardAvoid: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 40,
-    paddingBottom: 24,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.xl,
   },
   headerContainer: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: spacing.xxl,
   },
   titleText: {
-    fontSize: 28,
+    fontSize: typography.fontSize.xxxl,
     fontWeight: '700',
-    color: '#333333',
-    marginTop: 24,
-    marginBottom: 8,
+    color: colors.text.primary,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
   },
   subtitleText: {
-    fontSize: 16,
-    color: '#888888',
+    fontSize: typography.fontSize.md,
+    color: colors.text.secondary,
     textAlign: 'center',
   },
   emailText: {
-    fontSize: 16,
-    color: '#6C63FF',
+    fontSize: typography.fontSize.md,
+    color: colors.primary,
     fontWeight: '600',
-    marginTop: 4,
+    marginTop: spacing.xs,
   },
   formContainer: {
     width: '100%',
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F7F8F9',
-    borderRadius: 12,
-    marginBottom: 24,
-    paddingHorizontal: 16,
-    height: 60,
+    backgroundColor: colors.background.tertiary,
+    marginBottom: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    height: 56,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: '#EAEAEA',
+    borderColor: colors.gray[200],
   },
   inputIcon: {
-    marginRight: 12,
+    marginRight: spacing.md,
   },
   input: {
     flex: 1,
     height: '100%',
-    fontSize: 16,
-    color: '#333333',
+    fontSize: typography.fontSize.md,
+    color: colors.text.primary,
     letterSpacing: 2,
   },
   verifyButton: {
-    backgroundColor: '#ACDCD0',
-    borderRadius: 12,
     height: 56,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#6C63FF',
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.xl,
+    shadowColor: colors.primary,
     shadowOffset: {
       width: 0,
       height: 4,
     },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
-    elevation: 6,
-    marginBottom: 24,
-  },
-  verifyButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '600',
+    elevation: 4,
   },
   resendContainer: {
     flexDirection: 'row',
@@ -206,31 +197,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   resendText: {
-    fontSize: 14,
-    color: '#888888',
+    fontSize: typography.fontSize.md,
+    color: colors.text.secondary,
   },
   resendLink: {
-    fontSize: 14,
-    color: '#6C63FF',
+    fontSize: typography.fontSize.md,
+    color: colors.primary,
     fontWeight: '600',
   },
   footerContainer: {
     marginTop: 'auto',
     alignItems: 'center',
-    paddingVertical: 20,
+    paddingVertical: spacing.lg,
   },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
+    paddingVertical: spacing.sm,
   },
   backIcon: {
-    marginRight: 8,
+    marginRight: spacing.sm,
   },
   backButtonText: {
-    fontSize: 16,
-    color: '#6C63FF',
+    fontSize: typography.fontSize.md,
+    color: colors.primary,
     fontWeight: '500',
   },
 });

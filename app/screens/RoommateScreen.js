@@ -123,10 +123,10 @@ const RoommateScreen = () => {
       case 'price':
         return (
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Budget Range</Text>
+            <Text style={styles.modalTitle}>Khoảng ngân sách</Text>
             <FilterInputRange 
-              label1="Minimum" 
-              label2="Maximum"
+              label1="Tối thiểu" 
+              label2="Tối đa"
               value1={filters.minBudget}
               value2={filters.maxBudget}
               onChange1={(text) => handleFilterChange('minBudget', text ? parseFloat(text) : null)}
@@ -140,9 +140,9 @@ const RoommateScreen = () => {
       case 'gender':
         return (
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Gender</Text>
+            <Text style={styles.modalTitle}>Giới tính</Text>
             <View style={styles.chipContainer}>
-              {['Male', 'Female', 'Others'].map((gender) => (
+              {['Nam', 'Nữ', 'Khác'].map((gender) => (
                 <TouchableOpacity
                   key={gender}
                   style={[styles.chip, filters.gender === gender && styles.chipSelected]}
@@ -160,10 +160,10 @@ const RoommateScreen = () => {
       case 'age':
         return (
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Age Range</Text>
+            <Text style={styles.modalTitle}>Khoảng tuổi</Text>
             <FilterInputRange 
-              label1="From" 
-              label2="To"
+              label1="Từ" 
+              label2="Đến"
               value1={filters.minAge}
               value2={filters.maxAge}
               onChange1={(text) => handleFilterChange('minAge', text ? parseInt(text) : null)}
@@ -177,7 +177,7 @@ const RoommateScreen = () => {
       case 'lifestyle':
         return (
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Lifestyle</Text>
+            <Text style={styles.modalTitle}>Phong cách sống</Text>
             <View style={styles.chipContainer}>
               {lifeStyleOptions.map((style) => (
                 <TouchableOpacity
@@ -199,7 +199,7 @@ const RoommateScreen = () => {
       default:
         return (
           <View>
-            <Text>Select a filter option</Text>
+            <Text>Chọn tùy chọn lọc</Text>
           </View>
         );
     }
@@ -226,10 +226,10 @@ const RoommateScreen = () => {
   };
 
   const filterOptions = [
-    { id: 'price', icon: 'wallet', label: 'Budget', active: filters.minBudget || filters.maxBudget },
-    { id: 'gender', icon: 'human-male-female', label: 'Gender', active: filters.gender },
-    { id: 'age', icon: 'account-group', label: 'Age', active: filters.minAge || filters.maxAge },
-    { id: 'lifestyle', icon: 'coffee', label: 'Lifestyle', active: filters.lifeStyles.length > 0 },
+    { id: 'price', icon: 'wallet', label: 'Ngân sách', active: filters.minBudget || filters.maxBudget },
+    { id: 'gender', icon: 'human-male-female', label: 'Giới tính', active: filters.gender },
+    { id: 'age', icon: 'account-group', label: 'Độ tuổi', active: filters.minAge || filters.maxAge },
+    { id: 'lifestyle', icon: 'coffee', label: 'Phong cách sống', active: filters.lifeStyles.length > 0 },
   ];
 
   const FilterInputRange = ({ label1, label2, value1, value2, onChange1, onChange2, placeholder1, placeholder2 }) => (
@@ -265,7 +265,7 @@ const RoommateScreen = () => {
     return (
       <View style={styles.paginationContainer}>
         <Text style={styles.paginationText}>
-          {totalItems > 0 ? `Showing ${Math.min((currentPage - 1) * pageSize + 1, totalItems)}-${Math.min(currentPage * pageSize, totalItems)} of ${totalItems}` : 'No results'}
+          {totalItems > 0 ? `Hiển thị ${Math.min((currentPage - 1) * pageSize + 1, totalItems)}-${Math.min(currentPage * pageSize, totalItems)} của ${totalItems}` : 'Không có kết quả'}
         </Text>
         <View style={styles.paginationControls}>
           <TouchableOpacity 
@@ -315,7 +315,7 @@ const RoommateScreen = () => {
     return (
       <View style={styles.loadingMoreContainer}>
         <ActivityIndicator size="small" color={themeColors.accent} />
-        <Text style={styles.loadingMoreText}>Loading more...</Text>
+        <Text style={styles.loadingMoreText}>Đang tải thêm...</Text>
       </View>
     );
   };
@@ -405,7 +405,7 @@ const RoommateScreen = () => {
             style={styles.buttonGradient}
           >
             <MaterialCommunityIcons name="eye" size={16} color="#FFF" />
-            <Text style={styles.buttonText}>View Detail Post</Text>
+            <Text style={styles.buttonText}>Xem chi tiết bài đăng</Text>
           </LinearGradient>
         </TouchableOpacity>
       </LinearGradient>
@@ -426,7 +426,7 @@ const RoommateScreen = () => {
             <MaterialCommunityIcons name="magnify" size={20} color={themeColors.accent} />
             <TextInput
               style={styles.searchInput}
-              placeholder={activeTab === 'recommended' ? "Showing recommended roommates..." : "Search by location..."}
+              placeholder={activeTab === 'recommended' ? "Đang hiển thị người ở ghép được đề xuất..." : "Tìm kiếm theo địa điểm..."}
               placeholderTextColor="#9CA3AF"
               value={searchText}
               onChangeText={setSearchText}
@@ -453,7 +453,7 @@ const RoommateScreen = () => {
           }}
         >
           <Text style={[styles.tabText, activeTab === 'all' && styles.activeTabText]}>
-            All Posts
+            Tất cả bài đăng
           </Text>
         </TouchableOpacity>
         
@@ -472,7 +472,7 @@ const RoommateScreen = () => {
           }}
         >
           <Text style={[styles.tabText, activeTab === 'recommended' && styles.activeTabText]}>
-            Recommended
+            Đề xuất
           </Text>
         </TouchableOpacity>
       </View>
@@ -527,10 +527,10 @@ const RoommateScreen = () => {
             <View style={styles.emptyState}>
               <MaterialCommunityIcons name="account-group" size={80} color={themeColors.secondary} />
               <Text style={styles.emptyStateText}>
-                {activeTab === 'recommended' ? "No recommended roommates found" : "No roommates found"}
+                {activeTab === 'recommended' ? "Không tìm thấy người ở ghép được đề xuất" : "Không tìm thấy người ở ghép"}
               </Text>
               <Text style={styles.emptyStateSubtext}>
-                {activeTab === 'recommended' ? "Try checking back later" : "Try adjusting your filters"}
+                {activeTab === 'recommended' ? "Vui lòng thử lại sau" : "Hãy thử điều chỉnh bộ lọc của bạn"}
               </Text>
             </View>
           }
@@ -577,7 +577,7 @@ const RoommateScreen = () => {
                   fetchRoommatePosts(1, false);
                 }}
               >
-                <Text style={styles.resetButtonText}>Reset</Text>
+                <Text style={styles.resetButtonText}>Đặt lại</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
@@ -587,7 +587,7 @@ const RoommateScreen = () => {
                   fetchRoommatePosts(1, false);
                 }}
               >
-                <Text style={styles.applyButtonText}>Apply</Text>
+                <Text style={styles.applyButtonText}>Áp dụng</Text>
               </TouchableOpacity>
             </View>
           </View>

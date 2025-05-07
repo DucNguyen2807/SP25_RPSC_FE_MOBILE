@@ -164,15 +164,28 @@ const CustomerRequestsScreen = ({ navigation, route }) => {
     }
   };
 
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'Pending':
+        return 'Đang chờ';
+      case 'Approved':
+        return 'Đã duyệt';
+      case 'Rejected':
+        return 'Đã từ chối';
+      default:
+        return status;
+    }
+  };
+
   const renderRequestItem = ({ item }) => (
     <TouchableOpacity
       style={styles.requestCard}
       onPress={() => handleRequestPress(item)}
     >
       <View style={styles.requestHeader}>
-        <Text style={styles.requestId}>Request #{item.roomRequestId.substring(0, 8)}</Text>
+        <Text style={styles.requestId}>Yêu cầu #{item.roomRequestId.substring(0, 8)}</Text>
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-          <Text style={styles.statusText}>{item.status}</Text>
+          <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
         </View>
       </View>
 
@@ -180,26 +193,26 @@ const CustomerRequestsScreen = ({ navigation, route }) => {
         <View style={styles.detailRow}>
           <MaterialIcons name="calendar-today" size={16} color="#666" />
           <Text style={styles.detailText}>
-            Move-in: {new Date(item.dateWantToRent).toLocaleDateString()}
+            Ngày dọn vào: {new Date(item.dateWantToRent).toLocaleDateString()}
           </Text>
         </View>
         <View style={styles.detailRow}>
           <MaterialIcons name="timer" size={16} color="#666" />
           <Text style={styles.detailText}>
-            Duration: {item.monthWantRent} months
+            Thời hạn: {item.monthWantRent} tháng
           </Text>
         </View>
         <View style={styles.detailRow}>
           <MaterialIcons name="message" size={16} color="#666" />
           <Text style={styles.detailText} numberOfLines={2}>
-            Message: {item.message || 'No message'}
+            Lời nhắn: {item.message || 'Không có lời nhắn'}
           </Text>
         </View>
       </View>
 
       <View style={styles.requestFooter}>
         <Text style={styles.dateText}>
-          Created: {new Date(item.createdAt).toLocaleDateString()}
+          Ngày tạo: {new Date(item.createdAt).toLocaleDateString()}
         </Text>
         <View style={styles.footerActions}>
           {item.status === 'Pending' && (
@@ -207,15 +220,15 @@ const CustomerRequestsScreen = ({ navigation, route }) => {
               style={styles.cancelButton}
               onPress={() => {
                 Alert.alert(
-                  'Cancel Request',
-                  'Are you sure you want to cancel this request?',
+                  'Hủy yêu cầu',
+                  'Bạn có chắc chắn muốn hủy yêu cầu này?',
                   [
                     {
-                      text: 'No',
+                      text: 'Không',
                       style: 'cancel'
                     },
                     {
-                      text: 'Yes',
+                      text: 'Có',
                       onPress: () => handleCancelRequest(item.roomRequestId)
                     }
                   ]
@@ -226,7 +239,7 @@ const CustomerRequestsScreen = ({ navigation, route }) => {
               {cancelling ? (
                 <ActivityIndicator size="small" color="#FFF" />
               ) : (
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={styles.cancelButtonText}>Hủy</Text>
               )}
             </TouchableOpacity>
           )}
@@ -271,7 +284,7 @@ const CustomerRequestsScreen = ({ navigation, route }) => {
           <MaterialIcons name="error-outline" size={48} color="#F44336" />
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={fetchRequests}>
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <Text style={styles.retryButtonText}>Thử lại</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -285,7 +298,7 @@ const CustomerRequestsScreen = ({ navigation, route }) => {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <MaterialIcons name="inbox" size={48} color="#666" />
-              <Text style={styles.emptyText}>No requests found</Text>
+              <Text style={styles.emptyText}>Không tìm thấy yêu cầu nào</Text>
             </View>
           }
         />

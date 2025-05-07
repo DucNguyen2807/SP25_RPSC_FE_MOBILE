@@ -20,10 +20,22 @@
         "foregroundImage": "./app/assets/logoEasyRommie.png",
         "backgroundColor": "#ACDCD0"
       },
-      "package": "com.nguyenxuanduc280703.EasyRoomie"
+      "package": "com.nguyenxuanduc280703.EasyRoomie",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./app/assets/logoEasyRommie.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow EasyRoomie to use your location."
+        }
+      ]
+    ]
   }
 }

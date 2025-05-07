@@ -76,15 +76,15 @@ const SentRequestsScreen = ({ navigation, route }) => {
         try {
           await AsyncStorage.setItem('requestCount', totalRequests.toString());
         } catch (storageError) {
-          console.error('Error saving request count:', storageError);
+          console.error('Lỗi khi lưu số lượng yêu cầu:', storageError);
         }
       } else {
-        console.error('API returned error:', result.message);
+        console.error('API trả về lỗi:', result.message);
         setError(result.message);
         Alert.alert('Lỗi', result.message);
       }
     } catch (err) {
-      console.error('Exception in fetchSentRequests:', err);
+      console.error('Lỗi trong fetchSentRequests:', err);
       setError('Không thể tải yêu cầu đã gửi');
       Alert.alert('Lỗi', 'Không thể tải yêu cầu đã gửi');
     } finally {

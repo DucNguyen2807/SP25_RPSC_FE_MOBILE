@@ -158,16 +158,16 @@ const HomeScreen = () => {
   };
 
   const getTimeDifference = (dateString) => {
-    if (!dateString) return 'Today';
+    if (!dateString) return 'Hôm nay';
     
     const updatedDate = new Date(dateString);
     const today = new Date();
     const diffTime = Math.abs(today - updatedDate);
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return '1 day ago';
-    return `${diffDays} days ago`;
+    if (diffDays === 0) return 'Hôm nay';
+    if (diffDays === 1) return '1 ngày trước';
+    return `${diffDays} ngày trước`;
   };
 
   const handleImageError = (roomId) => {
@@ -334,6 +334,33 @@ const HomeScreen = () => {
     </TouchableOpacity>
   );
 
+  // Render pagination controls
+  const renderPagination = () => (
+    <View style={styles.paginationContainer}>
+      <TouchableOpacity 
+        style={[styles.paginationButton, currentPage === 1 && styles.paginationButtonDisabled]}
+        onPress={goToPrevPage}
+        disabled={currentPage === 1}
+      >
+        <FontAwesome5 name="chevron-left" size={16} color={currentPage === 1 ? "#CCC" : "#6D5BA3"} />
+      </TouchableOpacity>
+      
+      <View style={styles.paginationInfo}>
+        <Text style={styles.paginationText}>
+          Trang {currentPage} / {totalPages}
+        </Text>
+      </View>
+      
+      <TouchableOpacity 
+        style={[styles.paginationButton, currentPage === totalPages && styles.paginationButtonDisabled]}
+        onPress={goToNextPage}
+        disabled={currentPage === totalPages}
+      >
+        <FontAwesome5 name="chevron-right" size={16} color={currentPage === totalPages ? "#CCC" : "#6D5BA3"} />
+      </TouchableOpacity>
+    </View>
+  );
+
   // Filter Modal
   const renderFilterModal = () => (
     <Modal
@@ -346,10 +373,10 @@ const HomeScreen = () => {
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>
-              {activeFilter === 'price' && 'Filter by Price'}
-              {activeFilter === 'roomType' && 'Room Type'}
-              {activeFilter === 'district' && 'Area'}
-              {activeFilter === 'amenities' && 'Amenities'}
+              {activeFilter === 'price' && 'Lọc theo giá'}
+              {activeFilter === 'roomType' && 'Loại phòng'}
+              {activeFilter === 'district' && 'Khu vực'}
+              {activeFilter === 'amenities' && 'Tiện nghi'}
             </Text>
             <TouchableOpacity onPress={() => setShowFilterModal(false)}>
               <FontAwesome5 name="times" size={20} color="#666" />
@@ -359,7 +386,7 @@ const HomeScreen = () => {
           {activeFilter === 'price' && (
             <View style={styles.filterContent}>
               <View style={styles.inputContainer}>
-                <Text style={styles.filterLabel}>Min Price</Text>
+                <Text style={styles.filterLabel}>Giá tối thiểu</Text>
                 <TextInput
                   style={styles.filterInput}
                   value={filters.minPrice}
@@ -369,7 +396,7 @@ const HomeScreen = () => {
                 />
               </View>
               <View style={styles.inputContainer}>
-                <Text style={styles.filterLabel}>Max Price</Text>
+                <Text style={styles.filterLabel}>Giá tối đa</Text>
                 <TextInput
                   style={styles.filterInput}
                   value={filters.maxPrice}
@@ -383,7 +410,7 @@ const HomeScreen = () => {
 
           {activeFilter === 'roomType' && (
             <View style={styles.filterOptionsList}>
-              {['Studio', 'Single Room', 'Double Room', 'Apartment'].map((type, index) => (
+              {['Studio', 'Phòng đơn', 'Phòng đôi', 'Căn hộ'].map((type, index) => (
                 <TouchableOpacity
                   key={`roomType-${index}`}
                   style={[
@@ -406,8 +433,8 @@ const HomeScreen = () => {
           {activeFilter === 'district' && (
             <View style={styles.filterOptionsList}>
               {[
-                'District 1', 'District 2', 'District 3', 'Binh Thanh', 
-                'Go Vap', 'Phu Nhuan', 'Thu Duc'
+                'Quận 1', 'Quận 2', 'Quận 3', 'Bình Thạnh', 
+                'Gò Vấp', 'Phú Nhuận', 'Thủ Đức'
               ].map((district, index) => (
                 <TouchableOpacity
                   key={`district-${index}`}
@@ -430,7 +457,7 @@ const HomeScreen = () => {
 
           {activeFilter === 'amenities' && (
             <View style={styles.filterOptionsList}>
-              {['WiFi', 'Cleaning Service', 'Air Conditioning', 'Parking'].map((amenity, index) => (
+              {['Wifi', 'Dịch vụ dọn phòng', 'Điều hòa', 'Chỗ đậu xe'].map((amenity, index) => (
                 <TouchableOpacity
                   key={`amenity-${index}`}
                   style={[
@@ -470,13 +497,13 @@ const HomeScreen = () => {
                 setShowFilterModal(false);
               }}
             >
-              <Text style={styles.resetButtonText}>Reset</Text>
+              <Text style={styles.resetButtonText}>Đặt lại</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.applyButton}
               onPress={() => setShowFilterModal(false)}
             >
-              <Text style={styles.applyButtonText}>Apply</Text>
+              <Text style={styles.applyButtonText}>Áp dụng</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -517,7 +544,7 @@ const HomeScreen = () => {
             <FontAwesome5 name="search" size={16} color="#999" style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Where do you want to search?"
+              placeholder="Bạn muốn tìm kiếm ở đâu?"
               placeholderTextColor="#999"
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -532,11 +559,11 @@ const HomeScreen = () => {
           horizontal
           showsHorizontalScrollIndicator={false}
           data={[
-            { icon: 'money-bill-wave', text: 'Price', filter: 'price' },
-            { icon: 'home', text: 'Room Type', filter: 'roomType' },
-            { icon: 'map-marked-alt', text: 'Area', filter: 'district' },
-            { icon: 'wifi', text: 'Amenities', filter: 'amenities' },
-            { icon: 'map', text: 'Map', filter: 'map' }
+            { icon: 'money-bill-wave', text: 'Giá', filter: 'price' },
+            { icon: 'home', text: 'Loại phòng', filter: 'roomType' },
+            { icon: 'map-marked-alt', text: 'Khu vực', filter: 'district' },
+            { icon: 'wifi', text: 'Tiện nghi', filter: 'amenities' },
+            { icon: 'map', text: 'Bản đồ', filter: 'map' }
           ]}
           keyExtractor={(item, index) => `filter-${item.filter}-${index}`}
           renderItem={({ item }) => (
@@ -555,9 +582,9 @@ const HomeScreen = () => {
       {rooms.length === 0 ? (
         <View style={styles.noResultsContainer}>
           <FontAwesome5 name="search-minus" size={50} color="#6D5BA3" />
-          <Text style={styles.noResultsText}>No rooms found</Text>
+          <Text style={styles.noResultsText}>Không tìm thấy phòng</Text>
           <Text style={styles.noResultsSubText}>
-            Try adjusting your search or filter criteria
+            Hãy thử điều chỉnh tiêu chí tìm kiếm hoặc bộ lọc
           </Text>
           <TouchableOpacity 
             style={styles.resetFiltersButton}
@@ -573,7 +600,7 @@ const HomeScreen = () => {
               setCurrentPage(1);
             }}
           >
-            <Text style={styles.resetFiltersButtonText}>Reset Filters</Text>
+            <Text style={styles.resetFiltersButtonText}>Đặt lại bộ lọc</Text>
           </TouchableOpacity>
         </View>
       ) : (
