@@ -850,7 +850,7 @@ const renderLifestyleDropdown = () => {
               <Text style={[styles.cardTitle, { color: colors.text.primary }]}>{getStepTitle()}</Text>
             </View>
             
-            <View style={[styles.cardContent, { backgroundColor: colors.background.primary }]}>
+            <View style={[styles.cardContent, { backgroundColor: colors.primary }]}>
               {renderStepContent()}
             </View>
             

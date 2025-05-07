@@ -29,7 +29,7 @@ const RoomDetailScreen = () => {
   const [rentRequest, setRentRequest] = useState({
     message: '',
     monthWantRent: '',
-    dateWantToRent: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    dateWantToRent: new Date(Date.now()).toISOString()
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
@@ -171,7 +171,7 @@ const RoomDetailScreen = () => {
         setRentRequest({
           message: '',
           monthWantRent: '',
-          dateWantToRent: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+          dateWantToRent: new Date(Date.now()).toISOString()
         });
         // Show success message
         Alert.alert(
@@ -355,14 +355,13 @@ const RoomDetailScreen = () => {
                     </Text>
                     <FontAwesome5 name="calendar-alt" size={16} color="#6D5BA3" />
                   </TouchableOpacity>
-                  <Text style={styles.dateHint}>Vui lòng chọn ngày ít nhất 7 ngày kể từ hôm nay</Text>
 
                   {showDatePicker && (
                     <DateTimePicker
                       value={new Date(rentRequest.dateWantToRent)}
                       mode="date"
                       display="default"
-                      minimumDate={new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)}
+                      minimumDate={new Date(Date.now())}
                       onChange={(event, selectedDate) => {
                         setShowDatePicker(false);
                         if (selectedDate) {
