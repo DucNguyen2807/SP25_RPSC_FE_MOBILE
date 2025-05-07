@@ -30,7 +30,7 @@ const HomeScreen = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalPosts, setTotalPosts] = useState(0);
-  const [pageSize, setPageSize] = useState(5);
+  const [pageSize, setPageSize] = useState(20);
   
   // Add this to prevent multiple load more requests
   const [isLoadingMoreInProgress, setIsLoadingMoreInProgress] = useState(false);
