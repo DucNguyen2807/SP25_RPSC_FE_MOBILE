@@ -43,6 +43,24 @@ const RoomDetailScreen = () => {
     fetchFeedback();
   }, [roomId]);
 
+  // Update dateWantToRent when room data is loaded to ensure it's after availableDateToRent
+  useEffect(() => {
+    if (room && room.availableDateToRent) {
+      // Set move-in date to be the available date or today, whichever is later
+      const availableDate = new Date(room.availableDateToRent);
+      const today = new Date();
+      
+      // Choose the later date between available date and today
+      const initialDate = availableDate > today ? availableDate : today;
+      
+      // Update the rental request with a valid initial date
+      setRentRequest(prev => ({
+        ...prev,
+        dateWantToRent: initialDate.toISOString()
+      }));
+    }
+  }, [room]);
+
   const fetchRoomDetails = async () => {
     try {
       setLoading(true);
@@ -105,6 +123,19 @@ const RoomDetailScreen = () => {
     }
   };
 
+  const isValidMoveInDate = (selectedDate) => {
+    if (!room || !room.availableDateToRent) return true;
+    
+    const availableDate = new Date(room.availableDateToRent);
+    // Reset time components for proper date comparison
+    availableDate.setHours(0, 0, 0, 0);
+    
+    const dateToCheck = new Date(selectedDate);
+    dateToCheck.setHours(0, 0, 0, 0);
+    
+    return dateToCheck >= availableDate;
+  };
+
   const handleRentRequest = async () => {
     try {
       // Validate input
@@ -126,8 +157,14 @@ const RoomDetailScreen = () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      if (selectedDate <= today) {
+      if (selectedDate < today) {
         setSubmitError('Move-in date must be in the future');
+        return;
+      }
+
+      // Validate date is after availableDateToRent
+      if (!isValidMoveInDate(rentRequest.dateWantToRent)) {
+        setSubmitError(`Move-in date must be on or after ${new Date(room.availableDateToRent).toLocaleDateString()}`);
         return;
       }
 
@@ -299,6 +336,12 @@ const RoomDetailScreen = () => {
     return null;
   }
 
+  // Helper function to format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Ngay bây giờ';
+    return new Date(dateString).toLocaleDateString();
+  };
+
   // Updated renderRentModal function to improve form accessibility and date selection
   const renderRentModal = () => (
     <Modal
@@ -355,18 +398,31 @@ const RoomDetailScreen = () => {
                     </Text>
                     <FontAwesome5 name="calendar-alt" size={16} color="#6D5BA3" />
                   </TouchableOpacity>
+                  
+                  {/* Add warning message about available date */}
+                  {room.availableDateToRent && (
+                    <Text style={styles.dateHint}>
+                      *Phòng chỉ có sẵn từ {formatDate(room.availableDateToRent)}
+                    </Text>
+                  )}
 
                   {showDatePicker && (
                     <DateTimePicker
                       value={new Date(rentRequest.dateWantToRent)}
                       mode="date"
                       display="default"
-                      minimumDate={new Date(Date.now())}
+                      minimumDate={room.availableDateToRent ? new Date(room.availableDateToRent) : new Date(Date.now())}
                       onChange={(event, selectedDate) => {
                         setShowDatePicker(false);
                         if (selectedDate) {
-                          selectedDate.setHours(2, 7, 28, 795);
-                          setRentRequest(prev => ({ ...prev, dateWantToRent: selectedDate.toISOString() }));
+                          // Only update if the selected date is valid
+                          if (isValidMoveInDate(selectedDate)) {
+                            selectedDate.setHours(2, 7, 28, 795);
+                            setRentRequest(prev => ({ ...prev, dateWantToRent: selectedDate.toISOString() }));
+                            setSubmitError(null);
+                          } else {
+                            setSubmitError(`Move-in date must be on or after ${formatDate(room.availableDateToRent)}`);
+                          }
                         }
                       }}
                     />
@@ -626,7 +682,7 @@ const RoomDetailScreen = () => {
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Bắt đầu vào ở</Text>
                 <Text style={styles.infoValue}>
-                  {room.availableDateToRent ? new Date(room.availableDateToRent).toLocaleDateString() : 'Ngay bây giờ'}
+                  {formatDate(room.availableDateToRent)}
                 </Text>
               </View>
               <View style={styles.infoRow}>
