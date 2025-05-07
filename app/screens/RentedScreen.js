@@ -142,7 +142,6 @@ const RentedScreen = ({ navigation }) => {
   if (loading) {
     return (
       <View style={styles.container}>
-        
         <StatusBar barStyle="light-content" backgroundColor="#ACDCD0" />
         <LinearGradient
           colors={['#ACDCD0', '#ACDCD0']}

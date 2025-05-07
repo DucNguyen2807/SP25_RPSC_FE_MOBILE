@@ -141,21 +141,16 @@ const RoommatePostDetail = ({ route, navigation }) => {
           [{ 
             text: "OK", 
             onPress: async () => {
-              // Reload page data
               await fetchPostData();
-              
-              // Check if post status is now Inactive and navigate if so
               const updatedResult = await postService.getPostRoommateByCustomerId();
               if (updatedResult.isSuccess && updatedResult.data) {
                 const updatedPost = updatedResult.data;
                 if (updatedPost.status === 'Inactive') {
                   navigation.navigate('RentedMain');
                 } else {
-                  // If not inactive, still reload roommate requests
                   fetchRoommateRequests();
                 }
               } else {
-                // Fallback: reload roommate requests if post check fails
                 fetchRoommateRequests();
               }
             } 
@@ -165,7 +160,7 @@ const RoommatePostDetail = ({ route, navigation }) => {
         Alert.alert("Lỗi", result.message || "Không thể chấp nhận yêu cầu");
       }
     } catch (error) {
-      console.error('Error accepting request:', error);
+      console.error('Lỗi khi chấp nhận yêu cầu:', error);
       Alert.alert("Lỗi", "Đã xảy ra lỗi khi xử lý yêu cầu");
     } finally {
       setProcessingRequest(null);
@@ -184,7 +179,6 @@ const RoommatePostDetail = ({ route, navigation }) => {
           [{ 
             text: "OK", 
             onPress: () => {
-              // Fetch roommate requests again after successful rejection
               fetchRoommateRequests();
             } 
           }]
@@ -193,7 +187,7 @@ const RoommatePostDetail = ({ route, navigation }) => {
         Alert.alert("Lỗi", result.message || "Không thể từ chối yêu cầu");
       }
     } catch (error) {
-      console.error('Error rejecting request:', error);
+      console.error('Lỗi khi từ chối yêu cầu:', error);
       Alert.alert("Lỗi", "Đã xảy ra lỗi khi xử lý yêu cầu");
     } finally {
       setProcessingRequest(null);
@@ -605,7 +599,7 @@ const RoommatePostDetail = ({ route, navigation }) => {
               <View style={styles.userDetails}>
                 <Text style={styles.userName}>{post.fullName || 'Không có tên'}</Text>
               </View>
-              <Text style={styles.postTime}>{post.createdAt || 'Today'}</Text>
+              <Text style={styles.postTime}>{post.createdAt || 'Hôm nay'}</Text>
             </View>
 
             {post.title && (
@@ -634,7 +628,7 @@ const RoommatePostDetail = ({ route, navigation }) => {
               {post.status && (
                 <View style={styles.detailRow}>
                   <FontAwesome5 name="info-circle" size={16} color="#ACDCD0" />
-                  <Text style={styles.detailText}>Trạng thái: {post.status}</Text>
+                  <Text style={styles.detailText}>Trạng thái: {post.status === 'Active' ? 'Đang hoạt động' : 'Không hoạt động'}</Text>
                 </View>
               )}
             </View>

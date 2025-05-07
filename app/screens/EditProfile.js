@@ -18,7 +18,7 @@ const EditProfile = ({ navigation }) => {
     phoneNumber: '',
     dob: new Date(),
     address: '',
-    gender: 'Male',
+    gender: 'Nam',
     avatar: null
   });
 
@@ -75,7 +75,7 @@ const EditProfile = ({ navigation }) => {
           phoneNumber: user.phoneNumber || '',
           dob: user.dob ? new Date(user.dob) : new Date(),
           address: user.address || '',
-          gender: user.gender || 'Male',
+          gender: user.gender || 'Nam',
           avatar: user.avatar || null
         });
 
@@ -234,7 +234,7 @@ const EditProfile = ({ navigation }) => {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#4267B2" />
-        <Text style={styles.loadingText}>Loading your profile...</Text>
+        <Text style={styles.loadingText}>Đang tải thông tin cá nhân...</Text>
       </View>
     );
   }
@@ -256,12 +256,12 @@ const EditProfile = ({ navigation }) => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Select Date of Birth</Text>
+            <Text style={styles.modalTitle}>Chọn ngày sinh</Text>
             
             <View style={styles.datePickerContainer}>
               {/* Day Picker */}
               <View style={styles.datePickerColumn}>
-                <Text style={styles.datePickerLabel}>Day</Text>
+                <Text style={styles.datePickerLabel}>Ngày</Text>
                 <ScrollView style={styles.datePickerScroll}>
                   {days.map((d) => (
                     <TouchableOpacity 
@@ -283,7 +283,7 @@ const EditProfile = ({ navigation }) => {
               
               {/* Month Picker */}
               <View style={styles.datePickerColumn}>
-                <Text style={styles.datePickerLabel}>Month</Text>
+                <Text style={styles.datePickerLabel}>Tháng</Text>
                 <ScrollView style={styles.datePickerScroll}>
                   {months.map((m) => (
                     <TouchableOpacity 
@@ -305,7 +305,7 @@ const EditProfile = ({ navigation }) => {
               
               {/* Year Picker */}
               <View style={styles.datePickerColumn}>
-                <Text style={styles.datePickerLabel}>Year</Text>
+                <Text style={styles.datePickerLabel}>Năm</Text>
                 <ScrollView style={styles.datePickerScroll}>
                   {years.map((y) => (
                     <TouchableOpacity 
@@ -331,13 +331,13 @@ const EditProfile = ({ navigation }) => {
                 style={[styles.modalButton, styles.modalCancelButton]} 
                 onPress={() => setDateModalVisible(false)}
               >
-                <Text style={styles.modalCancelButtonText}>Cancel</Text>
+                <Text style={styles.modalCancelButtonText}>Hủy</Text>
               </TouchableOpacity>
               <TouchableOpacity 
                 style={[styles.modalButton, styles.modalConfirmButton]} 
                 onPress={confirmDate}
               >
-                <Text style={styles.modalConfirmButtonText}>Confirm</Text>
+                <Text style={styles.modalConfirmButtonText}>Xác nhận</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -394,7 +394,7 @@ const EditProfile = ({ navigation }) => {
               color={activeTab === 'user' ? '#4267B2' : '#666'} 
             />
             <Text style={[styles.tabText, activeTab === 'user' && styles.activeTabText]}>
-              Personal Info
+              Thông tin cá nhân
             </Text>
           </TouchableOpacity>
           
@@ -408,7 +408,7 @@ const EditProfile = ({ navigation }) => {
               color={activeTab === 'customer' ? '#4267B2' : '#666'} 
             />
             <Text style={[styles.tabText, activeTab === 'customer' && styles.activeTabText]}>
-              Preferences
+              Sở thích
             </Text>
           </TouchableOpacity>
         </View>
@@ -417,14 +417,14 @@ const EditProfile = ({ navigation }) => {
         {activeTab === 'user' && (
           <View style={styles.section}>
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Full Name</Text>
+              <Text style={styles.inputLabel}>Họ và tên</Text>
               <View style={styles.inputContainer}>
                 <Icon name="person" size={20} color="#999" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   value={userData.fullName}
                   onChangeText={(text) => handleUserDataChange('fullName', text)}
-                  placeholder="Enter your full name"
+                  placeholder="Nhập họ và tên của bạn"
                 />
               </View>
             </View>
@@ -442,21 +442,21 @@ const EditProfile = ({ navigation }) => {
             </View>
             
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Phone Number</Text>
+              <Text style={styles.inputLabel}>Số điện thoại</Text>
               <View style={styles.inputContainer}>
                 <Icon name="phone" size={20} color="#999" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   value={userData.phoneNumber}
                   onChangeText={(text) => handleUserDataChange('phoneNumber', text)}
-                  placeholder="Enter your phone number"
+                  placeholder="Nhập số điện thoại của bạn"
                   keyboardType="phone-pad"
                 />
               </View>
             </View>
             
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Date of Birth</Text>
+              <Text style={styles.inputLabel}>Ngày sinh</Text>
               <TouchableOpacity 
                 style={styles.datePickerButton} 
                 onPress={() => setDateModalVisible(true)}
@@ -468,50 +468,50 @@ const EditProfile = ({ navigation }) => {
             </View>
             
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Address</Text>
+              <Text style={styles.inputLabel}>Địa chỉ</Text>
               <View style={styles.inputContainer}>
                 <Icon name="location-on" size={20} color="#999" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   value={userData.address || ''}
                   onChangeText={(text) => handleUserDataChange('address', text)}
-                  placeholder="Enter your address"
+                  placeholder="Nhập địa chỉ của bạn"
                   multiline
                 />
               </View>
             </View>
             
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Gender</Text>
+              <Text style={styles.inputLabel}>Giới tính</Text>
               <View style={styles.radioContainer}>
                 <TouchableOpacity 
                   style={styles.radioOption} 
-                  onPress={() => handleUserDataChange('gender', 'Male')}
+                  onPress={() => handleUserDataChange('gender', 'Nam')}
                 >
                   <View style={styles.radioButton}>
-                    {userData.gender === 'Male' && <View style={styles.radioButtonSelected} />}
+                    {userData.gender === 'Nam' && <View style={styles.radioButtonSelected} />}
                   </View>
-                  <Text style={styles.radioLabel}>Male</Text>
+                  <Text style={styles.radioLabel}>Nam</Text>
                 </TouchableOpacity>
                 
                 <TouchableOpacity 
                   style={styles.radioOption} 
-                  onPress={() => handleUserDataChange('gender', 'Female')}
+                  onPress={() => handleUserDataChange('gender', 'Nữ')}
                 >
                   <View style={styles.radioButton}>
-                    {userData.gender === 'Female' && <View style={styles.radioButtonSelected} />}
+                    {userData.gender === 'Nữ' && <View style={styles.radioButtonSelected} />}
                   </View>
-                  <Text style={styles.radioLabel}>Female</Text>
+                  <Text style={styles.radioLabel}>Nữ</Text>
                 </TouchableOpacity>
                 
                 <TouchableOpacity 
                   style={styles.radioOption} 
-                  onPress={() => handleUserDataChange('gender', 'Other')}
+                  onPress={() => handleUserDataChange('gender', 'Khác')}
                 >
                   <View style={styles.radioButton}>
-                    {userData.gender === 'Other' && <View style={styles.radioButtonSelected} />}
+                    {userData.gender === 'Khác' && <View style={styles.radioButtonSelected} />}
                   </View>
-                  <Text style={styles.radioLabel}>Other</Text>
+                  <Text style={styles.radioLabel}>Khác</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -527,7 +527,7 @@ const EditProfile = ({ navigation }) => {
               ) : (
                 <>
                   <Icon name="save" size={20} color="#fff" style={styles.buttonIcon} />
-                  <Text style={styles.saveButtonText}>Save Personal Information</Text>
+                  <Text style={styles.saveButtonText}>Lưu thông tin cá nhân</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -538,77 +538,77 @@ const EditProfile = ({ navigation }) => {
         {activeTab === 'customer' && (
           <View style={styles.section}>
             <View style={styles.inputGroup}>
-  <Text style={styles.inputLabel}>Customer Type</Text>
-  <View style={styles.buttonPickerContainer}>
-    {customerTypes.map((type) => (
-      <TouchableOpacity
-        key={type}
-        style={[
-          styles.typeButton,
-          customerData.customerType === type && styles.typeButtonSelected
-        ]}
-        onPress={() => handleCustomerDataChange('customerType', type)}
-      >
-        <Text style={[
-          styles.typeButtonText,
-          customerData.customerType === type && styles.typeButtonTextSelected
-        ]}>
-          {type}
-        </Text>
-      </TouchableOpacity>
-    ))}
-  </View>
-</View>
+              <Text style={styles.inputLabel}>Loại người dùng</Text>
+              <View style={styles.buttonPickerContainer}>
+                {customerTypes.map((type) => (
+                  <TouchableOpacity
+                    key={type}
+                    style={[
+                      styles.typeButton,
+                      customerData.customerType === type && styles.typeButtonSelected
+                    ]}
+                    onPress={() => handleCustomerDataChange('customerType', type)}
+                  >
+                    <Text style={[
+                      styles.typeButtonText,
+                      customerData.customerType === type && styles.typeButtonTextSelected
+                    ]}>
+                      {type}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
             
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Budget Range</Text>
+              <Text style={styles.inputLabel}>Khoảng ngân sách</Text>
               <View style={styles.inputContainer}>
                 <Icon name="attach-money" size={20} color="#999" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   value={customerData.budgetRange}
                   onChangeText={(text) => handleCustomerDataChange('budgetRange', text)}
-                  placeholder="Enter your budget range"
+                  placeholder="Nhập khoảng ngân sách của bạn"
                   keyboardType="numeric"
                 />
               </View>
             </View>
             
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Preferred Location</Text>
+              <Text style={styles.inputLabel}>Vị trí mong muốn</Text>
               <View style={styles.inputContainer}>
                 <Icon name="place" size={20} color="#999" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   value={customerData.preferredLocation}
                   onChangeText={(text) => handleCustomerDataChange('preferredLocation', text)}
-                  placeholder="Enter your preferred location"
+                  placeholder="Nhập vị trí mong muốn"
                 />
               </View>
             </View>
             
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Lifestyle</Text>
+              <Text style={styles.inputLabel}>Phong cách sống</Text>
               <View style={styles.inputContainer}>
                 <Icon name="local-activity" size={20} color="#999" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   value={customerData.lifeStyle}
                   onChangeText={(text) => handleCustomerDataChange('lifeStyle', text)}
-                  placeholder="Describe your lifestyle"
+                  placeholder="Mô tả phong cách sống của bạn"
                 />
               </View>
             </View>
             
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Preferences</Text>
+              <Text style={styles.inputLabel}>Sở thích</Text>
               <View style={styles.textAreaContainer}>
                 <Icon name="favorite" size={20} color="#999" style={styles.textAreaIcon} />
                 <TextInput
                   style={styles.textArea}
                   value={customerData.preferences}
                   onChangeText={(text) => handleCustomerDataChange('preferences', text)}
-                  placeholder="Describe your preferences"
+                  placeholder="Mô tả sở thích của bạn"
                   multiline
                   numberOfLines={4}
                   textAlignVertical="top"
@@ -617,14 +617,14 @@ const EditProfile = ({ navigation }) => {
             </View>
             
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Requirements</Text>
+              <Text style={styles.inputLabel}>Yêu cầu</Text>
               <View style={styles.textAreaContainer}>
                 <Icon name="list-alt" size={20} color="#999" style={styles.textAreaIcon} />
                 <TextInput
                   style={styles.textArea}
                   value={customerData.requirement}
                   onChangeText={(text) => handleCustomerDataChange('requirement', text)}
-                  placeholder="Describe your requirements"
+                  placeholder="Mô tả yêu cầu của bạn"
                   multiline
                   numberOfLines={4}
                   textAlignVertical="top"
@@ -643,7 +643,7 @@ const EditProfile = ({ navigation }) => {
               ) : (
                 <>
                   <Icon name="save" size={20} color="#fff" style={styles.buttonIcon} />
-                  <Text style={styles.saveButtonText}>Save Preferences</Text>
+                  <Text style={styles.saveButtonText}>Lưu sở thích</Text>
                 </>
               )}
             </TouchableOpacity>

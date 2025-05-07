@@ -70,8 +70,8 @@ const SignUpScreen = ({ navigation }) => {
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.titleText}>Create Account</Text>
-            <Text style={styles.subtitleText}>Find your perfect roommate with EasyRoomie</Text>
+            <Text style={styles.titleText}>Tạo tài khoản</Text>
+            <Text style={styles.subtitleText}>Tìm bạn ở ghép phù hợp với EasyRoomie</Text>
           </View>
           
           <View style={styles.formContainer}>
@@ -79,7 +79,7 @@ const SignUpScreen = ({ navigation }) => {
               <Ionicons name="person-outline" size={22} color={colors.text.secondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Full Name"
+                placeholder="Họ và tên"
                 placeholderTextColor={colors.text.disabled}
                 value={fullName}
                 onChangeText={setFullName}
@@ -103,7 +103,7 @@ const SignUpScreen = ({ navigation }) => {
               <Ionicons name="lock-closed-outline" size={22} color={colors.text.secondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Password"
+                placeholder="Mật khẩu"
                 placeholderTextColor={colors.text.disabled}
                 secureTextEntry={!showPassword}
                 value={password}
@@ -122,7 +122,7 @@ const SignUpScreen = ({ navigation }) => {
               <Ionicons name="lock-closed-outline" size={22} color={colors.text.secondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Confirm Password"
+                placeholder="Xác nhận mật khẩu"
                 placeholderTextColor={colors.text.disabled}
                 secureTextEntry={!showConfirmPassword}
                 value={confirmPassword}
@@ -138,7 +138,7 @@ const SignUpScreen = ({ navigation }) => {
             </View>
             
             <View style={styles.userTypeContainer}>
-              <Text style={styles.userTypeLabel}>I am a:</Text>
+              <Text style={styles.userTypeLabel}>Tôi là:</Text>
               <View style={styles.userTypeOptions}>
                 <TouchableOpacity 
                   style={[styles.userTypeButton, isStudent && styles.userTypeActive]}
@@ -174,18 +174,18 @@ const SignUpScreen = ({ navigation }) => {
               disabled={isLoading}
             >
               {isLoading ? (
-                <Text style={styles.signUpButtonText}>Loading...</Text>
+                <Text style={styles.signUpButtonText}>Đang xử lý...</Text>
               ) : (
-                <Text style={styles.signUpButtonText}>Create Account</Text>
+                <Text style={styles.signUpButtonText}>Tạo tài khoản</Text>
               )}
             </TouchableOpacity>
           </View>
           
           <View style={styles.footerContainer}>
             <View style={styles.loginLinkContainer}>
-              <Text style={styles.loginText}>Already have an account? </Text>
+              <Text style={styles.loginText}>Đã có tài khoản? </Text>
               <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                <Text style={styles.loginLink}>Log in</Text>
+                <Text style={styles.loginLink}>Đăng nhập</Text>
               </TouchableOpacity>
             </View>
           </View>
